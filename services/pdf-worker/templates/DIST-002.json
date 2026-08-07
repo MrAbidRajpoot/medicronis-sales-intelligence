@@ -1,0 +1,21 @@
+{
+  "distributor_code": "DIST-002",
+  "name": "PharmaLink Lahore Statement",
+  "detection": {
+    "title_patterns": ["PharmaLink", "PHARMALINK", "DIST-002"],
+    "header_keywords": ["Item Description", "Sold", "Rate"]
+  },
+  "field_mapping": {
+    "raw_product_text": ["Item Description", "Description", "Product Name"],
+    "raw_product_code": ["SKU", "Code", "Item Code"],
+    "quantity": ["Sold", "Qty", "Quantity"],
+    "unit_price": ["Rate", "Unit Price", "Price"],
+    "gross_value": ["Value", "Amount", "Gross Value"],
+    "returns_qty": ["Returns", "Ret"],
+    "transaction_date": ["Date", "Invoice Date"],
+    "customer_name": ["Customer", "Retailer", "Outlet"]
+  },
+  "table_settings": {
+    "skip_rows_containing": ["Total", "Sub Total", "Summary", "Page"]
+  }
+}

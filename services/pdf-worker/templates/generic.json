@@ -1,0 +1,21 @@
+{
+  "distributor_code": "generic",
+  "name": "Generic Table Fallback",
+  "detection": {
+    "title_patterns": [],
+    "header_keywords": []
+  },
+  "field_mapping": {
+    "raw_product_text": ["product", "item", "description", "name", "medicine", "drug"],
+    "raw_product_code": ["code", "sku", "item code", "product code"],
+    "quantity": ["qty", "quantity", "sold", "units", "sale qty", "sales qty", "net sale"],
+    "unit_price": ["unit price", "rate", "price", "unit rate", "t.p.", "tp"],
+    "gross_value": ["amount", "value", "gross", "total value", "line total", "sale value"],
+    "returns_qty": ["returns", "ret qty", "return"],
+    "transaction_date": ["date", "txn date", "invoice date"],
+    "customer_name": ["customer", "outlet", "pharmacy", "retailer"]
+  },
+  "table_settings": {
+    "skip_rows_containing": ["total", "subtotal", "grand total", "page", "summary"]
+  }
+}

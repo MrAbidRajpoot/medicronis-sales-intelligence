@@ -1,0 +1,7689 @@
+{
+  "source": "d:\\Downloads\\July Closing.zip",
+  "total_pdfs": 46,
+  "with_tables": 37,
+  "with_text": 45,
+  "extraction_ok": 32,
+  "extraction_failed": 14,
+  "family_count": 31,
+  "families": [
+    {
+      "family_key": "('no_table', True, 1)",
+      "count": 5,
+      "files": [
+        "Ayan Pharma Taunsa.pdf",
+        "Ch Medicine MWL.pdf",
+        "Globar Enterprises SKP.PDF",
+        "Mrwa Enterprises BWP.pdf",
+        "Noor KHan minogra promotion30.pdf"
+      ],
+      "sample_headers": null,
+      "extract_stats": {
+        "templates": [
+          "generic"
+        ],
+        "avg_rows": 24.2,
+        "avg_sales_rows": 1.4,
+        "zero_extraction": 3
+      }
+    },
+    {
+      "family_key": "('other_table', 19, ('product name t.p. tax', 'opening', 'purchase', 'b.c', 'sale', 'sale return'), ('qty.', 'value', 'qty.', 'bon', 'value', 's. in'))",
+      "count": 4,
+      "files": [
+        "Al Makkah Trading Buner.PDF",
+        "Kamal Medicine Company Timergarah.PDF",
+        "Medicamp PSW.PDF",
+        "Umar Medicine Swabi.PDF"
+      ],
+      "sample_headers": {
+        "page": 1,
+        "table_index": 0,
+        "rows": 2,
+        "cols": 19,
+        "type": "other_table",
+        "header0": [
+          "Product Name T.P. Tax",
+          "Opening",
+          "",
+          "Purchase",
+          "",
+          "",
+          "B.C",
+          "Sale",
+          "",
+          "Sale Return",
+          "",
+          "Net Sale",
+          "",
+          "",
+          "P.R",
+          "Transfer / Av."
+        ],
+        "header1": [
+          "",
+          "Qty.",
+          "Value",
+          "Qty.",
+          "Bon",
+          "Value",
+          "S. In",
+          "Qty.",
+          "Bon",
+          "Qty.",
+          "Bon",
+          "Qty.",
+          "Bon",
+          "Value",
+          "S. Out",
+          "Out"
+        ],
+        "header0_norm": [
+          "product name t.p. tax",
+          "opening",
+          "purchase",
+          "b.c",
+          "sale",
+          "sale return",
+          "net sale",
+          "p.r",
+          "transfer / av.",
+          "closing balance"
+        ],
+        "header1_norm": [
+          "qty.",
+          "value",
+          "qty.",
+          "bon",
+          "value",
+          "s. in",
+          "qty.",
+          "bon",
+          "qty.",
+          "bon"
+        ]
+      },
+      "extract_stats": {
+        "templates": [
+          "generic"
+        ],
+        "avg_rows": 29.2,
+        "avg_sales_rows": 0.0,
+        "zero_extraction": 4
+      }
+    },
+    {
+      "family_key": "('ssr_stock_return_2row', 17, ('item', 'rate', 'open', 'rcvd', 'total', 'trans fered'), ('last month', 'today', 'qty', 'bonus', 'qty', 'bonus'))",
+      "count": 3,
+      "files": [
+        "AIM Pharma HYD.pdf",
+        "Lal Drug Agency Sibbi.pdf",
+        "Reliable Pharma MPK.pdf"
+      ],
+      "sample_headers": {
+        "page": 1,
+        "table_index": 0,
+        "rows": 11,
+        "cols": 17,
+        "type": "ssr_stock_return_2row",
+        "header0": [
+          "ITEM",
+          "RATE",
+          "OPEN",
+          "RCVD",
+          "TOTAL",
+          "TRANS\nFERED",
+          "SALE",
+          "",
+          "",
+          "",
+          "RETURN",
+          "",
+          "NET SALE",
+          "",
+          "",
+          "CLOSING"
+        ],
+        "header1": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "LAST\nMONTH",
+          "TODAY",
+          "QTY",
+          "BONUS",
+          "QTY",
+          "BONUS",
+          "QTY",
+          "BONUS",
+          "AMOUNT",
+          "QTY"
+        ],
+        "header0_norm": [
+          "item",
+          "rate",
+          "open",
+          "rcvd",
+          "total",
+          "trans fered",
+          "sale",
+          "return",
+          "net sale",
+          "closing"
+        ],
+        "header1_norm": [
+          "last month",
+          "today",
+          "qty",
+          "bonus",
+          "qty",
+          "bonus",
+          "qty",
+          "bonus",
+          "amount",
+          "qty"
+        ]
+      },
+      "extract_stats": {
+        "templates": [
+          "ssr-stock-return"
+        ],
+        "avg_rows": 20.0,
+        "avg_sales_rows": 20.0,
+        "zero_extraction": 0
+      }
+    },
+    {
+      "family_key": "('other_table', 15, ('item description', 'rate', 'pack', 'opening balance', 'purchase', 'sale'), ('purchase', 'return', 'total', 'net sales', 'bonus', 'value'))",
+      "count": 3,
+      "files": [
+        "Al Rehman  Medical Sources Lahore.pdf",
+        "Al Rehman Medical Sources Lahore.pdf",
+        "M&C RWP.pdf"
+      ],
+      "sample_headers": {
+        "page": 1,
+        "table_index": 0,
+        "rows": 2,
+        "cols": 15,
+        "type": "other_table",
+        "header0": [
+          "Item Description",
+          "Rate",
+          "Pack",
+          "Opening\nBalance",
+          "PURCHASE",
+          "",
+          "",
+          "SALE",
+          "",
+          "",
+          "Adjustment",
+          "CLOSING",
+          "",
+          "Today\nSale",
+          "Today\nReturn"
+        ],
+        "header1": [
+          "",
+          "",
+          "",
+          "",
+          "Purchase",
+          "Return",
+          "Total",
+          "Net Sales",
+          "Bonus",
+          "Value",
+          "",
+          "Balance",
+          "Value",
+          "",
+          ""
+        ],
+        "header0_norm": [
+          "item description",
+          "rate",
+          "pack",
+          "opening balance",
+          "purchase",
+          "sale",
+          "adjustment",
+          "closing",
+          "today sale",
+          "today return"
+        ],
+        "header1_norm": [
+          "purchase",
+          "return",
+          "total",
+          "net sales",
+          "bonus",
+          "value",
+          "balance",
+          "value"
+        ]
+      },
+      "extract_stats": {
+        "templates": [
+          "fmt-item-desc-net-sales"
+        ],
+        "avg_rows": 12.3,
+        "avg_sales_rows": 12.3,
+        "zero_extraction": 0
+      }
+    },
+    {
+      "family_key": "('other_table', 13, ('item description', 'rate', 'pack', 'opening balance', 'purchase', 'sale'), ('purchase', 'return', 'total', 'net sales', 'bonus', 'value'))",
+      "count": 2,
+      "files": [
+        "Bashir Pharma Gujranwala.pdf",
+        "Pharmarite Distributor Jehlum.pdf"
+      ],
+      "sample_headers": {
+        "page": 1,
+        "table_index": 0,
+        "rows": 2,
+        "cols": 13,
+        "type": "other_table",
+        "header0": [
+          "Item Description",
+          "Rate",
+          "Pack",
+          "Opening\nBalance",
+          "PURCHASE",
+          "",
+          "",
+          "SALE",
+          "",
+          "",
+          "Adjustment",
+          "CLOSING",
+          ""
+        ],
+        "header1": [
+          "",
+          "",
+          "",
+          "",
+          "Purchase",
+          "Return",
+          "Total",
+          "Net Sales",
+          "Bonus",
+          "Value",
+          "",
+          "Balance",
+          "Value"
+        ],
+        "header0_norm": [
+          "item description",
+          "rate",
+          "pack",
+          "opening balance",
+          "purchase",
+          "sale",
+          "adjustment",
+          "closing"
+        ],
+        "header1_norm": [
+          "purchase",
+          "return",
+          "total",
+          "net sales",
+          "bonus",
+          "value",
+          "balance",
+          "value"
+        ]
+      },
+      "extract_stats": {
+        "templates": [
+          "fmt-item-desc-net-sales"
+        ],
+        "avg_rows": 19.5,
+        "avg_sales_rows": 19.5,
+        "zero_extraction": 0
+      }
+    },
+    {
+      "family_key": "('other_table', 13, ('trad rate', 'opening balance', 'receipt', 'sale', 'total stock', 'transfer'), ('quantity amount', 'sale', 'return', 'net sale', 'amount'))",
+      "count": 2,
+      "files": [
+        "Hamed Pharma Bannu Promotion.pdf",
+        "Hamed Pharma Bannu Trade.pdf"
+      ],
+      "sample_headers": {
+        "page": 1,
+        "table_index": 0,
+        "rows": 14,
+        "cols": 13,
+        "type": "other_table",
+        "header0": [
+          "",
+          "TRAD\nRATE",
+          "OPENING\nBALANCE",
+          "RECEIPT",
+          "",
+          "SALE",
+          "",
+          "",
+          "",
+          "TOTAL\nSTOCK",
+          "TRANSFER",
+          "",
+          ""
+        ],
+        "header1": [
+          "",
+          "",
+          "",
+          "QUANTITY AMOUNT",
+          "",
+          "SALE",
+          "RETURN",
+          "NET SALE",
+          "AMOUNT",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "header0_norm": [
+          "trad rate",
+          "opening balance",
+          "receipt",
+          "sale",
+          "total stock",
+          "transfer"
+        ],
+        "header1_norm": [
+          "quantity amount",
+          "sale",
+          "return",
+          "net sale",
+          "amount"
+        ]
+      },
+      "extract_stats": {
+        "templates": [
+          "generic"
+        ],
+        "avg_rows": 17.5,
+        "avg_sales_rows": 17.5,
+        "zero_extraction": 0
+      }
+    },
+    {
+      "family_key": "('no_table', True, 2)",
+      "count": 2,
+      "files": [
+        "Noor Khan Mingora.pdf",
+        "Zafar & Sons NWS.pdf"
+      ],
+      "sample_headers": null,
+      "extract_stats": {
+        "templates": [
+          "generic"
+        ],
+        "avg_rows": 16.5,
+        "avg_sales_rows": 0.0,
+        "zero_extraction": 2
+      }
+    },
+    {
+      "family_key": "('other_table', 16, ('opening', 'purchase', 'p-return', 'g-sale', 's.ret', 'net sale'), ('id', 'description', 'tp', 'qty+bns', 'qty', 'bns'))",
+      "count": 2,
+      "files": [
+        "Ruman Medicine Promotion RYK.pdf",
+        "Ruman Medicine Trade RYK.pdf"
+      ],
+      "sample_headers": {
+        "page": 1,
+        "table_index": 0,
+        "rows": 2,
+        "cols": 16,
+        "type": "other_table",
+        "header0": [
+          "",
+          "",
+          "",
+          "OPENING",
+          "PURCHASE",
+          "",
+          "P-RETURN",
+          "",
+          "G-SALE",
+          "S.RET",
+          "NET SALE",
+          "",
+          "",
+          "OTHERS",
+          "CLOSING",
+          ""
+        ],
+        "header1": [
+          "ID",
+          "DESCRIPTION",
+          "TP",
+          "QTY+BNS",
+          "QTY",
+          "BNS",
+          "QTY",
+          "BN\nS",
+          "QTY",
+          "QTY+BNS",
+          "QTY",
+          "BNS",
+          "VALUE",
+          "QTY",
+          "QTY",
+          "Value"
+        ],
+        "header0_norm": [
+          "opening",
+          "purchase",
+          "p-return",
+          "g-sale",
+          "s.ret",
+          "net sale",
+          "others",
+          "closing"
+        ],
+        "header1_norm": [
+          "id",
+          "description",
+          "tp",
+          "qty+bns",
+          "qty",
+          "bns",
+          "qty",
+          "bn s",
+          "qty",
+          "qty+bns"
+        ]
+      },
+      "extract_stats": {
+        "templates": [
+          "fmt-medicronis-erp-statement"
+        ],
+        "avg_rows": 11.0,
+        "avg_sales_rows": 11.0,
+        "zero_extraction": 0
+      }
+    },
+    {
+      "family_key": "('other_table', 15, ('sales and stock statement',), ('from date:01/07/2026 to date:30/07/2026 printing date: 30/07/2026 company:medicronics pharma ,selected groups, sale calculated on sale price printing time: 6:32:48pm',))",
+      "count": 1,
+      "files": [
+        "AL Shifa Enterprises Jampur.pdf"
+      ],
+      "sample_headers": {
+        "page": 1,
+        "table_index": 0,
+        "rows": 47,
+        "cols": 15,
+        "type": "other_table",
+        "header0": [
+          "Sales and Stock Statement",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "header1": [
+          "From Date:01/07/2026 To Date:30/07/2026 Printing Date: 30/07/2026\nCompany:Medicronics Pharma ,Selected groups, Sale Calculated on Sale price Printing Time: 6:32:48PM",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "header0_norm": [
+          "sales and stock statement"
+        ],
+        "header1_norm": [
+          "from date:01/07/2026 to date:30/07/2026 printing date: 30/07/2026 company:medicronics pharma ,selected groups, sale calculated on sale price printing time: 6:32:48pm"
+        ]
+      },
+      "extract_stats": {
+        "templates": [
+          "fmt-medicronis-erp-statement"
+        ],
+        "avg_rows": 24.0,
+        "avg_sales_rows": 24.0,
+        "zero_extraction": 0
+      }
+    },
+    {
+      "family_key": "('other_table', 1, ('029aminal syp 120ml 90.00 78 78 5 450 73 6,570',), (\"007berry flow sachet 10's 115.00 41 240 281 68 7,820 213 24,495\",))",
+      "count": 1,
+      "files": [
+        "AMT FSD.pdf"
+      ],
+      "sample_headers": {
+        "page": 1,
+        "table_index": 0,
+        "rows": 26,
+        "cols": 1,
+        "type": "other_table",
+        "header0": [
+          "029AMINAL SYP 120ML 90.00 78 78 5 450 73 6,570"
+        ],
+        "header1": [
+          "007BERRY FLOW SACHET 10'S 115.00 41 240 281 68 7,820 213 24,495"
+        ],
+        "header0_norm": [
+          "029aminal syp 120ml 90.00 78 78 5 450 73 6,570"
+        ],
+        "header1_norm": [
+          "007berry flow sachet 10's 115.00 41 240 281 68 7,820 213 24,495"
+        ]
+      },
+      "extract_stats": {
+        "templates": [
+          "generic"
+        ],
+        "avg_rows": 1.0,
+        "avg_sales_rows": 0.0,
+        "zero_extraction": 1
+      }
+    },
+    {
+      "family_key": "('other_table', 16, ('sales and stock statement',), ('from date:01/07/2026 to date:30/07/2026 printing date: 30/07/2026 company:medicronis pharmaceuticals ,selected groups, sale calculated on trade price printing time 8:01:16pm',))",
+      "count": 1,
+      "files": [
+        "AQ Enterprises Sargodha.pdf"
+      ],
+      "sample_headers": {
+        "page": 1,
+        "table_index": 0,
+        "rows": 31,
+        "cols": 16,
+        "type": "other_table",
+        "header0": [
+          "Sales and Stock Statement",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "header1": [
+          "From Date:01/07/2026 To Date:30/07/2026 Printing Date: 30/07/2026\nCompany:Medicronis Pharmaceuticals ,Selected groups, Sale Calculated on Trade price Printing Time 8:01:16PM",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "header0_norm": [
+          "sales and stock statement"
+        ],
+        "header1_norm": [
+          "from date:01/07/2026 to date:30/07/2026 printing date: 30/07/2026 company:medicronis pharmaceuticals ,selected groups, sale calculated on trade price printing time 8:01:16pm"
+        ]
+      },
+      "extract_stats": {
+        "templates": [
+          "fmt-medicronis-erp-statement"
+        ],
+        "avg_rows": 28.0,
+        "avg_sales_rows": 28.0,
+        "zero_extraction": 0
+      }
+    },
+    {
+      "family_key": "('ssr_stock_return_2row', 16, ('item', 'rate', 'open', 'rcvd', 'total', 'trans fered'), ('last month', 'qty', 'bonus', 'qty', 'bonus', 'qty'))",
+      "count": 1,
+      "files": [
+        "Al Haram Enterprises Kohat.pdf"
+      ],
+      "sample_headers": {
+        "page": 1,
+        "table_index": 0,
+        "rows": 33,
+        "cols": 16,
+        "type": "ssr_stock_return_2row",
+        "header0": [
+          "ITEM",
+          "RATE",
+          "OPEN",
+          "RCVD",
+          "TOTAL",
+          "TRANS\nFERED",
+          "SALE",
+          "",
+          "",
+          "RETURN",
+          "",
+          "NET SALE",
+          "",
+          "",
+          "CLOSING",
+          ""
+        ],
+        "header1": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "LAST\nMONTH",
+          "QTY",
+          "BONUS",
+          "QTY",
+          "BONUS",
+          "QTY",
+          "BONUS",
+          "AMOUNT",
+          "QTY",
+          "AMT"
+        ],
+        "header0_norm": [
+          "item",
+          "rate",
+          "open",
+          "rcvd",
+          "total",
+          "trans fered",
+          "sale",
+          "return",
+          "net sale",
+          "closing"
+        ],
+        "header1_norm": [
+          "last month",
+          "qty",
+          "bonus",
+          "qty",
+          "bonus",
+          "qty",
+          "bonus",
+          "amount",
+          "qty",
+          "amt"
+        ]
+      },
+      "extract_stats": {
+        "templates": [
+          "ssr-stock-return-16col"
+        ],
+        "avg_rows": 26.0,
+        "avg_sales_rows": 26.0,
+        "zero_extraction": 0
+      }
+    },
+    {
+      "family_key": "('other_table', 15, ('sales and stock statement',), ('from date:01/07/2026 to date:30/07/2026 printing date: 30/07/2026 company:medicronis pharmaceutical ,selected groups, sale calculated on sale price printing time: 6:47:46pm',))",
+      "count": 1,
+      "files": [
+        "Al Harmain ENterprises DG Khan.pdf"
+      ],
+      "sample_headers": {
+        "page": 1,
+        "table_index": 0,
+        "rows": 50,
+        "cols": 15,
+        "type": "other_table",
+        "header0": [
+          "Sales and Stock Statement",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "header1": [
+          "From Date:01/07/2026 To Date:30/07/2026 Printing Date: 30/07/2026\nCompany:Medicronis Pharmaceutical ,Selected groups, Sale Calculated on Sale price Printing Time: 6:47:46PM",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "header0_norm": [
+          "sales and stock statement"
+        ],
+        "header1_norm": [
+          "from date:01/07/2026 to date:30/07/2026 printing date: 30/07/2026 company:medicronis pharmaceutical ,selected groups, sale calculated on sale price printing time: 6:47:46pm"
+        ]
+      },
+      "extract_stats": {
+        "templates": [
+          "fmt-medicronis-erp-statement"
+        ],
+        "avg_rows": 31.0,
+        "avg_sales_rows": 31.0,
+        "zero_extraction": 0
+      }
+    },
+    {
+      "family_key": "('text_pattern', 'STOCK STATEMENT', 1)",
+      "count": 1,
+      "files": [
+        "Bukhari Traders MBD.pdf"
+      ],
+      "sample_headers": null,
+      "extract_stats": {
+        "templates": [
+          "generic"
+        ],
+        "avg_rows": 30.0,
+        "avg_sales_rows": 9.0,
+        "zero_extraction": 0
+      }
+    },
+    {
+      "family_key": "('single_header_product_table', 16, ('code', 'product desc', 'pack', 'rate', 'ob', 'pur'), ('null',))",
+      "count": 1,
+      "files": [
+        "Chishti Pharma Multan.pdf"
+      ],
+      "sample_headers": {
+        "page": 1,
+        "table_index": 0,
+        "rows": 25,
+        "cols": 16,
+        "type": "single_header_product_table",
+        "header0": [
+          "Code",
+          "Product Desc",
+          "Pack",
+          "Rate",
+          "OB",
+          "Pur",
+          "Total",
+          "Sale",
+          "Ret Sale",
+          "Net\nSale",
+          "Sale\nValue",
+          "Exp\nBrk",
+          "Trf\nin",
+          "Trf\nOut",
+          "Clos\nQty",
+          "Clos\nValue"
+        ],
+        "header1": [
+          "NULL",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "header0_norm": [
+          "code",
+          "product desc",
+          "pack",
+          "rate",
+          "ob",
+          "pur",
+          "total",
+          "sale",
+          "ret sale",
+          "net sale"
+        ],
+        "header1_norm": [
+          "null"
+        ]
+      },
+      "extract_stats": {
+        "templates": [
+          "generic"
+        ],
+        "avg_rows": 49.0,
+        "avg_sales_rows": 0.0,
+        "zero_extraction": 1
+      }
+    },
+    {
+      "family_key": "('other_table', 2, ('sale & stock statment',), ('sale & stock statment',))",
+      "count": 1,
+      "files": [
+        "Evergreen Enterprises DI Khan.pdf"
+      ],
+      "sample_headers": {
+        "page": 1,
+        "table_index": 0,
+        "rows": 3,
+        "cols": 2,
+        "type": "other_table",
+        "header0": [
+          "Sale & Stock Statment",
+          ""
+        ],
+        "header1": [
+          "",
+          "Sale & Stock Statment"
+        ],
+        "header0_norm": [
+          "sale & stock statment"
+        ],
+        "header1_norm": [
+          "sale & stock statment"
+        ]
+      },
+      "extract_stats": {
+        "templates": [
+          "generic"
+        ],
+        "avg_rows": 43.0,
+        "avg_sales_rows": 30.0,
+        "zero_extraction": 0
+      }
+    },
+    {
+      "family_key": "('single_header_product_table', 1, ('description pack rate open pur total gross bonus total sale exp trnf trnf closing closing bal receipt stock sale sale sale value brk in out qty value',), ('a',))",
+      "count": 1,
+      "files": [
+        "Faiz Enterprises Rajanpur.pdf"
+      ],
+      "sample_headers": {
+        "page": 1,
+        "table_index": 0,
+        "rows": 35,
+        "cols": 1,
+        "type": "single_header_product_table",
+        "header0": [
+          "Description Pack Rate Open Pur Total Gross Bonus Total Sale Exp Trnf Trnf Closing Closing\nBal Receipt Stock Sale Sale Sale Value Brk In out Qty Value"
+        ],
+        "header1": [
+          "A"
+        ],
+        "header0_norm": [
+          "description pack rate open pur total gross bonus total sale exp trnf trnf closing closing bal receipt stock sale sale sale value brk in out qty value"
+        ],
+        "header1_norm": [
+          "a"
+        ]
+      },
+      "extract_stats": {
+        "templates": [
+          "generic"
+        ],
+        "avg_rows": 34.0,
+        "avg_sales_rows": 0.0,
+        "zero_extraction": 1
+      }
+    },
+    {
+      "family_key": "('other_table', 15, ('item description', 'rate', 'opening balance', 'purchase', 'sale', 'adjustment'), ('purchase', 'return', 'total', 'sale', 'return', 'total'))",
+      "count": 1,
+      "files": [
+        "Haji Nizam & Sons Quetta.pdf"
+      ],
+      "sample_headers": {
+        "page": 1,
+        "table_index": 0,
+        "rows": 2,
+        "cols": 15,
+        "type": "other_table",
+        "header0": [
+          "Item Description",
+          "Rate",
+          "Opening\nBalance",
+          "PURCHASE",
+          "",
+          "",
+          "SALE",
+          "",
+          "",
+          "",
+          "Adjustment",
+          "CLOSING",
+          "",
+          "Today\nSale",
+          "Today\nReturn"
+        ],
+        "header1": [
+          "",
+          "",
+          "",
+          "Purchase",
+          "Return",
+          "Total",
+          "Sale",
+          "Return",
+          "Total",
+          "Value",
+          "",
+          "Balance",
+          "Value",
+          "",
+          ""
+        ],
+        "header0_norm": [
+          "item description",
+          "rate",
+          "opening balance",
+          "purchase",
+          "sale",
+          "adjustment",
+          "closing",
+          "today sale",
+          "today return"
+        ],
+        "header1_norm": [
+          "purchase",
+          "return",
+          "total",
+          "sale",
+          "return",
+          "total",
+          "value",
+          "balance",
+          "value"
+        ]
+      },
+      "extract_stats": {
+        "templates": [
+          "fmt-item-desc-net-sales"
+        ],
+        "avg_rows": 15.0,
+        "avg_sales_rows": 15.0,
+        "zero_extraction": 0
+      }
+    },
+    {
+      "family_key": "('other_table', 9, ('cefpak 500mg injection', '69.00', '7', '-7', '-', '-'), ('cipak 200mg infusion', '120.00', '4', '-1', '3', '360'))",
+      "count": 1,
+      "files": [
+        "Hamza Medicine TTS.pdf"
+      ],
+      "sample_headers": {
+        "page": 1,
+        "table_index": 1,
+        "rows": 37,
+        "cols": 9,
+        "type": "other_table",
+        "header0": [
+          "CEFPAK 500MG INJECTION",
+          "69.00",
+          "7",
+          "-7",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-"
+        ],
+        "header1": [
+          "CIPAK 200MG INFUSION",
+          "120.00",
+          "4",
+          "-1",
+          "3",
+          "360",
+          "-",
+          "-",
+          "-"
+        ],
+        "header0_norm": [
+          "cefpak 500mg injection",
+          "69.00",
+          "7",
+          "-7",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-"
+        ],
+        "header1_norm": [
+          "cipak 200mg infusion",
+          "120.00",
+          "4",
+          "-1",
+          "3",
+          "360",
+          "-",
+          "-",
+          "-"
+        ]
+      },
+      "extract_stats": {
+        "templates": [
+          "generic"
+        ],
+        "avg_rows": 30.0,
+        "avg_sales_rows": 30.0,
+        "zero_extraction": 0
+      }
+    },
+    {
+      "family_key": "('other_table', 7, ('opening qty. bon', 'purchase qty. bon', 'purchas return qty. bo', 'sales qty. bon', 'sales return', 'net sales qty.bon amount'), ('qty. bo',))",
+      "count": 1,
+      "files": [
+        "Hashmani Health Care Karachi.pdf"
+      ],
+      "sample_headers": {
+        "page": 1,
+        "table_index": 0,
+        "rows": 30,
+        "cols": 7,
+        "type": "other_table",
+        "header0": [
+          "OPENING\nQTY. BON",
+          "PURCHASE\nQTY. BON",
+          "PURCHAS\nRETURN\nQTY. BO",
+          "SALES\nQTY. BON",
+          "SALES\nRETURN",
+          "NET\nSALES\nQTY.BON AMOUNT",
+          ""
+        ],
+        "header1": [
+          "",
+          "",
+          "",
+          "",
+          "QTY. BO",
+          "",
+          ""
+        ],
+        "header0_norm": [
+          "opening qty. bon",
+          "purchase qty. bon",
+          "purchas return qty. bo",
+          "sales qty. bon",
+          "sales return",
+          "net sales qty.bon amount"
+        ],
+        "header1_norm": [
+          "qty. bo"
+        ]
+      },
+      "extract_stats": {
+        "templates": [
+          "generic"
+        ],
+        "avg_rows": 25.0,
+        "avg_sales_rows": 25.0,
+        "zero_extraction": 0
+      }
+    },
+    {
+      "family_key": "('other_table', 1, ('total sale value 264,567.00',), ('closing stock value 388,823.00',))",
+      "count": 1,
+      "files": [
+        "Life Care Distributor Gujrat.pdf"
+      ],
+      "sample_headers": {
+        "page": 2,
+        "table_index": 0,
+        "rows": 2,
+        "cols": 1,
+        "type": "other_table",
+        "header0": [
+          "Total Sale Value 264,567.00"
+        ],
+        "header1": [
+          "Closing Stock Value 388,823.00"
+        ],
+        "header0_norm": [
+          "total sale value 264,567.00"
+        ],
+        "header1_norm": [
+          "closing stock value 388,823.00"
+        ]
+      },
+      "extract_stats": {
+        "templates": [
+          "generic"
+        ],
+        "avg_rows": 12.0,
+        "avg_sales_rows": 1.0,
+        "zero_extraction": 0
+      }
+    },
+    {
+      "family_key": "('other_table', 21, ('#', 'name', 'price', 'open stock', 'receipt qty | bns', 'total stock'), ('medicronis pharmaceuticals',))",
+      "count": 1,
+      "files": [
+        "Mashal Enterprises Bajaur.pdf"
+      ],
+      "sample_headers": {
+        "page": 1,
+        "table_index": 0,
+        "rows": 19,
+        "cols": 21,
+        "type": "other_table",
+        "header0": [
+          "#",
+          "NAME",
+          "PRICE",
+          "OPEN STOCK",
+          "RECEIPT\nQTY | BNS",
+          "",
+          "TOTAL STOCK",
+          "SALES\nQTY | BNS",
+          "",
+          "RETURN\nQTY | BNS",
+          "",
+          "NET SALE\nQTY | BNS",
+          "",
+          "SALE VALUES",
+          "TRANSFER\nIN | OUT",
+          ""
+        ],
+        "header1": [
+          "MEDICRONIS PHARMACEUTICALS",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "header0_norm": [
+          "#",
+          "name",
+          "price",
+          "open stock",
+          "receipt qty | bns",
+          "total stock",
+          "sales qty | bns",
+          "return qty | bns",
+          "net sale qty | bns",
+          "sale values"
+        ],
+        "header1_norm": [
+          "medicronis pharmaceuticals"
+        ]
+      },
+      "extract_stats": {
+        "templates": [
+          "generic"
+        ],
+        "avg_rows": 39.0,
+        "avg_sales_rows": 23.0,
+        "zero_extraction": 0
+      }
+    },
+    {
+      "family_key": "('other_table', 13, ('d e s c r i p t i o n', 'trade rate', 'opening balance', 'receipt', 'sale', 'avb sale'), ('quantity', 'sale', 'return', 'net sale', 'amount', 'in'))",
+      "count": 1,
+      "files": [
+        "Mehran Traders Mardan.pdf"
+      ],
+      "sample_headers": {
+        "page": 1,
+        "table_index": 0,
+        "rows": 42,
+        "cols": 13,
+        "type": "other_table",
+        "header0": [
+          "D E S C R I P T I O N",
+          "TRADE\nRATE",
+          "OPENING\nBALANCE",
+          "RECEIPT",
+          "SALE",
+          "",
+          "",
+          "",
+          "AVB\nSALE",
+          "TRANSFER",
+          "",
+          "Prevouse Month\n30\u00ad06\u00ad2026",
+          "CLOSING\nBALANCE"
+        ],
+        "header1": [
+          "",
+          "",
+          "",
+          "QUANTITY",
+          "SALE",
+          "RETURN",
+          "NET SALE",
+          "AMOUNT",
+          "",
+          "IN",
+          "OUT",
+          "",
+          ""
+        ],
+        "header0_norm": [
+          "d e s c r i p t i o n",
+          "trade rate",
+          "opening balance",
+          "receipt",
+          "sale",
+          "avb sale",
+          "transfer",
+          "prevouse month 30\u00ad06\u00ad2026",
+          "closing balance"
+        ],
+        "header1_norm": [
+          "quantity",
+          "sale",
+          "return",
+          "net sale",
+          "amount",
+          "in",
+          "out"
+        ]
+      },
+      "extract_stats": {
+        "templates": [
+          "generic"
+        ],
+        "avg_rows": 42.0,
+        "avg_sales_rows": 6.0,
+        "zero_extraction": 0
+      }
+    },
+    {
+      "family_key": "('other_table', 15, ('sales and stock statement',), ('from date:01/07/2026 to date:30/07/2026 printing date: 30/07/2026 company:medicronis pharma ,selected groups, sale calculated on trade price printing time: 5:33:51pm',))",
+      "count": 1,
+      "files": [
+        "N&G Enterprises SWL.pdf"
+      ],
+      "sample_headers": {
+        "page": 1,
+        "table_index": 0,
+        "rows": 50,
+        "cols": 15,
+        "type": "other_table",
+        "header0": [
+          "Sales and Stock Statement",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "header1": [
+          "From Date:01/07/2026 To Date:30/07/2026 Printing Date: 30/07/2026\nCompany:MEDICRONIS PHARMA ,Selected groups, Sale Calculated on Trade price Printing Time: 5:33:51PM",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "header0_norm": [
+          "sales and stock statement"
+        ],
+        "header1_norm": [
+          "from date:01/07/2026 to date:30/07/2026 printing date: 30/07/2026 company:medicronis pharma ,selected groups, sale calculated on trade price printing time: 5:33:51pm"
+        ]
+      },
+      "extract_stats": {
+        "templates": [
+          "fmt-medicronis-erp-statement"
+        ],
+        "avg_rows": 17.0,
+        "avg_sales_rows": 17.0,
+        "zero_extraction": 0
+      }
+    },
+    {
+      "family_key": "('no_table', False, 1)",
+      "count": 1,
+      "files": [
+        "New Tawakal Enterprises ABBT.pdf"
+      ],
+      "sample_headers": null,
+      "extract_stats": {
+        "templates": [
+          "generic"
+        ],
+        "avg_rows": 0.0,
+        "avg_sales_rows": 0.0,
+        "zero_extraction": 1
+      }
+    },
+    {
+      "family_key": "('single_header_product_table', 10, ('description / pack', 't.p.', 'opening balance', 'purhase', 'sales qty', 'sale value'), ('aminal 120ml syp m', '90.00', '40', '0', '0', '0'))",
+      "count": 1,
+      "files": [
+        "Punjab Medicine Layyah 22.pdf"
+      ],
+      "sample_headers": {
+        "page": 1,
+        "table_index": 0,
+        "rows": 37,
+        "cols": 10,
+        "type": "single_header_product_table",
+        "header0": [
+          "Description / Pack",
+          "T.P.",
+          "Opening\nBalance",
+          "Purhase",
+          "Sales\nQty",
+          "Sale\nValue",
+          "Bonus",
+          "S.E.P.",
+          "Closing\nStock",
+          "Closing\nValue"
+        ],
+        "header1": [
+          "AMINAL 120ML SYP M",
+          "90.00",
+          "40",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "40",
+          "3600"
+        ],
+        "header0_norm": [
+          "description / pack",
+          "t.p.",
+          "opening balance",
+          "purhase",
+          "sales qty",
+          "sale value",
+          "bonus",
+          "s.e.p.",
+          "closing stock",
+          "closing value"
+        ],
+        "header1_norm": [
+          "aminal 120ml syp m",
+          "90.00",
+          "40",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "40",
+          "3600"
+        ]
+      },
+      "extract_stats": {
+        "templates": [
+          "generic"
+        ],
+        "avg_rows": 36.0,
+        "avg_sales_rows": 7.0,
+        "zero_extraction": 0
+      }
+    },
+    {
+      "family_key": "('other_table', 14, ('item description', 'rate', 'pack', 'opening balance', 'purchase', 'sale'), ('purchase', 'return', 'total', 'net sales', 'bonus', 'value'))",
+      "count": 1,
+      "files": [
+        "Shafiq Medicine Company Khanpur.pdf"
+      ],
+      "sample_headers": {
+        "page": 1,
+        "table_index": 0,
+        "rows": 2,
+        "cols": 14,
+        "type": "other_table",
+        "header0": [
+          "Item Description",
+          "Rate",
+          "Pack",
+          "Opening\nBalance",
+          "PURCHASE",
+          "",
+          "",
+          "SALE",
+          "",
+          "",
+          "CLOSING",
+          "",
+          "Today\nSale",
+          "Today\nReturn"
+        ],
+        "header1": [
+          "",
+          "",
+          "",
+          "",
+          "Purchase",
+          "Return",
+          "Total",
+          "Net Sales",
+          "Bonus",
+          "Value",
+          "Balance",
+          "Value",
+          "",
+          ""
+        ],
+        "header0_norm": [
+          "item description",
+          "rate",
+          "pack",
+          "opening balance",
+          "purchase",
+          "sale",
+          "closing",
+          "today sale",
+          "today return"
+        ],
+        "header1_norm": [
+          "purchase",
+          "return",
+          "total",
+          "net sales",
+          "bonus",
+          "value",
+          "balance",
+          "value"
+        ]
+      },
+      "extract_stats": {
+        "templates": [
+          "fmt-item-desc-net-sales"
+        ],
+        "avg_rows": 18.0,
+        "avg_sales_rows": 18.0,
+        "zero_extraction": 0
+      }
+    },
+    {
+      "family_key": "('other_table', 1, ('medicronis pharmaceutical',), ('trading group',))",
+      "count": 1,
+      "files": [
+        "The Hamza Traders Kasur.pdf"
+      ],
+      "sample_headers": {
+        "page": 1,
+        "table_index": 1,
+        "rows": 2,
+        "cols": 1,
+        "type": "other_table",
+        "header0": [
+          "MEDICRONIS PHARMACEUTICAL"
+        ],
+        "header1": [
+          "TRADING GROUP"
+        ],
+        "header0_norm": [
+          "medicronis pharmaceutical"
+        ],
+        "header1_norm": [
+          "trading group"
+        ]
+      },
+      "extract_stats": {
+        "templates": [
+          "generic"
+        ],
+        "avg_rows": 25.0,
+        "avg_sales_rows": 6.0,
+        "zero_extraction": 0
+      }
+    },
+    {
+      "family_key": "('other_table', 15, ('sales and stock statement',), ('from date:01/07/2026 to date:31/07/2026 printing date: 31/07/2026 company:medicronics labortaries ,selected groups, sale calculated on sale price printing time: 8:46:07pm',))",
+      "count": 1,
+      "files": [
+        "Wellcome Pharma alipur.pdf"
+      ],
+      "sample_headers": {
+        "page": 1,
+        "table_index": 0,
+        "rows": 46,
+        "cols": 15,
+        "type": "other_table",
+        "header0": [
+          "Sales and Stock Statement",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "header1": [
+          "From Date:01/07/2026 To Date:31/07/2026 Printing Date: 31/07/2026\nCompany:MEDICRONICS LABORTARIES ,Selected groups, Sale Calculated on Sale price Printing Time: 8:46:07PM",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "header0_norm": [
+          "sales and stock statement"
+        ],
+        "header1_norm": [
+          "from date:01/07/2026 to date:31/07/2026 printing date: 31/07/2026 company:medicronics labortaries ,selected groups, sale calculated on sale price printing time: 8:46:07pm"
+        ]
+      },
+      "extract_stats": {
+        "templates": [
+          "fmt-medicronis-erp-statement"
+        ],
+        "avg_rows": 30.0,
+        "avg_sales_rows": 30.0,
+        "zero_extraction": 0
+      }
+    },
+    {
+      "family_key": "('other_table', 14, ('code', 'product', 'tp', 'opening', 'purchase', 'net sale'), ('qty', 'value', 'qty', 'bon.', 'value', 'qty'))",
+      "count": 1,
+      "files": [
+        "Zavion Pharma Jhang.pdf"
+      ],
+      "sample_headers": {
+        "page": 1,
+        "table_index": 0,
+        "rows": 2,
+        "cols": 14,
+        "type": "other_table",
+        "header0": [
+          "Code",
+          "Product",
+          "TP",
+          "Opening",
+          "",
+          "Purchase",
+          "",
+          "",
+          "Net Sale",
+          "",
+          "",
+          "Purchase Return",
+          "",
+          ""
+        ],
+        "header1": [
+          "",
+          "",
+          "",
+          "Qty",
+          "Value",
+          "Qty",
+          "Bon.",
+          "Value",
+          "Qty",
+          "Bon.",
+          "Value",
+          "Qty",
+          "Bon.",
+          "Value"
+        ],
+        "header0_norm": [
+          "code",
+          "product",
+          "tp",
+          "opening",
+          "purchase",
+          "net sale",
+          "purchase return"
+        ],
+        "header1_norm": [
+          "qty",
+          "value",
+          "qty",
+          "bon.",
+          "value",
+          "qty",
+          "bon.",
+          "value",
+          "qty",
+          "bon."
+        ]
+      },
+      "extract_stats": {
+        "templates": [
+          "generic"
+        ],
+        "avg_rows": 13.0,
+        "avg_sales_rows": 0.0,
+        "zero_extraction": 1
+      }
+    },
+    {
+      "family_key": "('other_table', 15, ('sales and stock statement',), ('from date:01/07/2026 to date:30/07/2026 printing date: 30/07/2026 company:medicronis pharmaceutical ,selected groups, sale calculated on sale price printing time: 8:31:25pm',))",
+      "count": 1,
+      "files": [
+        "sHAHZAIB pHARMA Okara30.pdf"
+      ],
+      "sample_headers": {
+        "page": 1,
+        "table_index": 0,
+        "rows": 46,
+        "cols": 15,
+        "type": "other_table",
+        "header0": [
+          "Sales and Stock Statement",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "header1": [
+          "From Date:01/07/2026 To Date:30/07/2026 Printing Date: 30/07/2026\nCompany:Medicronis Pharmaceutical ,Selected groups, Sale Calculated on Sale price Printing Time: 8:31:25PM",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "header0_norm": [
+          "sales and stock statement"
+        ],
+        "header1_norm": [
+          "from date:01/07/2026 to date:30/07/2026 printing date: 30/07/2026 company:medicronis pharmaceutical ,selected groups, sale calculated on sale price printing time: 8:31:25pm"
+        ]
+      },
+      "extract_stats": {
+        "templates": [
+          "fmt-medicronis-erp-statement"
+        ],
+        "avg_rows": 28.0,
+        "avg_sales_rows": 28.0,
+        "zero_extraction": 0
+      }
+    }
+  ],
+  "pdfs": [
+    {
+      "file": "AIM Pharma HYD.pdf",
+      "pages": 1,
+      "has_text": true,
+      "distributor_hint": "AIM PHARMA, HYDERABAD",
+      "detected_pattern": "SALES, STOCK & RETURN",
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 11,
+          "cols": 17,
+          "type": "ssr_stock_return_2row",
+          "header0": [
+            "ITEM",
+            "RATE",
+            "OPEN",
+            "RCVD",
+            "TOTAL",
+            "TRANS\nFERED",
+            "SALE",
+            "",
+            "",
+            "",
+            "RETURN",
+            "",
+            "NET SALE",
+            "",
+            "",
+            "CLOSING"
+          ],
+          "header1": [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "LAST\nMONTH",
+            "TODAY",
+            "QTY",
+            "BONUS",
+            "QTY",
+            "BONUS",
+            "QTY",
+            "BONUS",
+            "AMOUNT",
+            "QTY"
+          ],
+          "header0_norm": [
+            "item",
+            "rate",
+            "open",
+            "rcvd",
+            "total",
+            "trans fered",
+            "sale",
+            "return",
+            "net sale",
+            "closing"
+          ],
+          "header1_norm": [
+            "last month",
+            "today",
+            "qty",
+            "bonus",
+            "qty",
+            "bonus",
+            "qty",
+            "bonus",
+            "amount",
+            "qty"
+          ]
+        },
+        {
+          "page": 1,
+          "table_index": 1,
+          "rows": 37,
+          "cols": 17,
+          "type": "ssr_stock_return_2row",
+          "header0": [
+            "ITEM",
+            "RATE",
+            "OPEN",
+            "RCVD",
+            "TOTAL",
+            "TRANS\nFERED",
+            "SALE",
+            "",
+            "",
+            "",
+            "RETURN",
+            "",
+            "NET SALE",
+            "",
+            "",
+            "CLOSING"
+          ],
+          "header1": [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "LAST\nMONTH",
+            "TODAY",
+            "QTY",
+            "BONUS",
+            "QTY",
+            "BONUS",
+            "QTY",
+            "BONUS",
+            "AMOUNT",
+            "QTY"
+          ],
+          "header0_norm": [
+            "item",
+            "rate",
+            "open",
+            "rcvd",
+            "total",
+            "trans fered",
+            "sale",
+            "return",
+            "net sale",
+            "closing"
+          ],
+          "header1_norm": [
+            "last month",
+            "today",
+            "qty",
+            "bonus",
+            "qty",
+            "bonus",
+            "qty",
+            "bonus",
+            "amount",
+            "qty"
+          ]
+        }
+      ],
+      "family_key": [
+        "ssr_stock_return_2row",
+        17,
+        [
+          "item",
+          "rate",
+          "open",
+          "rcvd",
+          "total",
+          "trans fered"
+        ],
+        [
+          "last month",
+          "today",
+          "qty",
+          "bonus",
+          "qty",
+          "bonus"
+        ]
+      ],
+      "extract": {
+        "template_used": "ssr-stock-return",
+        "distributor_hint": "ssr-stock-return",
+        "distributor_name_hint": "AIM PHARMA, HYDERABAD",
+        "row_count": 29,
+        "rows_with_sales": 29,
+        "confidence": 0.95,
+        "sample_products": [
+          "CLAN PLUS SYP 120ML",
+          "COLIMAX DROP 1S",
+          "ECTAFIN 1G INJ 1S"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "AL Shifa Enterprises Jampur.pdf",
+      "pages": 1,
+      "has_text": true,
+      "distributor_hint": "Al-Shifa Enterprises (Jampur (Rajanpur))",
+      "detected_pattern": "STOCK STATEMENT",
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 47,
+          "cols": 15,
+          "type": "other_table",
+          "header0": [
+            "Sales and Stock Statement",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "header1": [
+            "From Date:01/07/2026 To Date:30/07/2026 Printing Date: 30/07/2026\nCompany:Medicronics Pharma ,Selected groups, Sale Calculated on Sale price Printing Time: 6:32:48PM",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "header0_norm": [
+            "sales and stock statement"
+          ],
+          "header1_norm": [
+            "from date:01/07/2026 to date:30/07/2026 printing date: 30/07/2026 company:medicronics pharma ,selected groups, sale calculated on sale price printing time: 6:32:48pm"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        15,
+        [
+          "sales and stock statement"
+        ],
+        [
+          "from date:01/07/2026 to date:30/07/2026 printing date: 30/07/2026 company:medicronics pharma ,selected groups, sale calculated on sale price printing time: 6:32:48pm"
+        ]
+      ],
+      "extract": {
+        "template_used": "fmt-medicronis-erp-statement",
+        "distributor_hint": "fmt-medicronis-erp-statement",
+        "distributor_name_hint": "Al-Shifa Enterprises (Jampur (Rajanpur))",
+        "row_count": 24,
+        "rows_with_sales": 24,
+        "confidence": 0.95,
+        "sample_products": [
+          "Aminal120ml Syp(1)",
+          "Cipak 200mg/100ml inf(1)",
+          "Colimax drops(1)"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "AMT FSD.pdf",
+      "pages": 1,
+      "has_text": true,
+      "distributor_hint": "AMT INTERNATIONAL DISTRIBUTOR",
+      "detected_pattern": "STOCK STATEMENT",
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 26,
+          "cols": 1,
+          "type": "other_table",
+          "header0": [
+            "029AMINAL SYP 120ML 90.00 78 78 5 450 73 6,570"
+          ],
+          "header1": [
+            "007BERRY FLOW SACHET 10'S 115.00 41 240 281 68 7,820 213 24,495"
+          ],
+          "header0_norm": [
+            "029aminal syp 120ml 90.00 78 78 5 450 73 6,570"
+          ],
+          "header1_norm": [
+            "007berry flow sachet 10's 115.00 41 240 281 68 7,820 213 24,495"
+          ]
+        },
+        {
+          "page": 1,
+          "table_index": 1,
+          "rows": 6,
+          "cols": 1,
+          "type": "other_table",
+          "header0": [
+            "024CLAN PLUS SYP 120ML 255.00 139 139 139 35,445"
+          ],
+          "header1": [
+            "022COLIMAX DROPS 20ML 187.00 22 22 2 374 20 3,740"
+          ],
+          "header0_norm": [
+            "024clan plus syp 120ml 255.00 139 139 139 35,445"
+          ],
+          "header1_norm": [
+            "022colimax drops 20ml 187.00 22 22 2 374 20 3,740"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        1,
+        [
+          "029aminal syp 120ml 90.00 78 78 5 450 73 6,570"
+        ],
+        [
+          "007berry flow sachet 10's 115.00 41 240 281 68 7,820 213 24,495"
+        ]
+      ],
+      "extract": {
+        "template_used": "generic",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "AMT INTERNATIONAL DISTRIBUTOR",
+        "row_count": 1,
+        "rows_with_sales": 0,
+        "confidence": 0.7,
+        "sample_products": []
+      },
+      "errors": []
+    },
+    {
+      "file": "AQ Enterprises Sargodha.pdf",
+      "pages": 2,
+      "has_text": true,
+      "distributor_hint": "A Q Enterprises (Sargodha)",
+      "detected_pattern": "STOCK STATEMENT",
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 31,
+          "cols": 16,
+          "type": "other_table",
+          "header0": [
+            "Sales and Stock Statement",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "header1": [
+            "From Date:01/07/2026 To Date:30/07/2026 Printing Date: 30/07/2026\nCompany:Medicronis Pharmaceuticals ,Selected groups, Sale Calculated on Trade price Printing Time 8:01:16PM",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "header0_norm": [
+            "sales and stock statement"
+          ],
+          "header1_norm": [
+            "from date:01/07/2026 to date:30/07/2026 printing date: 30/07/2026 company:medicronis pharmaceuticals ,selected groups, sale calculated on trade price printing time 8:01:16pm"
+          ]
+        },
+        {
+          "page": 2,
+          "table_index": 0,
+          "rows": 10,
+          "cols": 16,
+          "type": "other_table",
+          "header0": [
+            "",
+            "",
+            "",
+            "OPENING",
+            "PURCHASE",
+            "",
+            "P-RETURN",
+            "",
+            "E & C",
+            "G-SALE",
+            "S-RETUR",
+            "NET SALE",
+            "",
+            "",
+            "CLOSING STOCK",
+            ""
+          ],
+          "header1": [
+            "PR.ID",
+            "PRODUCT NAME",
+            "PACK",
+            "QTY+BNS",
+            "QTY",
+            "BNS",
+            "QTY",
+            "BNS",
+            "QTY",
+            "QTY",
+            "QTY+BNS",
+            "QTY",
+            "BNS",
+            "VALUE",
+            "QTY",
+            "VALUE"
+          ],
+          "header0_norm": [
+            "opening",
+            "purchase",
+            "p-return",
+            "e & c",
+            "g-sale",
+            "s-retur",
+            "net sale",
+            "closing stock"
+          ],
+          "header1_norm": [
+            "pr.id",
+            "product name",
+            "pack",
+            "qty+bns",
+            "qty",
+            "bns",
+            "qty",
+            "bns",
+            "qty",
+            "qty"
+          ]
+        },
+        {
+          "page": 2,
+          "table_index": 1,
+          "rows": 4,
+          "cols": 16,
+          "type": "other_table",
+          "header0": [
+            "Group: Transformer Group",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "header1": [
+            "28030",
+            "Colimax Drops 20ml",
+            "20ml",
+            "63",
+            "-",
+            "-",
+            "-",
+            "-",
+            "-",
+            "11",
+            "4",
+            "7",
+            "-",
+            "1,309",
+            "56",
+            "561.00"
+          ],
+          "header0_norm": [
+            "group: transformer group"
+          ],
+          "header1_norm": [
+            "28030",
+            "colimax drops 20ml",
+            "20ml",
+            "63",
+            "-",
+            "-",
+            "-",
+            "-",
+            "-",
+            "11"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        16,
+        [
+          "sales and stock statement"
+        ],
+        [
+          "from date:01/07/2026 to date:30/07/2026 printing date: 30/07/2026 company:medicronis pharmaceuticals ,selected groups, sale calculated on trade price printing time 8:01:16pm"
+        ]
+      ],
+      "extract": {
+        "template_used": "fmt-medicronis-erp-statement",
+        "distributor_hint": "fmt-medicronis-erp-statement",
+        "distributor_name_hint": "A Q Enterprises (Sargodha)",
+        "row_count": 28,
+        "rows_with_sales": 28,
+        "confidence": 0.95,
+        "sample_products": [
+          "Aminal Syp 120ml",
+          "Berry Flow Sachet",
+          "Cipak 100ml Inf"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "Al Haram Enterprises Kohat.pdf",
+      "pages": 1,
+      "has_text": true,
+      "distributor_hint": "AL HARAM ENTERPRISES, KOHAT",
+      "detected_pattern": null,
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 33,
+          "cols": 16,
+          "type": "ssr_stock_return_2row",
+          "header0": [
+            "ITEM",
+            "RATE",
+            "OPEN",
+            "RCVD",
+            "TOTAL",
+            "TRANS\nFERED",
+            "SALE",
+            "",
+            "",
+            "RETURN",
+            "",
+            "NET SALE",
+            "",
+            "",
+            "CLOSING",
+            ""
+          ],
+          "header1": [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "LAST\nMONTH",
+            "QTY",
+            "BONUS",
+            "QTY",
+            "BONUS",
+            "QTY",
+            "BONUS",
+            "AMOUNT",
+            "QTY",
+            "AMT"
+          ],
+          "header0_norm": [
+            "item",
+            "rate",
+            "open",
+            "rcvd",
+            "total",
+            "trans fered",
+            "sale",
+            "return",
+            "net sale",
+            "closing"
+          ],
+          "header1_norm": [
+            "last month",
+            "qty",
+            "bonus",
+            "qty",
+            "bonus",
+            "qty",
+            "bonus",
+            "amount",
+            "qty",
+            "amt"
+          ]
+        },
+        {
+          "page": 1,
+          "table_index": 1,
+          "rows": 13,
+          "cols": 16,
+          "type": "ssr_stock_return_2row",
+          "header0": [
+            "ITEM",
+            "RATE",
+            "OPEN",
+            "RCVD",
+            "TOTAL",
+            "TRANS\nFERED",
+            "SALE",
+            "",
+            "",
+            "RETURN",
+            "",
+            "NET SALE",
+            "",
+            "",
+            "CLOSING",
+            ""
+          ],
+          "header1": [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "LAST\nMONTH",
+            "QTY",
+            "BONUS",
+            "QTY",
+            "BONUS",
+            "QTY",
+            "BONUS",
+            "AMOUNT",
+            "QTY",
+            "AMT"
+          ],
+          "header0_norm": [
+            "item",
+            "rate",
+            "open",
+            "rcvd",
+            "total",
+            "trans fered",
+            "sale",
+            "return",
+            "net sale",
+            "closing"
+          ],
+          "header1_norm": [
+            "last month",
+            "qty",
+            "bonus",
+            "qty",
+            "bonus",
+            "qty",
+            "bonus",
+            "amount",
+            "qty",
+            "amt"
+          ]
+        }
+      ],
+      "family_key": [
+        "ssr_stock_return_2row",
+        16,
+        [
+          "item",
+          "rate",
+          "open",
+          "rcvd",
+          "total",
+          "trans fered"
+        ],
+        [
+          "last month",
+          "qty",
+          "bonus",
+          "qty",
+          "bonus",
+          "qty"
+        ]
+      ],
+      "extract": {
+        "template_used": "ssr-stock-return-16col",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "AL HARAM ENTERPRISES, KOHAT",
+        "row_count": 26,
+        "rows_with_sales": 26,
+        "confidence": 0.7,
+        "sample_products": [
+          "AMINAL COUGH 120ML SYP",
+          "BERRY FLOW 10S SACHET",
+          "CIPAK 100ML INFU"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "Al Harmain ENterprises DG Khan.pdf",
+      "pages": 2,
+      "has_text": true,
+      "distributor_hint": "AL-HARMAIN ENTERPRISES (D.G.Khan)",
+      "detected_pattern": "STOCK STATEMENT",
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 50,
+          "cols": 15,
+          "type": "other_table",
+          "header0": [
+            "Sales and Stock Statement",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "header1": [
+            "From Date:01/07/2026 To Date:30/07/2026 Printing Date: 30/07/2026\nCompany:Medicronis Pharmaceutical ,Selected groups, Sale Calculated on Sale price Printing Time: 6:47:46PM",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "header0_norm": [
+            "sales and stock statement"
+          ],
+          "header1_norm": [
+            "from date:01/07/2026 to date:30/07/2026 printing date: 30/07/2026 company:medicronis pharmaceutical ,selected groups, sale calculated on sale price printing time: 6:47:46pm"
+          ]
+        },
+        {
+          "page": 2,
+          "table_index": 0,
+          "rows": 3,
+          "cols": 15,
+          "type": "other_table",
+          "header0": [
+            "",
+            "",
+            "OPENING",
+            "PURCHASE",
+            "",
+            "P-RETURN",
+            "",
+            "E & C",
+            "G-SAL",
+            "S-RET",
+            "NET SALE",
+            "",
+            "",
+            "CLOSING STOCK",
+            ""
+          ],
+          "header1": [
+            "PR.ID",
+            "PRODUCT",
+            "QTY+BN",
+            "QTY",
+            "BNS",
+            "QTY",
+            "BNS",
+            "QTY",
+            "QTY",
+            "QTY+BN",
+            "QTY",
+            "BNS",
+            "VALUE",
+            "QTY",
+            "VALUE"
+          ],
+          "header0_norm": [
+            "opening",
+            "purchase",
+            "p-return",
+            "e & c",
+            "g-sal",
+            "s-ret",
+            "net sale",
+            "closing stock"
+          ],
+          "header1_norm": [
+            "pr.id",
+            "product",
+            "qty+bn",
+            "qty",
+            "bns",
+            "qty",
+            "bns",
+            "qty",
+            "qty",
+            "qty+bn"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        15,
+        [
+          "sales and stock statement"
+        ],
+        [
+          "from date:01/07/2026 to date:30/07/2026 printing date: 30/07/2026 company:medicronis pharmaceutical ,selected groups, sale calculated on sale price printing time: 6:47:46pm"
+        ]
+      ],
+      "extract": {
+        "template_used": "fmt-medicronis-erp-statement",
+        "distributor_hint": "fmt-medicronis-erp-statement",
+        "distributor_name_hint": "AL-HARMAIN ENTERPRISES (D.G.Khan)",
+        "row_count": 31,
+        "rows_with_sales": 31,
+        "confidence": 0.95,
+        "sample_products": [
+          "Medizek 20 mg cap.(14's)",
+          "Medizek 40 mg(14's)",
+          "AMINAL SYRUP.120ML(120ML)"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "Al Makkah Trading Buner.PDF",
+      "pages": 1,
+      "has_text": true,
+      "distributor_hint": "Al MAKKAH TRADING CO.",
+      "detected_pattern": null,
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 2,
+          "cols": 19,
+          "type": "other_table",
+          "header0": [
+            "Product Name T.P. Tax",
+            "Opening",
+            "",
+            "Purchase",
+            "",
+            "",
+            "B.C",
+            "Sale",
+            "",
+            "Sale Return",
+            "",
+            "Net Sale",
+            "",
+            "",
+            "P.R",
+            "Transfer / Av."
+          ],
+          "header1": [
+            "",
+            "Qty.",
+            "Value",
+            "Qty.",
+            "Bon",
+            "Value",
+            "S. In",
+            "Qty.",
+            "Bon",
+            "Qty.",
+            "Bon",
+            "Qty.",
+            "Bon",
+            "Value",
+            "S. Out",
+            "Out"
+          ],
+          "header0_norm": [
+            "product name t.p. tax",
+            "opening",
+            "purchase",
+            "b.c",
+            "sale",
+            "sale return",
+            "net sale",
+            "p.r",
+            "transfer / av.",
+            "closing balance"
+          ],
+          "header1_norm": [
+            "qty.",
+            "value",
+            "qty.",
+            "bon",
+            "value",
+            "s. in",
+            "qty.",
+            "bon",
+            "qty.",
+            "bon"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        19,
+        [
+          "product name t.p. tax",
+          "opening",
+          "purchase",
+          "b.c",
+          "sale",
+          "sale return"
+        ],
+        [
+          "qty.",
+          "value",
+          "qty.",
+          "bon",
+          "value",
+          "s. in"
+        ]
+      ],
+      "extract": {
+        "template_used": "generic",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "Al MAKKAH TRADING CO.",
+        "row_count": 22,
+        "rows_with_sales": 0,
+        "confidence": 0.7,
+        "sample_products": []
+      },
+      "errors": []
+    },
+    {
+      "file": "Al Rehman  Medical Sources Lahore.pdf",
+      "pages": 2,
+      "has_text": true,
+      "distributor_hint": "AL-REHMAN MEDICAL SOURCES",
+      "detected_pattern": null,
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 2,
+          "cols": 15,
+          "type": "other_table",
+          "header0": [
+            "Item Description",
+            "Rate",
+            "Pack",
+            "Opening\nBalance",
+            "PURCHASE",
+            "",
+            "",
+            "SALE",
+            "",
+            "",
+            "Adjustment",
+            "CLOSING",
+            "",
+            "Today\nSale",
+            "Today\nReturn"
+          ],
+          "header1": [
+            "",
+            "",
+            "",
+            "",
+            "Purchase",
+            "Return",
+            "Total",
+            "Net Sales",
+            "Bonus",
+            "Value",
+            "",
+            "Balance",
+            "Value",
+            "",
+            ""
+          ],
+          "header0_norm": [
+            "item description",
+            "rate",
+            "pack",
+            "opening balance",
+            "purchase",
+            "sale",
+            "adjustment",
+            "closing",
+            "today sale",
+            "today return"
+          ],
+          "header1_norm": [
+            "purchase",
+            "return",
+            "total",
+            "net sales",
+            "bonus",
+            "value",
+            "balance",
+            "value"
+          ]
+        },
+        {
+          "page": 1,
+          "table_index": 1,
+          "rows": 29,
+          "cols": 15,
+          "type": "other_table",
+          "header0": [
+            "216005 25`S LANCIX 600MG INJ",
+            "670.00",
+            "",
+            "48 -",
+            "- -",
+            "- -",
+            "48 -",
+            "10",
+            "-",
+            "6700",
+            "- -",
+            "38 -",
+            "25460",
+            "-",
+            "1"
+          ],
+          "header1": [
+            "216013 AMINAL COUGH SYRUP",
+            "-",
+            "120ML",
+            "- 11",
+            "- 10",
+            "- -",
+            "- 21",
+            "-",
+            "3",
+            "-",
+            "- -",
+            "- 18",
+            "-",
+            "-",
+            "-"
+          ],
+          "header0_norm": [
+            "216005 25`s lancix 600mg inj",
+            "670.00",
+            "48 -",
+            "- -",
+            "- -",
+            "48 -",
+            "10",
+            "-",
+            "6700",
+            "- -"
+          ],
+          "header1_norm": [
+            "216013 aminal cough syrup",
+            "-",
+            "120ml",
+            "- 11",
+            "- 10",
+            "- -",
+            "- 21",
+            "-",
+            "3",
+            "-"
+          ]
+        },
+        {
+          "page": 2,
+          "table_index": 0,
+          "rows": 16,
+          "cols": 15,
+          "type": "other_table",
+          "header0": [
+            "Item Description",
+            "Rate",
+            "Pack",
+            "Opening\nBalance",
+            "PURCHASE",
+            "",
+            "",
+            "SALE",
+            "",
+            "",
+            "Adjustment",
+            "CLOSING",
+            "",
+            "Today\nSale",
+            "Today\nReturn"
+          ],
+          "header1": [
+            "",
+            "",
+            "",
+            "",
+            "Purchase",
+            "Return",
+            "Total",
+            "Net Sales",
+            "Bonus",
+            "Value",
+            "",
+            "Balance",
+            "Value",
+            "",
+            ""
+          ],
+          "header0_norm": [
+            "item description",
+            "rate",
+            "pack",
+            "opening balance",
+            "purchase",
+            "sale",
+            "adjustment",
+            "closing",
+            "today sale",
+            "today return"
+          ],
+          "header1_norm": [
+            "purchase",
+            "return",
+            "total",
+            "net sales",
+            "bonus",
+            "value",
+            "balance",
+            "value"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        15,
+        [
+          "item description",
+          "rate",
+          "pack",
+          "opening balance",
+          "purchase",
+          "sale"
+        ],
+        [
+          "purchase",
+          "return",
+          "total",
+          "net sales",
+          "bonus",
+          "value"
+        ]
+      ],
+      "extract": {
+        "template_used": "fmt-item-desc-net-sales",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "AL-REHMAN MEDICAL SOURCES",
+        "row_count": 17,
+        "rows_with_sales": 17,
+        "confidence": 0.7,
+        "sample_products": [
+          "216005 25`S LANCIX 600MG INJ",
+          "216013 AMINAL COUGH SYRUP",
+          "216004 CIPAK 200MG/100ML I.V INF"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "Al Rehman Medical Sources Lahore.pdf",
+      "pages": 2,
+      "has_text": true,
+      "distributor_hint": "AL-REHMAN MEDICAL SOURCES",
+      "detected_pattern": null,
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 2,
+          "cols": 15,
+          "type": "other_table",
+          "header0": [
+            "Item Description",
+            "Rate",
+            "Pack",
+            "Opening\nBalance",
+            "PURCHASE",
+            "",
+            "",
+            "SALE",
+            "",
+            "",
+            "Adjustment",
+            "CLOSING",
+            "",
+            "Today\nSale",
+            "Today\nReturn"
+          ],
+          "header1": [
+            "",
+            "",
+            "",
+            "",
+            "Purchase",
+            "Return",
+            "Total",
+            "Net Sales",
+            "Bonus",
+            "Value",
+            "",
+            "Balance",
+            "Value",
+            "",
+            ""
+          ],
+          "header0_norm": [
+            "item description",
+            "rate",
+            "pack",
+            "opening balance",
+            "purchase",
+            "sale",
+            "adjustment",
+            "closing",
+            "today sale",
+            "today return"
+          ],
+          "header1_norm": [
+            "purchase",
+            "return",
+            "total",
+            "net sales",
+            "bonus",
+            "value",
+            "balance",
+            "value"
+          ]
+        },
+        {
+          "page": 1,
+          "table_index": 1,
+          "rows": 29,
+          "cols": 15,
+          "type": "other_table",
+          "header0": [
+            "216005 25`S LANCIX 600MG INJ",
+            "670.00",
+            "",
+            "48 -",
+            "- -",
+            "- -",
+            "48 -",
+            "11",
+            "-",
+            "7370",
+            "- -",
+            "37 -",
+            "24790",
+            "1",
+            "-"
+          ],
+          "header1": [
+            "216013 AMINAL COUGH SYRUP",
+            "-",
+            "120ML",
+            "- 11",
+            "- 10",
+            "- -",
+            "- 21",
+            "-",
+            "3",
+            "-",
+            "- -",
+            "- 18",
+            "-",
+            "-",
+            "-"
+          ],
+          "header0_norm": [
+            "216005 25`s lancix 600mg inj",
+            "670.00",
+            "48 -",
+            "- -",
+            "- -",
+            "48 -",
+            "11",
+            "-",
+            "7370",
+            "- -"
+          ],
+          "header1_norm": [
+            "216013 aminal cough syrup",
+            "-",
+            "120ml",
+            "- 11",
+            "- 10",
+            "- -",
+            "- 21",
+            "-",
+            "3",
+            "-"
+          ]
+        },
+        {
+          "page": 2,
+          "table_index": 0,
+          "rows": 16,
+          "cols": 15,
+          "type": "other_table",
+          "header0": [
+            "Item Description",
+            "Rate",
+            "Pack",
+            "Opening\nBalance",
+            "PURCHASE",
+            "",
+            "",
+            "SALE",
+            "",
+            "",
+            "Adjustment",
+            "CLOSING",
+            "",
+            "Today\nSale",
+            "Today\nReturn"
+          ],
+          "header1": [
+            "",
+            "",
+            "",
+            "",
+            "Purchase",
+            "Return",
+            "Total",
+            "Net Sales",
+            "Bonus",
+            "Value",
+            "",
+            "Balance",
+            "Value",
+            "",
+            ""
+          ],
+          "header0_norm": [
+            "item description",
+            "rate",
+            "pack",
+            "opening balance",
+            "purchase",
+            "sale",
+            "adjustment",
+            "closing",
+            "today sale",
+            "today return"
+          ],
+          "header1_norm": [
+            "purchase",
+            "return",
+            "total",
+            "net sales",
+            "bonus",
+            "value",
+            "balance",
+            "value"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        15,
+        [
+          "item description",
+          "rate",
+          "pack",
+          "opening balance",
+          "purchase",
+          "sale"
+        ],
+        [
+          "purchase",
+          "return",
+          "total",
+          "net sales",
+          "bonus",
+          "value"
+        ]
+      ],
+      "extract": {
+        "template_used": "fmt-item-desc-net-sales",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "AL-REHMAN MEDICAL SOURCES",
+        "row_count": 17,
+        "rows_with_sales": 17,
+        "confidence": 0.7,
+        "sample_products": [
+          "216005 25`S LANCIX 600MG INJ",
+          "216013 AMINAL COUGH SYRUP",
+          "216004 CIPAK 200MG/100ML I.V INF"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "Ayan Pharma Taunsa.pdf",
+      "pages": 1,
+      "has_text": true,
+      "distributor_hint": "AYAN PHARMA",
+      "detected_pattern": null,
+      "tables": [],
+      "family_key": [
+        "no_table",
+        true,
+        1
+      ],
+      "extract": {
+        "template_used": "generic",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "AYAN PHARMA",
+        "row_count": 43,
+        "rows_with_sales": 2,
+        "confidence": 0.7,
+        "sample_products": [
+          "TRADE 66240",
+          "PROMO 62050"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "Bashir Pharma Gujranwala.pdf",
+      "pages": 2,
+      "has_text": true,
+      "distributor_hint": "BASHIR PHARMA DISTRIBUTOR - GUJRANWALA",
+      "detected_pattern": null,
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 2,
+          "cols": 13,
+          "type": "other_table",
+          "header0": [
+            "Item Description",
+            "Rate",
+            "Pack",
+            "Opening\nBalance",
+            "PURCHASE",
+            "",
+            "",
+            "SALE",
+            "",
+            "",
+            "Adjustment",
+            "CLOSING",
+            ""
+          ],
+          "header1": [
+            "",
+            "",
+            "",
+            "",
+            "Purchase",
+            "Return",
+            "Total",
+            "Net Sales",
+            "Bonus",
+            "Value",
+            "",
+            "Balance",
+            "Value"
+          ],
+          "header0_norm": [
+            "item description",
+            "rate",
+            "pack",
+            "opening balance",
+            "purchase",
+            "sale",
+            "adjustment",
+            "closing"
+          ],
+          "header1_norm": [
+            "purchase",
+            "return",
+            "total",
+            "net sales",
+            "bonus",
+            "value",
+            "balance",
+            "value"
+          ]
+        },
+        {
+          "page": 1,
+          "table_index": 1,
+          "rows": 26,
+          "cols": 13,
+          "type": "other_table",
+          "header0": [
+            "100011 AMINAL SYP 120ML",
+            "90.00",
+            "",
+            "379 -",
+            "- -",
+            "- -",
+            "379 -",
+            "121",
+            "11",
+            "10890",
+            "- -",
+            "247 -",
+            "22230"
+          ],
+          "header1": [
+            "100017 CIPAK 200MG/100ML INFUSION",
+            "120.00",
+            "",
+            "183 -",
+            "- -",
+            "- -",
+            "183 -",
+            "18",
+            "-",
+            "2160",
+            "- -",
+            "165 -",
+            "19800"
+          ],
+          "header0_norm": [
+            "100011 aminal syp 120ml",
+            "90.00",
+            "379 -",
+            "- -",
+            "- -",
+            "379 -",
+            "121",
+            "11",
+            "10890",
+            "- -"
+          ],
+          "header1_norm": [
+            "100017 cipak 200mg/100ml infusion",
+            "120.00",
+            "183 -",
+            "- -",
+            "- -",
+            "183 -",
+            "18",
+            "-",
+            "2160",
+            "- -"
+          ]
+        },
+        {
+          "page": 2,
+          "table_index": 0,
+          "rows": 2,
+          "cols": 13,
+          "type": "other_table",
+          "header0": [
+            "Item Description",
+            "Rate",
+            "Pack",
+            "Opening\nBalance",
+            "PURCHASE",
+            "",
+            "",
+            "SALE",
+            "",
+            "",
+            "Adjustment",
+            "CLOSING",
+            ""
+          ],
+          "header1": [
+            "",
+            "",
+            "",
+            "",
+            "Purchase",
+            "Return",
+            "Total",
+            "Net Sales",
+            "Bonus",
+            "Value",
+            "",
+            "Balance",
+            "Value"
+          ],
+          "header0_norm": [
+            "item description",
+            "rate",
+            "pack",
+            "opening balance",
+            "purchase",
+            "sale",
+            "adjustment",
+            "closing"
+          ],
+          "header1_norm": [
+            "purchase",
+            "return",
+            "total",
+            "net sales",
+            "bonus",
+            "value",
+            "balance",
+            "value"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        13,
+        [
+          "item description",
+          "rate",
+          "pack",
+          "opening balance",
+          "purchase",
+          "sale"
+        ],
+        [
+          "purchase",
+          "return",
+          "total",
+          "net sales",
+          "bonus",
+          "value"
+        ]
+      ],
+      "extract": {
+        "template_used": "fmt-item-desc-net-sales",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "BASHIR PHARMA DISTRIBUTOR - GUJRANWALA",
+        "row_count": 24,
+        "rows_with_sales": 24,
+        "confidence": 0.7,
+        "sample_products": [
+          "100011 AMINAL SYP 120ML",
+          "100017 CIPAK 200MG/100ML INFUSION",
+          "100024 G-TAX 500MG INJ"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "Bukhari Traders MBD.pdf",
+      "pages": 1,
+      "has_text": true,
+      "distributor_hint": "BUKHARI TRADERS",
+      "detected_pattern": "STOCK STATEMENT",
+      "tables": [],
+      "family_key": [
+        "text_pattern",
+        "STOCK STATEMENT",
+        1
+      ],
+      "extract": {
+        "template_used": "generic",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "BUKHARI TRADERS",
+        "row_count": 30,
+        "rows_with_sales": 9,
+        "confidence": 0.7,
+        "sample_products": [
+          "AMINAL PLUS SYP 120ML 90.00 79 0 33 5 28 2,700",
+          "COLIMAX DROPS 187.00 28 0 2 0 2 561",
+          "KUFXY SYRUP 120ML 99.00 90 0 53 10 43 5,049"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "Ch Medicine MWL.pdf",
+      "pages": 1,
+      "has_text": true,
+      "distributor_hint": "CHAUDHRY MEDICINE COMPANY",
+      "detected_pattern": null,
+      "tables": [],
+      "family_key": [
+        "no_table",
+        true,
+        1
+      ],
+      "extract": {
+        "template_used": "generic",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "CHAUDHRY MEDICINE COMPANY",
+        "row_count": 42,
+        "rows_with_sales": 5,
+        "confidence": 0.7,
+        "sample_products": [
+          "KUFXY 120ML SYP SYRUP 120ML 70 240 0 310 130",
+          "MEDELAC 120ML SYP SYRUP 120ML 149 220 0 369 98",
+          "MEDISCON SYP SYRUP 120ML 639 550 0 1189 514"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "Chishti Pharma Multan.pdf",
+      "pages": 3,
+      "has_text": true,
+      "distributor_hint": "CHISHTI PHARMA DISTRIBUTION",
+      "detected_pattern": null,
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 25,
+          "cols": 16,
+          "type": "single_header_product_table",
+          "header0": [
+            "Code",
+            "Product Desc",
+            "Pack",
+            "Rate",
+            "OB",
+            "Pur",
+            "Total",
+            "Sale",
+            "Ret Sale",
+            "Net\nSale",
+            "Sale\nValue",
+            "Exp\nBrk",
+            "Trf\nin",
+            "Trf\nOut",
+            "Clos\nQty",
+            "Clos\nValue"
+          ],
+          "header1": [
+            "NULL",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "header0_norm": [
+            "code",
+            "product desc",
+            "pack",
+            "rate",
+            "ob",
+            "pur",
+            "total",
+            "sale",
+            "ret sale",
+            "net sale"
+          ],
+          "header1_norm": [
+            "null"
+          ]
+        },
+        {
+          "page": 2,
+          "table_index": 0,
+          "rows": 25,
+          "cols": 16,
+          "type": "single_header_product_table",
+          "header0": [
+            "Code",
+            "Product Desc",
+            "Pack",
+            "Rate",
+            "OB",
+            "Pur",
+            "Total",
+            "Sale",
+            "Ret Sale",
+            "Net\nSale",
+            "Sale\nValue",
+            "Exp\nBrk",
+            "Trf\nin",
+            "Trf\nOut",
+            "Clos\nQty",
+            "Clos\nValue"
+          ],
+          "header1": [
+            "19013",
+            "CIPAK 200MG/100ML INF",
+            "100ML",
+            "102.00",
+            "238",
+            "0",
+            "238",
+            "30",
+            "0",
+            "30",
+            "3060.00",
+            "0",
+            "0",
+            "0",
+            "208",
+            "21216.00"
+          ],
+          "header0_norm": [
+            "code",
+            "product desc",
+            "pack",
+            "rate",
+            "ob",
+            "pur",
+            "total",
+            "sale",
+            "ret sale",
+            "net sale"
+          ],
+          "header1_norm": [
+            "19013",
+            "cipak 200mg/100ml inf",
+            "100ml",
+            "102.00",
+            "238",
+            "0",
+            "238",
+            "30",
+            "0",
+            "30"
+          ]
+        },
+        {
+          "page": 3,
+          "table_index": 0,
+          "rows": 9,
+          "cols": 16,
+          "type": "single_header_product_table",
+          "header0": [
+            "Code",
+            "Product Desc",
+            "Pack",
+            "Rate",
+            "OB",
+            "Pur",
+            "Total",
+            "Sale",
+            "Ret Sale",
+            "Net\nSale",
+            "Sale\nValue",
+            "Exp\nBrk",
+            "Trf\nin",
+            "Trf\nOut",
+            "Clos\nQty",
+            "Clos\nValue"
+          ],
+          "header1": [
+            "19426",
+            "PAXCAL SYRUP",
+            "120ML",
+            "105.00",
+            "62",
+            "0",
+            "62",
+            "13",
+            "0",
+            "13",
+            "1260.00",
+            "0",
+            "0",
+            "0",
+            "49",
+            "5145.00"
+          ],
+          "header0_norm": [
+            "code",
+            "product desc",
+            "pack",
+            "rate",
+            "ob",
+            "pur",
+            "total",
+            "sale",
+            "ret sale",
+            "net sale"
+          ],
+          "header1_norm": [
+            "19426",
+            "paxcal syrup",
+            "120ml",
+            "105.00",
+            "62",
+            "0",
+            "62",
+            "13",
+            "0",
+            "13"
+          ]
+        }
+      ],
+      "family_key": [
+        "single_header_product_table",
+        16,
+        [
+          "code",
+          "product desc",
+          "pack",
+          "rate",
+          "ob",
+          "pur"
+        ],
+        [
+          "null"
+        ]
+      ],
+      "extract": {
+        "template_used": "generic",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "CHISHTI PHARMA DISTRIBUTION",
+        "row_count": 49,
+        "rows_with_sales": 0,
+        "confidence": 0.7,
+        "sample_products": []
+      },
+      "errors": []
+    },
+    {
+      "file": "Evergreen Enterprises DI Khan.pdf",
+      "pages": 2,
+      "has_text": true,
+      "distributor_hint": "Evergreen Enterprises",
+      "detected_pattern": null,
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 3,
+          "cols": 2,
+          "type": "other_table",
+          "header0": [
+            "Sale & Stock Statment",
+            ""
+          ],
+          "header1": [
+            "",
+            "Sale & Stock Statment"
+          ],
+          "header0_norm": [
+            "sale & stock statment"
+          ],
+          "header1_norm": [
+            "sale & stock statment"
+          ]
+        },
+        {
+          "page": 1,
+          "table_index": 1,
+          "rows": 12,
+          "cols": 11,
+          "type": "other_table",
+          "header0": [
+            "",
+            "D E S C R I P T I O N",
+            "TRAD\nRATE",
+            "OPENING\nBALANCE",
+            "RECEIPT\nQUANTITY",
+            "SALE\nRETURN",
+            "SALE MARKET",
+            "",
+            "",
+            "TO DAY\nSALE",
+            "STOCK\nADJUST"
+          ],
+          "header1": [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "QTY",
+            "BNS",
+            "AMOUNT",
+            "",
+            ""
+          ],
+          "header0_norm": [
+            "d e s c r i p t i o n",
+            "trad rate",
+            "opening balance",
+            "receipt quantity",
+            "sale return",
+            "sale market",
+            "to day sale",
+            "stock adjust"
+          ],
+          "header1_norm": [
+            "qty",
+            "bns",
+            "amount"
+          ]
+        },
+        {
+          "page": 1,
+          "table_index": 2,
+          "rows": 34,
+          "cols": 11,
+          "type": "other_table",
+          "header0": [
+            "246",
+            "AMINAL 120ML",
+            "90.00",
+            "35",
+            "110",
+            "",
+            "130",
+            "11",
+            "11700.00",
+            "",
+            "0"
+          ],
+          "header1": [
+            "251",
+            "APIVO SYP",
+            "85.00",
+            "1",
+            "0",
+            "",
+            "",
+            "",
+            "0.00",
+            "",
+            "0"
+          ],
+          "header0_norm": [
+            "246",
+            "aminal 120ml",
+            "90.00",
+            "35",
+            "110",
+            "130",
+            "11",
+            "11700.00",
+            "0"
+          ],
+          "header1_norm": [
+            "251",
+            "apivo syp",
+            "85.00",
+            "1",
+            "0",
+            "0.00",
+            "0"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        2,
+        [
+          "sale & stock statment"
+        ],
+        [
+          "sale & stock statment"
+        ]
+      ],
+      "extract": {
+        "template_used": "generic",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "Evergreen Enterprises",
+        "row_count": 43,
+        "rows_with_sales": 30,
+        "confidence": 0.7,
+        "sample_products": [
+          "220 CLAN PLUS 120ML 255.00 179 220 29 223 23",
+          "221 COLIMAX DROPS 187.00 168 180 15 80 40",
+          "222 ECTAFIN 1GM 391.00 123 0 20"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "Faiz Enterprises Rajanpur.pdf",
+      "pages": 1,
+      "has_text": true,
+      "distributor_hint": "FAIZ ENTERPRISES",
+      "detected_pattern": "SALES REPORT",
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 35,
+          "cols": 1,
+          "type": "single_header_product_table",
+          "header0": [
+            "Description Pack Rate Open Pur Total Gross Bonus Total Sale Exp Trnf Trnf Closing Closing\nBal Receipt Stock Sale Sale Sale Value Brk In out Qty Value"
+          ],
+          "header1": [
+            "A"
+          ],
+          "header0_norm": [
+            "description pack rate open pur total gross bonus total sale exp trnf trnf closing closing bal receipt stock sale sale sale value brk in out qty value"
+          ],
+          "header1_norm": [
+            "a"
+          ]
+        }
+      ],
+      "family_key": [
+        "single_header_product_table",
+        1,
+        [
+          "description pack rate open pur total gross bonus total sale exp trnf trnf closing closing bal receipt stock sale sale sale value brk in out qty value"
+        ],
+        [
+          "a"
+        ]
+      ],
+      "extract": {
+        "template_used": "generic",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "FAIZ ENTERPRISES",
+        "row_count": 34,
+        "rows_with_sales": 0,
+        "confidence": 0.7,
+        "sample_products": []
+      },
+      "errors": []
+    },
+    {
+      "file": "Globar Enterprises SKP.PDF",
+      "pages": 1,
+      "has_text": true,
+      "distributor_hint": "P a g e N o . 1 G l o b a l E n t e r p r i s e s 30/07/2026",
+      "detected_pattern": null,
+      "tables": [],
+      "family_key": [
+        "no_table",
+        true,
+        1
+      ],
+      "extract": {
+        "template_used": "generic",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "P a g e N o . 1 G l o b a l E n t e r p r i s e s 30/07/2026",
+        "row_count": 29,
+        "rows_with_sales": 0,
+        "confidence": 0.7,
+        "sample_products": []
+      },
+      "errors": []
+    },
+    {
+      "file": "Haji Nizam & Sons Quetta.pdf",
+      "pages": 3,
+      "has_text": true,
+      "distributor_hint": "Haji Nizamuddin & Sons",
+      "detected_pattern": null,
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 2,
+          "cols": 15,
+          "type": "other_table",
+          "header0": [
+            "Item Description",
+            "Rate",
+            "Opening\nBalance",
+            "PURCHASE",
+            "",
+            "",
+            "SALE",
+            "",
+            "",
+            "",
+            "Adjustment",
+            "CLOSING",
+            "",
+            "Today\nSale",
+            "Today\nReturn"
+          ],
+          "header1": [
+            "",
+            "",
+            "",
+            "Purchase",
+            "Return",
+            "Total",
+            "Sale",
+            "Return",
+            "Total",
+            "Value",
+            "",
+            "Balance",
+            "Value",
+            "",
+            ""
+          ],
+          "header0_norm": [
+            "item description",
+            "rate",
+            "opening balance",
+            "purchase",
+            "sale",
+            "adjustment",
+            "closing",
+            "today sale",
+            "today return"
+          ],
+          "header1_norm": [
+            "purchase",
+            "return",
+            "total",
+            "sale",
+            "return",
+            "total",
+            "value",
+            "balance",
+            "value"
+          ]
+        },
+        {
+          "page": 1,
+          "table_index": 1,
+          "rows": 28,
+          "cols": 15,
+          "type": "other_table",
+          "header0": [
+            "008049 AMINAL COUGH SYRUP",
+            "-",
+            "- 54",
+            "- -",
+            "- -",
+            "- 54",
+            "- 13",
+            "- 1",
+            "- 12",
+            "-",
+            "- -",
+            "- 42",
+            "-",
+            "-",
+            "-"
+          ],
+          "header1": [
+            "008049 AMINAL COUGH SYRUP",
+            "90.00",
+            "401 -",
+            "- -",
+            "- -",
+            "401 -",
+            "158 -",
+            "12 -",
+            "146 -",
+            "13140",
+            "- -",
+            "255 -",
+            "22950",
+            "-",
+            "-"
+          ],
+          "header0_norm": [
+            "008049 aminal cough syrup",
+            "-",
+            "- 54",
+            "- -",
+            "- -",
+            "- 54",
+            "- 13",
+            "- 1",
+            "- 12",
+            "-"
+          ],
+          "header1_norm": [
+            "008049 aminal cough syrup",
+            "90.00",
+            "401 -",
+            "- -",
+            "- -",
+            "401 -",
+            "158 -",
+            "12 -",
+            "146 -",
+            "13140"
+          ]
+        },
+        {
+          "page": 2,
+          "table_index": 0,
+          "rows": 25,
+          "cols": 15,
+          "type": "other_table",
+          "header0": [
+            "Item Description",
+            "Rate",
+            "Opening\nBalance",
+            "PURCHASE",
+            "",
+            "",
+            "SALE",
+            "",
+            "",
+            "",
+            "Adjustment",
+            "CLOSING",
+            "",
+            "Today\nSale",
+            "Today\nReturn"
+          ],
+          "header1": [
+            "",
+            "",
+            "",
+            "Purchase",
+            "Return",
+            "Total",
+            "Sale",
+            "Return",
+            "Total",
+            "Value",
+            "",
+            "Balance",
+            "Value",
+            "",
+            ""
+          ],
+          "header0_norm": [
+            "item description",
+            "rate",
+            "opening balance",
+            "purchase",
+            "sale",
+            "adjustment",
+            "closing",
+            "today sale",
+            "today return"
+          ],
+          "header1_norm": [
+            "purchase",
+            "return",
+            "total",
+            "sale",
+            "return",
+            "total",
+            "value",
+            "balance",
+            "value"
+          ]
+        },
+        {
+          "page": 2,
+          "table_index": 1,
+          "rows": 6,
+          "cols": 15,
+          "type": "other_table",
+          "header0": [
+            "008046 CLAN PLUS SYP",
+            "255.00",
+            "42 -",
+            "100 -",
+            "- -",
+            "142 -",
+            "51 -",
+            "- -",
+            "51 -",
+            "13005",
+            "- -",
+            "91 -",
+            "23205",
+            "1",
+            "-"
+          ],
+          "header1": [
+            "008046 CLAN PLUS SYP",
+            "-",
+            "- 5",
+            "- 10",
+            "- -",
+            "- 15",
+            "- 5",
+            "- -",
+            "- 5",
+            "-",
+            "- -",
+            "- 10",
+            "-",
+            "-",
+            "-"
+          ],
+          "header0_norm": [
+            "008046 clan plus syp",
+            "255.00",
+            "42 -",
+            "100 -",
+            "- -",
+            "142 -",
+            "51 -",
+            "- -",
+            "51 -",
+            "13005"
+          ],
+          "header1_norm": [
+            "008046 clan plus syp",
+            "-",
+            "- 5",
+            "- 10",
+            "- -",
+            "- 15",
+            "- 5",
+            "- -",
+            "- 5",
+            "-"
+          ]
+        },
+        {
+          "page": 3,
+          "table_index": 0,
+          "rows": 6,
+          "cols": 15,
+          "type": "other_table",
+          "header0": [
+            "Item Description",
+            "Rate",
+            "Opening\nBalance",
+            "PURCHASE",
+            "",
+            "",
+            "SALE",
+            "",
+            "",
+            "",
+            "Adjustment",
+            "CLOSING",
+            "",
+            "Today\nSale",
+            "Today\nReturn"
+          ],
+          "header1": [
+            "",
+            "",
+            "",
+            "Purchase",
+            "Return",
+            "Total",
+            "Sale",
+            "Return",
+            "Total",
+            "Value",
+            "",
+            "Balance",
+            "Value",
+            "",
+            ""
+          ],
+          "header0_norm": [
+            "item description",
+            "rate",
+            "opening balance",
+            "purchase",
+            "sale",
+            "adjustment",
+            "closing",
+            "today sale",
+            "today return"
+          ],
+          "header1_norm": [
+            "purchase",
+            "return",
+            "total",
+            "sale",
+            "return",
+            "total",
+            "value",
+            "balance",
+            "value"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        15,
+        [
+          "item description",
+          "rate",
+          "opening balance",
+          "purchase",
+          "sale",
+          "adjustment"
+        ],
+        [
+          "purchase",
+          "return",
+          "total",
+          "sale",
+          "return",
+          "total"
+        ]
+      ],
+      "extract": {
+        "template_used": "fmt-item-desc-net-sales",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "Haji Nizamuddin & Sons",
+        "row_count": 15,
+        "rows_with_sales": 15,
+        "confidence": 0.7,
+        "sample_products": [
+          "008049 AMINAL COUGH SYRUP",
+          "008058 BERRY FLOW SACHET",
+          "008003 CEFPAK 250MG INJ I.V"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "Hamed Pharma Bannu Promotion.pdf",
+      "pages": 1,
+      "has_text": true,
+      "distributor_hint": "HAMED PHARMA",
+      "detected_pattern": null,
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 14,
+          "cols": 13,
+          "type": "other_table",
+          "header0": [
+            "",
+            "TRAD\nRATE",
+            "OPENING\nBALANCE",
+            "RECEIPT",
+            "",
+            "SALE",
+            "",
+            "",
+            "",
+            "TOTAL\nSTOCK",
+            "TRANSFER",
+            "",
+            ""
+          ],
+          "header1": [
+            "",
+            "",
+            "",
+            "QUANTITY AMOUNT",
+            "",
+            "SALE",
+            "RETURN",
+            "NET SALE",
+            "AMOUNT",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "header0_norm": [
+            "trad rate",
+            "opening balance",
+            "receipt",
+            "sale",
+            "total stock",
+            "transfer"
+          ],
+          "header1_norm": [
+            "quantity amount",
+            "sale",
+            "return",
+            "net sale",
+            "amount"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        13,
+        [
+          "trad rate",
+          "opening balance",
+          "receipt",
+          "sale",
+          "total stock",
+          "transfer"
+        ],
+        [
+          "quantity amount",
+          "sale",
+          "return",
+          "net sale",
+          "amount"
+        ]
+      ],
+      "extract": {
+        "template_used": "generic",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "HAMED PHARMA",
+        "row_count": 9,
+        "rows_with_sales": 9,
+        "confidence": 0.7,
+        "sample_products": [
+          "CLAN PLUS SYP 255.00 56.00 240 + 24 61200.00 270 + 27 10 + 1 260",
+          "COLIMAX DROPS 187.00 131.00 20 + 10 8 12",
+          "ECTAFIN 1G INJ 391.00"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "Hamed Pharma Bannu Trade.pdf",
+      "pages": 1,
+      "has_text": true,
+      "distributor_hint": "HAMED PHARMA",
+      "detected_pattern": null,
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 32,
+          "cols": 13,
+          "type": "other_table",
+          "header0": [
+            "",
+            "TRAD\nRATE",
+            "OPENING\nBALANCE",
+            "RECEIPT",
+            "",
+            "SALE",
+            "",
+            "",
+            "",
+            "TOTAL\nSTOCK",
+            "TRANSFER",
+            "",
+            ""
+          ],
+          "header1": [
+            "",
+            "",
+            "",
+            "QUANTITY AMOUNT",
+            "",
+            "SALE",
+            "RETURN",
+            "NET SALE",
+            "AMOUNT",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "header0_norm": [
+            "trad rate",
+            "opening balance",
+            "receipt",
+            "sale",
+            "total stock",
+            "transfer"
+          ],
+          "header1_norm": [
+            "quantity amount",
+            "sale",
+            "return",
+            "net sale",
+            "amount"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        13,
+        [
+          "trad rate",
+          "opening balance",
+          "receipt",
+          "sale",
+          "total stock",
+          "transfer"
+        ],
+        [
+          "quantity amount",
+          "sale",
+          "return",
+          "net sale",
+          "amount"
+        ]
+      ],
+      "extract": {
+        "template_used": "generic",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "HAMED PHARMA",
+        "row_count": 26,
+        "rows_with_sales": 26,
+        "confidence": 0.7,
+        "sample_products": [
+          "CIPAK INFU 120.00 154.00 20 10 10",
+          "G TAX 500MG INJ 78.00",
+          "G TAX 250MG INJ 60.00"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "Hamza Medicine TTS.pdf",
+      "pages": 2,
+      "has_text": true,
+      "distributor_hint": "HAMZA MEDICINE CENTER",
+      "detected_pattern": null,
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 1,
+          "rows": 37,
+          "cols": 9,
+          "type": "other_table",
+          "header0": [
+            "CEFPAK 500MG INJECTION",
+            "69.00",
+            "7",
+            "-7",
+            "-",
+            "-",
+            "-",
+            "-",
+            "-"
+          ],
+          "header1": [
+            "CIPAK 200MG INFUSION",
+            "120.00",
+            "4",
+            "-1",
+            "3",
+            "360",
+            "-",
+            "-",
+            "-"
+          ],
+          "header0_norm": [
+            "cefpak 500mg injection",
+            "69.00",
+            "7",
+            "-7",
+            "-",
+            "-",
+            "-",
+            "-",
+            "-"
+          ],
+          "header1_norm": [
+            "cipak 200mg infusion",
+            "120.00",
+            "4",
+            "-1",
+            "3",
+            "360",
+            "-",
+            "-",
+            "-"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        9,
+        [
+          "cefpak 500mg injection",
+          "69.00",
+          "7",
+          "-7",
+          "-",
+          "-"
+        ],
+        [
+          "cipak 200mg infusion",
+          "120.00",
+          "4",
+          "-1",
+          "3",
+          "360"
+        ]
+      ],
+      "extract": {
+        "template_used": "generic",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "HAMZA MEDICINE CENTER",
+        "row_count": 30,
+        "rows_with_sales": 30,
+        "confidence": 0.7,
+        "sample_products": [
+          "COLIMAX DROPS",
+          "GEE T.N OINTMENT 30G",
+          "G-TAX 1GM INJ"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "Hashmani Health Care Karachi.pdf",
+      "pages": 2,
+      "has_text": true,
+      "distributor_hint": "HASMANI HEALTH CARE",
+      "detected_pattern": null,
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 30,
+          "cols": 7,
+          "type": "other_table",
+          "header0": [
+            "OPENING\nQTY. BON",
+            "PURCHASE\nQTY. BON",
+            "PURCHAS\nRETURN\nQTY. BO",
+            "SALES\nQTY. BON",
+            "SALES\nRETURN",
+            "NET\nSALES\nQTY.BON AMOUNT",
+            ""
+          ],
+          "header1": [
+            "",
+            "",
+            "",
+            "",
+            "QTY. BO",
+            "",
+            ""
+          ],
+          "header0_norm": [
+            "opening qty. bon",
+            "purchase qty. bon",
+            "purchas return qty. bo",
+            "sales qty. bon",
+            "sales return",
+            "net sales qty.bon amount"
+          ],
+          "header1_norm": [
+            "qty. bo"
+          ]
+        },
+        {
+          "page": 2,
+          "table_index": 0,
+          "rows": 4,
+          "cols": 7,
+          "type": "other_table",
+          "header0": [
+            "OPENING\nQTY. BON",
+            "PURCHASE\nQTY. BON",
+            "PURCHAS\nRETURN\nQTY. BO",
+            "SALES\nQTY. BON",
+            "SALES\nRETURN",
+            "NET\nSALES\nQTY.BON AMOUNT",
+            ""
+          ],
+          "header1": [
+            "",
+            "",
+            "",
+            "",
+            "QTY. BO",
+            "",
+            ""
+          ],
+          "header0_norm": [
+            "opening qty. bon",
+            "purchase qty. bon",
+            "purchas return qty. bo",
+            "sales qty. bon",
+            "sales return",
+            "net sales qty.bon amount"
+          ],
+          "header1_norm": [
+            "qty. bo"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        7,
+        [
+          "opening qty. bon",
+          "purchase qty. bon",
+          "purchas return qty. bo",
+          "sales qty. bon",
+          "sales return",
+          "net sales qty.bon amount"
+        ],
+        [
+          "qty. bo"
+        ]
+      ],
+      "extract": {
+        "template_used": "generic",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "HASMANI HEALTH CARE",
+        "row_count": 25,
+        "rows_with_sales": 25,
+        "confidence": 0.7,
+        "sample_products": [
+          "AMINAL PLUS SYP 120ML 90.00 120ML 65 8 100 10 88 2 11 77 2 6,930.00 88 16",
+          "BERRY FLOW SCHATE 115.00 1X10 44 240 279 39 240 27,600.00 44",
+          "COLIMAX DROPS 20ML 187.00 20ML 103 57 29 6 29 6 5,423.00 74 51"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "Kamal Medicine Company Timergarah.PDF",
+      "pages": 2,
+      "has_text": true,
+      "distributor_hint": "KAMAL MEDICINE COMPANY",
+      "detected_pattern": null,
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 2,
+          "cols": 19,
+          "type": "other_table",
+          "header0": [
+            "Product Name T.P. Tax",
+            "Opening",
+            "",
+            "Purchase",
+            "",
+            "",
+            "B.C",
+            "Sale",
+            "",
+            "Sale Return",
+            "",
+            "Net Sale",
+            "",
+            "",
+            "P.R",
+            "Transfer / Av."
+          ],
+          "header1": [
+            "",
+            "Qty.",
+            "Value",
+            "Qty.",
+            "Bon",
+            "Value",
+            "S. In",
+            "Qty.",
+            "Bon",
+            "Qty.",
+            "Bon",
+            "Qty.",
+            "Bon",
+            "Value",
+            "S. Out",
+            "Out"
+          ],
+          "header0_norm": [
+            "product name t.p. tax",
+            "opening",
+            "purchase",
+            "b.c",
+            "sale",
+            "sale return",
+            "net sale",
+            "p.r",
+            "transfer / av.",
+            "closing balance"
+          ],
+          "header1_norm": [
+            "qty.",
+            "value",
+            "qty.",
+            "bon",
+            "value",
+            "s. in",
+            "qty.",
+            "bon",
+            "qty.",
+            "bon"
+          ]
+        },
+        {
+          "page": 2,
+          "table_index": 0,
+          "rows": 2,
+          "cols": 19,
+          "type": "other_table",
+          "header0": [
+            "Product Name T.P. Tax",
+            "Opening",
+            "",
+            "Purchase",
+            "",
+            "",
+            "B.C",
+            "Sale",
+            "",
+            "Sale Return",
+            "",
+            "Net Sale",
+            "",
+            "",
+            "P.R",
+            "Transfer / Av."
+          ],
+          "header1": [
+            "",
+            "Qty.",
+            "Value",
+            "Qty.",
+            "Bon",
+            "Value",
+            "S. In",
+            "Qty.",
+            "Bon",
+            "Qty.",
+            "Bon",
+            "Qty.",
+            "Bon",
+            "Value",
+            "S. Out",
+            "Out"
+          ],
+          "header0_norm": [
+            "product name t.p. tax",
+            "opening",
+            "purchase",
+            "b.c",
+            "sale",
+            "sale return",
+            "net sale",
+            "p.r",
+            "transfer / av.",
+            "closing balance"
+          ],
+          "header1_norm": [
+            "qty.",
+            "value",
+            "qty.",
+            "bon",
+            "value",
+            "s. in",
+            "qty.",
+            "bon",
+            "qty.",
+            "bon"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        19,
+        [
+          "product name t.p. tax",
+          "opening",
+          "purchase",
+          "b.c",
+          "sale",
+          "sale return"
+        ],
+        [
+          "qty.",
+          "value",
+          "qty.",
+          "bon",
+          "value",
+          "s. in"
+        ]
+      ],
+      "extract": {
+        "template_used": "generic",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "KAMAL MEDICINE COMPANY",
+        "row_count": 31,
+        "rows_with_sales": 0,
+        "confidence": 0.7,
+        "sample_products": []
+      },
+      "errors": []
+    },
+    {
+      "file": "Lal Drug Agency Sibbi.pdf",
+      "pages": 1,
+      "has_text": true,
+      "distributor_hint": "LAL DRUG AGENCY, SIBBI",
+      "detected_pattern": "SALES, STOCK & RETURN",
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 32,
+          "cols": 17,
+          "type": "ssr_stock_return_2row",
+          "header0": [
+            "ITEM",
+            "RATE",
+            "OPEN",
+            "RCVD",
+            "TOTAL",
+            "TRANS\nFERED",
+            "SALE",
+            "",
+            "",
+            "",
+            "RETURN",
+            "",
+            "NET SALE",
+            "",
+            "",
+            "CLOSING"
+          ],
+          "header1": [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "LAST\nMONTH",
+            "TODAY",
+            "QTY",
+            "BONUS",
+            "QTY",
+            "BONUS",
+            "QTY",
+            "BONUS",
+            "AMOUNT",
+            "QTY"
+          ],
+          "header0_norm": [
+            "item",
+            "rate",
+            "open",
+            "rcvd",
+            "total",
+            "trans fered",
+            "sale",
+            "return",
+            "net sale",
+            "closing"
+          ],
+          "header1_norm": [
+            "last month",
+            "today",
+            "qty",
+            "bonus",
+            "qty",
+            "bonus",
+            "qty",
+            "bonus",
+            "amount",
+            "qty"
+          ]
+        }
+      ],
+      "family_key": [
+        "ssr_stock_return_2row",
+        17,
+        [
+          "item",
+          "rate",
+          "open",
+          "rcvd",
+          "total",
+          "trans fered"
+        ],
+        [
+          "last month",
+          "today",
+          "qty",
+          "bonus",
+          "qty",
+          "bonus"
+        ]
+      ],
+      "extract": {
+        "template_used": "ssr-stock-return",
+        "distributor_hint": "ssr-stock-return",
+        "distributor_name_hint": "LAL DRUG AGENCY, SIBBI",
+        "row_count": 13,
+        "rows_with_sales": 13,
+        "confidence": 0.95,
+        "sample_products": [
+          "BERRY FLOW SACHET 10S",
+          "CIPAK INF 100ML",
+          "G SAF 125MG SYP 120ML"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "Life Care Distributor Gujrat.pdf",
+      "pages": 2,
+      "has_text": true,
+      "distributor_hint": "LIFE CARE DISTRIBUTOR & DIAGNOSTIC STORE",
+      "detected_pattern": null,
+      "tables": [
+        {
+          "page": 2,
+          "table_index": 0,
+          "rows": 2,
+          "cols": 1,
+          "type": "other_table",
+          "header0": [
+            "Total Sale Value 264,567.00"
+          ],
+          "header1": [
+            "Closing Stock Value 388,823.00"
+          ],
+          "header0_norm": [
+            "total sale value 264,567.00"
+          ],
+          "header1_norm": [
+            "closing stock value 388,823.00"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        1,
+        [
+          "total sale value 264,567.00"
+        ],
+        [
+          "closing stock value 388,823.00"
+        ]
+      ],
+      "extract": {
+        "template_used": "generic",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "LIFE CARE DISTRIBUTOR & DIAGNOSTIC STORE",
+        "row_count": 12,
+        "rows_with_sales": 1,
+        "confidence": 0.7,
+        "sample_products": [
+          "40 PEER GO CREAM 30GM 120.00 26 0.00 18.00 7.00 0.00"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "M&C RWP.pdf",
+      "pages": 1,
+      "has_text": true,
+      "distributor_hint": "M&C DISTRIBUTOR",
+      "detected_pattern": null,
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 2,
+          "cols": 15,
+          "type": "other_table",
+          "header0": [
+            "Item Description",
+            "Rate",
+            "Pack",
+            "Opening\nBalance",
+            "PURCHASE",
+            "",
+            "",
+            "SALE",
+            "",
+            "",
+            "Adjustment",
+            "CLOSING",
+            "",
+            "Today\nSale",
+            "Today\nReturn"
+          ],
+          "header1": [
+            "",
+            "",
+            "",
+            "",
+            "Purchase",
+            "Return",
+            "Total",
+            "Net Sales",
+            "Bonus",
+            "Value",
+            "",
+            "Balance",
+            "Value",
+            "",
+            ""
+          ],
+          "header0_norm": [
+            "item description",
+            "rate",
+            "pack",
+            "opening balance",
+            "purchase",
+            "sale",
+            "adjustment",
+            "closing",
+            "today sale",
+            "today return"
+          ],
+          "header1_norm": [
+            "purchase",
+            "return",
+            "total",
+            "net sales",
+            "bonus",
+            "value",
+            "balance",
+            "value"
+          ]
+        },
+        {
+          "page": 1,
+          "table_index": 1,
+          "rows": 3,
+          "cols": 15,
+          "type": "other_table",
+          "header0": [
+            "020030 GTN 30GM CREAM",
+            "180.00",
+            "",
+            "340 -",
+            "- -",
+            "- -",
+            "340 -",
+            "225",
+            "1",
+            "40500",
+            "- -",
+            "114 -",
+            "20520",
+            "3",
+            "-"
+          ],
+          "header1": [
+            "020023 LANCIX 600MG",
+            "320.00",
+            "",
+            "95 -",
+            "1 -",
+            "- -",
+            "96 -",
+            "96",
+            "-",
+            "30720",
+            "- -",
+            "- -",
+            "-",
+            "-",
+            "-"
+          ],
+          "header0_norm": [
+            "020030 gtn 30gm cream",
+            "180.00",
+            "340 -",
+            "- -",
+            "- -",
+            "340 -",
+            "225",
+            "1",
+            "40500",
+            "- -"
+          ],
+          "header1_norm": [
+            "020023 lancix 600mg",
+            "320.00",
+            "95 -",
+            "1 -",
+            "- -",
+            "96 -",
+            "96",
+            "-",
+            "30720",
+            "- -"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        15,
+        [
+          "item description",
+          "rate",
+          "pack",
+          "opening balance",
+          "purchase",
+          "sale"
+        ],
+        [
+          "purchase",
+          "return",
+          "total",
+          "net sales",
+          "bonus",
+          "value"
+        ]
+      ],
+      "extract": {
+        "template_used": "fmt-item-desc-net-sales",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "M&C DISTRIBUTOR",
+        "row_count": 3,
+        "rows_with_sales": 3,
+        "confidence": 0.7,
+        "sample_products": [
+          "020030 GTN 30GM CREAM",
+          "020023 LANCIX 600MG",
+          "020006 MEDISCON SYP"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "Mashal Enterprises Bajaur.pdf",
+      "pages": 3,
+      "has_text": true,
+      "distributor_hint": "FILTER :",
+      "detected_pattern": null,
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 19,
+          "cols": 21,
+          "type": "other_table",
+          "header0": [
+            "#",
+            "NAME",
+            "PRICE",
+            "OPEN STOCK",
+            "RECEIPT\nQTY | BNS",
+            "",
+            "TOTAL STOCK",
+            "SALES\nQTY | BNS",
+            "",
+            "RETURN\nQTY | BNS",
+            "",
+            "NET SALE\nQTY | BNS",
+            "",
+            "SALE VALUES",
+            "TRANSFER\nIN | OUT",
+            ""
+          ],
+          "header1": [
+            "MEDICRONIS PHARMACEUTICALS",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "header0_norm": [
+            "#",
+            "name",
+            "price",
+            "open stock",
+            "receipt qty | bns",
+            "total stock",
+            "sales qty | bns",
+            "return qty | bns",
+            "net sale qty | bns",
+            "sale values"
+          ],
+          "header1_norm": [
+            "medicronis pharmaceuticals"
+          ]
+        },
+        {
+          "page": 2,
+          "table_index": 0,
+          "rows": 30,
+          "cols": 21,
+          "type": "other_table",
+          "header0": [
+            "#",
+            "NAME",
+            "PRICE",
+            "OPEN STOCK",
+            "RECEIPT\nQTY | BNS",
+            "",
+            "TOTAL STOCK",
+            "SALES\nQTY | BNS",
+            "",
+            "RETURN\nQTY | BNS",
+            "",
+            "NET SALE\nQTY | BNS",
+            "",
+            "SALE VALUES",
+            "TRANSFER\nIN | OUT",
+            ""
+          ],
+          "header1": [
+            "431",
+            "LANCIX INJ 10",
+            "270.00",
+            "224",
+            "0",
+            "0",
+            "224",
+            "178",
+            "0",
+            "25",
+            "0",
+            "153",
+            "0",
+            "41,310",
+            "0",
+            "0"
+          ],
+          "header0_norm": [
+            "#",
+            "name",
+            "price",
+            "open stock",
+            "receipt qty | bns",
+            "total stock",
+            "sales qty | bns",
+            "return qty | bns",
+            "net sale qty | bns",
+            "sale values"
+          ],
+          "header1_norm": [
+            "431",
+            "lancix inj 10",
+            "270.00",
+            "224",
+            "0",
+            "0",
+            "224",
+            "178",
+            "0",
+            "25"
+          ]
+        },
+        {
+          "page": 3,
+          "table_index": 0,
+          "rows": 2,
+          "cols": 17,
+          "type": "other_table",
+          "header0": [
+            "#",
+            "NAME",
+            "PRICE",
+            "OPEN STOCK",
+            "RECEIPT\nQTY | BNS",
+            "TOTAL STOCK",
+            "SALES\nQTY | BNS",
+            "RETURN\nQTY | BNS",
+            "NET SALE\nQTY | BNS",
+            "SALE VALUES",
+            "TRANSFER\nIN | OUT",
+            "",
+            "P.R",
+            "AV",
+            "AVR",
+            "CLOSING\nSTOCK"
+          ],
+          "header1": [
+            "Over All Total",
+            "",
+            "376,676",
+            "",
+            "222,080",
+            "613,256",
+            "309,165",
+            "55,815",
+            "253,350",
+            "",
+            "0",
+            "0",
+            "0",
+            "0",
+            "0",
+            "349,400"
+          ],
+          "header0_norm": [
+            "#",
+            "name",
+            "price",
+            "open stock",
+            "receipt qty | bns",
+            "total stock",
+            "sales qty | bns",
+            "return qty | bns",
+            "net sale qty | bns",
+            "sale values"
+          ],
+          "header1_norm": [
+            "over all total",
+            "376,676",
+            "222,080",
+            "613,256",
+            "309,165",
+            "55,815",
+            "253,350",
+            "0",
+            "0",
+            "0"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        21,
+        [
+          "#",
+          "name",
+          "price",
+          "open stock",
+          "receipt qty | bns",
+          "total stock"
+        ],
+        [
+          "medicronis pharmaceuticals"
+        ]
+      ],
+      "extract": {
+        "template_used": "generic",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "FILTER :",
+        "row_count": 39,
+        "rows_with_sales": 23,
+        "confidence": 0.7,
+        "sample_products": [
+          "G.TAX 1G INJ",
+          "G.TAX 500MG INJ",
+          "GEE T.N CREAM"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "Medicamp PSW.PDF",
+      "pages": 2,
+      "has_text": true,
+      "distributor_hint": "MEDICAMP DISTRIBUTOR",
+      "detected_pattern": null,
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 2,
+          "cols": 19,
+          "type": "other_table",
+          "header0": [
+            "Product Name T.P. Tax",
+            "Opening",
+            "",
+            "Purchase",
+            "",
+            "",
+            "B.C",
+            "Sale",
+            "",
+            "Sale Return",
+            "",
+            "Net Sale",
+            "",
+            "",
+            "P.R",
+            "Transfer / Av."
+          ],
+          "header1": [
+            "",
+            "Qty.",
+            "Value",
+            "Qty.",
+            "Bon",
+            "Value",
+            "S. In",
+            "Qty.",
+            "Bon",
+            "Qty.",
+            "Bon",
+            "Qty.",
+            "Bon",
+            "Value",
+            "S. Out",
+            "Out"
+          ],
+          "header0_norm": [
+            "product name t.p. tax",
+            "opening",
+            "purchase",
+            "b.c",
+            "sale",
+            "sale return",
+            "net sale",
+            "p.r",
+            "transfer / av.",
+            "closing balance"
+          ],
+          "header1_norm": [
+            "qty.",
+            "value",
+            "qty.",
+            "bon",
+            "value",
+            "s. in",
+            "qty.",
+            "bon",
+            "qty.",
+            "bon"
+          ]
+        },
+        {
+          "page": 2,
+          "table_index": 0,
+          "rows": 2,
+          "cols": 19,
+          "type": "other_table",
+          "header0": [
+            "Product Name T.P. Tax",
+            "Opening",
+            "",
+            "Purchase",
+            "",
+            "",
+            "B.C",
+            "Sale",
+            "",
+            "Sale Return",
+            "",
+            "Net Sale",
+            "",
+            "",
+            "P.R",
+            "Transfer / Av."
+          ],
+          "header1": [
+            "",
+            "Qty.",
+            "Value",
+            "Qty.",
+            "Bon",
+            "Value",
+            "S. In",
+            "Qty.",
+            "Bon",
+            "Qty.",
+            "Bon",
+            "Qty.",
+            "Bon",
+            "Value",
+            "S. Out",
+            "Out"
+          ],
+          "header0_norm": [
+            "product name t.p. tax",
+            "opening",
+            "purchase",
+            "b.c",
+            "sale",
+            "sale return",
+            "net sale",
+            "p.r",
+            "transfer / av.",
+            "closing balance"
+          ],
+          "header1_norm": [
+            "qty.",
+            "value",
+            "qty.",
+            "bon",
+            "value",
+            "s. in",
+            "qty.",
+            "bon",
+            "qty.",
+            "bon"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        19,
+        [
+          "product name t.p. tax",
+          "opening",
+          "purchase",
+          "b.c",
+          "sale",
+          "sale return"
+        ],
+        [
+          "qty.",
+          "value",
+          "qty.",
+          "bon",
+          "value",
+          "s. in"
+        ]
+      ],
+      "extract": {
+        "template_used": "generic",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "MEDICAMP DISTRIBUTOR",
+        "row_count": 27,
+        "rows_with_sales": 0,
+        "confidence": 0.7,
+        "sample_products": []
+      },
+      "errors": []
+    },
+    {
+      "file": "Mehran Traders Mardan.pdf",
+      "pages": 2,
+      "has_text": true,
+      "distributor_hint": "Mehran Traders",
+      "detected_pattern": "STOCK STATEMENT",
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 42,
+          "cols": 13,
+          "type": "other_table",
+          "header0": [
+            "D E S C R I P T I O N",
+            "TRADE\nRATE",
+            "OPENING\nBALANCE",
+            "RECEIPT",
+            "SALE",
+            "",
+            "",
+            "",
+            "AVB\nSALE",
+            "TRANSFER",
+            "",
+            "Prevouse Month\n30\u00ad06\u00ad2026",
+            "CLOSING\nBALANCE"
+          ],
+          "header1": [
+            "",
+            "",
+            "",
+            "QUANTITY",
+            "SALE",
+            "RETURN",
+            "NET SALE",
+            "AMOUNT",
+            "",
+            "IN",
+            "OUT",
+            "",
+            ""
+          ],
+          "header0_norm": [
+            "d e s c r i p t i o n",
+            "trade rate",
+            "opening balance",
+            "receipt",
+            "sale",
+            "avb sale",
+            "transfer",
+            "prevouse month 30\u00ad06\u00ad2026",
+            "closing balance"
+          ],
+          "header1_norm": [
+            "quantity",
+            "sale",
+            "return",
+            "net sale",
+            "amount",
+            "in",
+            "out"
+          ]
+        },
+        {
+          "page": 2,
+          "table_index": 0,
+          "rows": 5,
+          "cols": 13,
+          "type": "other_table",
+          "header0": [
+            "D E S C R I P T I O N",
+            "TRADE\nRATE",
+            "OPENING\nBALANCE",
+            "RECEIPT",
+            "SALE",
+            "",
+            "",
+            "",
+            "AVB\nSALE",
+            "TRANSFER",
+            "",
+            "Prevouse Month\n30\u00ad06\u00ad2026",
+            "CLOSING\nBALANCE"
+          ],
+          "header1": [
+            "",
+            "",
+            "",
+            "QUANTITY",
+            "SALE",
+            "RETURN",
+            "NET SALE",
+            "AMOUNT",
+            "",
+            "IN",
+            "OUT",
+            "",
+            ""
+          ],
+          "header0_norm": [
+            "d e s c r i p t i o n",
+            "trade rate",
+            "opening balance",
+            "receipt",
+            "sale",
+            "avb sale",
+            "transfer",
+            "prevouse month 30\u00ad06\u00ad2026",
+            "closing balance"
+          ],
+          "header1_norm": [
+            "quantity",
+            "sale",
+            "return",
+            "net sale",
+            "amount",
+            "in",
+            "out"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        13,
+        [
+          "d e s c r i p t i o n",
+          "trade rate",
+          "opening balance",
+          "receipt",
+          "sale",
+          "avb sale"
+        ],
+        [
+          "quantity",
+          "sale",
+          "return",
+          "net sale",
+          "amount",
+          "in"
+        ]
+      ],
+      "extract": {
+        "template_used": "generic",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "Mehran Traders",
+        "row_count": 42,
+        "rows_with_sales": 6,
+        "confidence": 0.7,
+        "sample_products": [
+          "*** AMINAL 120ML SYP 90.00 83 0 0 56 + 5 10 1 46+ 4",
+          "*** BERRY FLOW SACHET 115.00 50 0 0 65 0 15 0 50",
+          "870 G\u00adSEF 125MG SYP 140.00 59 0 0 29 0 5 0 24"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "Mrwa Enterprises BWP.pdf",
+      "pages": 1,
+      "has_text": true,
+      "distributor_hint": "MRWA ENTERPRISES",
+      "detected_pattern": null,
+      "tables": [],
+      "family_key": [
+        "no_table",
+        true,
+        1
+      ],
+      "extract": {
+        "template_used": "generic",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "MRWA ENTERPRISES",
+        "row_count": 0,
+        "rows_with_sales": 0,
+        "confidence": 0.2,
+        "sample_products": []
+      },
+      "errors": []
+    },
+    {
+      "file": "N&G Enterprises SWL.pdf",
+      "pages": 1,
+      "has_text": true,
+      "distributor_hint": "N & G Enterprises (Sahiwal)",
+      "detected_pattern": "STOCK STATEMENT",
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 50,
+          "cols": 15,
+          "type": "other_table",
+          "header0": [
+            "Sales and Stock Statement",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "header1": [
+            "From Date:01/07/2026 To Date:30/07/2026 Printing Date: 30/07/2026\nCompany:MEDICRONIS PHARMA ,Selected groups, Sale Calculated on Trade price Printing Time: 5:33:51PM",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "header0_norm": [
+            "sales and stock statement"
+          ],
+          "header1_norm": [
+            "from date:01/07/2026 to date:30/07/2026 printing date: 30/07/2026 company:medicronis pharma ,selected groups, sale calculated on trade price printing time: 5:33:51pm"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        15,
+        [
+          "sales and stock statement"
+        ],
+        [
+          "from date:01/07/2026 to date:30/07/2026 printing date: 30/07/2026 company:medicronis pharma ,selected groups, sale calculated on trade price printing time: 5:33:51pm"
+        ]
+      ],
+      "extract": {
+        "template_used": "fmt-medicronis-erp-statement",
+        "distributor_hint": "fmt-medicronis-erp-statement",
+        "distributor_name_hint": "N & G Enterprises (Sahiwal)",
+        "row_count": 17,
+        "rows_with_sales": 17,
+        "confidence": 0.95,
+        "sample_products": [
+          "Aminal Plus 120ml Syp(1)",
+          "Berryflow Sachet (10)",
+          "CIPAK 200mg /100ml Inf(1)"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "New Tawakal Enterprises ABBT.pdf",
+      "pages": 1,
+      "has_text": false,
+      "distributor_hint": null,
+      "detected_pattern": null,
+      "tables": [],
+      "family_key": [
+        "no_table",
+        false,
+        1
+      ],
+      "extract": {
+        "template_used": "generic",
+        "distributor_hint": "generic",
+        "distributor_name_hint": null,
+        "row_count": 0,
+        "rows_with_sales": 0,
+        "confidence": 0.2,
+        "sample_products": []
+      },
+      "errors": []
+    },
+    {
+      "file": "Noor KHan minogra promotion30.pdf",
+      "pages": 1,
+      "has_text": true,
+      "distributor_hint": "NOORKHAN CORPORATION",
+      "detected_pattern": null,
+      "tables": [],
+      "family_key": [
+        "no_table",
+        true,
+        1
+      ],
+      "extract": {
+        "template_used": "generic",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "NOORKHAN CORPORATION",
+        "row_count": 7,
+        "rows_with_sales": 0,
+        "confidence": 0.7,
+        "sample_products": []
+      },
+      "errors": []
+    },
+    {
+      "file": "Noor Khan Mingora.pdf",
+      "pages": 2,
+      "has_text": true,
+      "distributor_hint": "NOORKHAN CORPORATION",
+      "detected_pattern": null,
+      "tables": [],
+      "family_key": [
+        "no_table",
+        true,
+        2
+      ],
+      "extract": {
+        "template_used": "generic",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "NOORKHAN CORPORATION",
+        "row_count": 33,
+        "rows_with_sales": 0,
+        "confidence": 0.7,
+        "sample_products": []
+      },
+      "errors": []
+    },
+    {
+      "file": "Pharmarite Distributor Jehlum.pdf",
+      "pages": 2,
+      "has_text": true,
+      "distributor_hint": "Pharmarite Distributor",
+      "detected_pattern": null,
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 2,
+          "cols": 13,
+          "type": "other_table",
+          "header0": [
+            "Item Description",
+            "Rate",
+            "Pack",
+            "Opening\nBalance",
+            "PURCHASE",
+            "",
+            "",
+            "SALE",
+            "",
+            "",
+            "Adjustment",
+            "CLOSING",
+            ""
+          ],
+          "header1": [
+            "",
+            "",
+            "",
+            "",
+            "Purchase",
+            "Return",
+            "Total",
+            "Net Sales",
+            "Bonus",
+            "Value",
+            "",
+            "Balance",
+            "Value"
+          ],
+          "header0_norm": [
+            "item description",
+            "rate",
+            "pack",
+            "opening balance",
+            "purchase",
+            "sale",
+            "adjustment",
+            "closing"
+          ],
+          "header1_norm": [
+            "purchase",
+            "return",
+            "total",
+            "net sales",
+            "bonus",
+            "value",
+            "balance",
+            "value"
+          ]
+        },
+        {
+          "page": 1,
+          "table_index": 1,
+          "rows": 29,
+          "cols": 13,
+          "type": "other_table",
+          "header0": [
+            "063031 AMINAL PLUS SYP",
+            "-",
+            "",
+            "- 21",
+            "- -",
+            "- -",
+            "- 21",
+            "-",
+            "2",
+            "-",
+            "- -",
+            "- 19",
+            "-"
+          ],
+          "header1": [
+            "063031 AMINAL PLUS SYP",
+            "90.00",
+            "",
+            "83 -",
+            "- -",
+            "- -",
+            "83 -",
+            "20",
+            "-",
+            "1800",
+            "- -",
+            "63 -",
+            "5670"
+          ],
+          "header0_norm": [
+            "063031 aminal plus syp",
+            "-",
+            "- 21",
+            "- -",
+            "- -",
+            "- 21",
+            "-",
+            "2",
+            "-",
+            "- -"
+          ],
+          "header1_norm": [
+            "063031 aminal plus syp",
+            "90.00",
+            "83 -",
+            "- -",
+            "- -",
+            "83 -",
+            "20",
+            "-",
+            "1800",
+            "- -"
+          ]
+        },
+        {
+          "page": 2,
+          "table_index": 0,
+          "rows": 16,
+          "cols": 13,
+          "type": "other_table",
+          "header0": [
+            "Item Description",
+            "Rate",
+            "Pack",
+            "Opening\nBalance",
+            "PURCHASE",
+            "",
+            "",
+            "SALE",
+            "",
+            "",
+            "Adjustment",
+            "CLOSING",
+            ""
+          ],
+          "header1": [
+            "",
+            "",
+            "",
+            "",
+            "Purchase",
+            "Return",
+            "Total",
+            "Net Sales",
+            "Bonus",
+            "Value",
+            "",
+            "Balance",
+            "Value"
+          ],
+          "header0_norm": [
+            "item description",
+            "rate",
+            "pack",
+            "opening balance",
+            "purchase",
+            "sale",
+            "adjustment",
+            "closing"
+          ],
+          "header1_norm": [
+            "purchase",
+            "return",
+            "total",
+            "net sales",
+            "bonus",
+            "value",
+            "balance",
+            "value"
+          ]
+        },
+        {
+          "page": 2,
+          "table_index": 1,
+          "rows": 10,
+          "cols": 13,
+          "type": "other_table",
+          "header0": [
+            "063022 G-TAX INJ 250mg",
+            "60.00",
+            "",
+            "88 -",
+            "- -",
+            "- -",
+            "88 -",
+            "-",
+            "-",
+            "-",
+            "- -",
+            "88 -",
+            "5280"
+          ],
+          "header1": [
+            "063023 G-TAX INJ 500mg",
+            "78.00",
+            "",
+            "23 -",
+            "- -",
+            "- -",
+            "23 -",
+            "-",
+            "-",
+            "-",
+            "- -",
+            "23 -",
+            "1794"
+          ],
+          "header0_norm": [
+            "063022 g-tax inj 250mg",
+            "60.00",
+            "88 -",
+            "- -",
+            "- -",
+            "88 -",
+            "-",
+            "-",
+            "-",
+            "- -"
+          ],
+          "header1_norm": [
+            "063023 g-tax inj 500mg",
+            "78.00",
+            "23 -",
+            "- -",
+            "- -",
+            "23 -",
+            "-",
+            "-",
+            "-",
+            "- -"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        13,
+        [
+          "item description",
+          "rate",
+          "pack",
+          "opening balance",
+          "purchase",
+          "sale"
+        ],
+        [
+          "purchase",
+          "return",
+          "total",
+          "net sales",
+          "bonus",
+          "value"
+        ]
+      ],
+      "extract": {
+        "template_used": "fmt-item-desc-net-sales",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "Pharmarite Distributor",
+        "row_count": 15,
+        "rows_with_sales": 15,
+        "confidence": 0.7,
+        "sample_products": [
+          "063031 AMINAL PLUS SYP",
+          "063037 BERRY FLOW SACH",
+          "063018 COLIMAX DROPS"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "Punjab Medicine Layyah 22.pdf",
+      "pages": 1,
+      "has_text": true,
+      "distributor_hint": "PUNJAB MEDICINE COMPANY",
+      "detected_pattern": null,
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 37,
+          "cols": 10,
+          "type": "single_header_product_table",
+          "header0": [
+            "Description / Pack",
+            "T.P.",
+            "Opening\nBalance",
+            "Purhase",
+            "Sales\nQty",
+            "Sale\nValue",
+            "Bonus",
+            "S.E.P.",
+            "Closing\nStock",
+            "Closing\nValue"
+          ],
+          "header1": [
+            "AMINAL 120ML SYP M",
+            "90.00",
+            "40",
+            "0",
+            "0",
+            "0",
+            "0",
+            "0",
+            "40",
+            "3600"
+          ],
+          "header0_norm": [
+            "description / pack",
+            "t.p.",
+            "opening balance",
+            "purhase",
+            "sales qty",
+            "sale value",
+            "bonus",
+            "s.e.p.",
+            "closing stock",
+            "closing value"
+          ],
+          "header1_norm": [
+            "aminal 120ml syp m",
+            "90.00",
+            "40",
+            "0",
+            "0",
+            "0",
+            "0",
+            "0",
+            "40",
+            "3600"
+          ]
+        }
+      ],
+      "family_key": [
+        "single_header_product_table",
+        10,
+        [
+          "description / pack",
+          "t.p.",
+          "opening balance",
+          "purhase",
+          "sales qty",
+          "sale value"
+        ],
+        [
+          "aminal 120ml syp m",
+          "90.00",
+          "40",
+          "0",
+          "0",
+          "0"
+        ]
+      ],
+      "extract": {
+        "template_used": "generic",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "PUNJAB MEDICINE COMPANY",
+        "row_count": 36,
+        "rows_with_sales": 7,
+        "confidence": 0.7,
+        "sample_products": [
+          "LANCiX INJ LARGE 6 25S",
+          "MEDEGAR SYP",
+          "MEDICORNIS G.T.N 30GM"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "Reliable Pharma MPK.pdf",
+      "pages": 1,
+      "has_text": true,
+      "distributor_hint": "RELIABLE MEDICOS, MIRPURKHAS",
+      "detected_pattern": "SALES, STOCK & RETURN",
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 5,
+          "cols": 17,
+          "type": "ssr_stock_return_2row",
+          "header0": [
+            "ITEM",
+            "RATE",
+            "OPEN",
+            "RCVD",
+            "TOTAL",
+            "TRANS\nFERED",
+            "SALE",
+            "",
+            "",
+            "",
+            "RETURN",
+            "",
+            "NET SALE",
+            "",
+            "",
+            "CLOSING"
+          ],
+          "header1": [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "LAST\nMONTH",
+            "TODAY",
+            "QTY",
+            "BONUS",
+            "QTY",
+            "BONUS",
+            "QTY",
+            "BONUS",
+            "AMOUNT",
+            "QTY"
+          ],
+          "header0_norm": [
+            "item",
+            "rate",
+            "open",
+            "rcvd",
+            "total",
+            "trans fered",
+            "sale",
+            "return",
+            "net sale",
+            "closing"
+          ],
+          "header1_norm": [
+            "last month",
+            "today",
+            "qty",
+            "bonus",
+            "qty",
+            "bonus",
+            "qty",
+            "bonus",
+            "amount",
+            "qty"
+          ]
+        },
+        {
+          "page": 1,
+          "table_index": 1,
+          "rows": 32,
+          "cols": 17,
+          "type": "ssr_stock_return_2row",
+          "header0": [
+            "ITEM",
+            "RATE",
+            "OPEN",
+            "RCVD",
+            "TOTAL",
+            "TRANS\nFERED",
+            "SALE",
+            "",
+            "",
+            "",
+            "RETURN",
+            "",
+            "NET SALE",
+            "",
+            "",
+            "CLOSING"
+          ],
+          "header1": [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "LAST\nMONTH",
+            "TODAY",
+            "QTY",
+            "BONUS",
+            "QTY",
+            "BONUS",
+            "QTY",
+            "BONUS",
+            "AMOUNT",
+            "QTY"
+          ],
+          "header0_norm": [
+            "item",
+            "rate",
+            "open",
+            "rcvd",
+            "total",
+            "trans fered",
+            "sale",
+            "return",
+            "net sale",
+            "closing"
+          ],
+          "header1_norm": [
+            "last month",
+            "today",
+            "qty",
+            "bonus",
+            "qty",
+            "bonus",
+            "qty",
+            "bonus",
+            "amount",
+            "qty"
+          ]
+        }
+      ],
+      "family_key": [
+        "ssr_stock_return_2row",
+        17,
+        [
+          "item",
+          "rate",
+          "open",
+          "rcvd",
+          "total",
+          "trans fered"
+        ],
+        [
+          "last month",
+          "today",
+          "qty",
+          "bonus",
+          "qty",
+          "bonus"
+        ]
+      ],
+      "extract": {
+        "template_used": "ssr-stock-return",
+        "distributor_hint": "ssr-stock-return",
+        "distributor_name_hint": "RELIABLE MEDICOS, MIRPURKHAS",
+        "row_count": 18,
+        "rows_with_sales": 18,
+        "confidence": 0.95,
+        "sample_products": [
+          "AMINAL SYP 120ML",
+          "CIPAK INFUSION 100ML",
+          "GEE T.N OINTMENT 30GM"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "Ruman Medicine Promotion RYK.pdf",
+      "pages": 1,
+      "has_text": true,
+      "distributor_hint": "RUMAN MEDICINE",
+      "detected_pattern": "STOCK STATEMENT",
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 2,
+          "cols": 16,
+          "type": "other_table",
+          "header0": [
+            "",
+            "",
+            "",
+            "OPENING",
+            "PURCHASE",
+            "",
+            "P-RETURN",
+            "",
+            "G-SALE",
+            "S.RET",
+            "NET SALE",
+            "",
+            "",
+            "OTHERS",
+            "CLOSING",
+            ""
+          ],
+          "header1": [
+            "ID",
+            "DESCRIPTION",
+            "TP",
+            "QTY+BNS",
+            "QTY",
+            "BNS",
+            "QTY",
+            "BN\nS",
+            "QTY",
+            "QTY+BNS",
+            "QTY",
+            "BNS",
+            "VALUE",
+            "QTY",
+            "QTY",
+            "Value"
+          ],
+          "header0_norm": [
+            "opening",
+            "purchase",
+            "p-return",
+            "g-sale",
+            "s.ret",
+            "net sale",
+            "others",
+            "closing"
+          ],
+          "header1_norm": [
+            "id",
+            "description",
+            "tp",
+            "qty+bns",
+            "qty",
+            "bns",
+            "qty",
+            "bn s",
+            "qty",
+            "qty+bns"
+          ]
+        },
+        {
+          "page": 1,
+          "table_index": 1,
+          "rows": 9,
+          "cols": 18,
+          "type": "other_table",
+          "header0": [
+            "306",
+            "007003*CLAN PLUS 120ML SYP",
+            "255",
+            "-",
+            "149",
+            "10",
+            "-",
+            "-",
+            "43",
+            "-",
+            "43",
+            "-",
+            "",
+            "10,965",
+            "",
+            "-"
+          ],
+          "header1": [
+            "1710",
+            "007023*COLIMAX 20ML DROP",
+            "187",
+            "-",
+            "60",
+            "30",
+            "-",
+            "-",
+            "-",
+            "-",
+            "-",
+            "-",
+            "",
+            "-",
+            "",
+            "-"
+          ],
+          "header0_norm": [
+            "306",
+            "007003*clan plus 120ml syp",
+            "255",
+            "-",
+            "149",
+            "10",
+            "-",
+            "-",
+            "43",
+            "-"
+          ],
+          "header1_norm": [
+            "1710",
+            "007023*colimax 20ml drop",
+            "187",
+            "-",
+            "60",
+            "30",
+            "-",
+            "-",
+            "-",
+            "-"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        16,
+        [
+          "opening",
+          "purchase",
+          "p-return",
+          "g-sale",
+          "s.ret",
+          "net sale"
+        ],
+        [
+          "id",
+          "description",
+          "tp",
+          "qty+bns",
+          "qty",
+          "bns"
+        ]
+      ],
+      "extract": {
+        "template_used": "fmt-medicronis-erp-statement",
+        "distributor_hint": "fmt-medicronis-erp-statement",
+        "distributor_name_hint": "RUMAN MEDICINE",
+        "row_count": 4,
+        "rows_with_sales": 4,
+        "confidence": 0.95,
+        "sample_products": [
+          "007005*ECTAFIN 1G INJ (CEFOPERAZONE+\nSULBACTUM)",
+          "007006*ECTAFIN 2G INJ (CEFOPERAZONE+\nSULBACTUM)",
+          "007002*EVOX 500MG INJ (LEVOFLOXACIN)"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "Ruman Medicine Trade RYK.pdf",
+      "pages": 1,
+      "has_text": true,
+      "distributor_hint": "RUMAN MEDICINE",
+      "detected_pattern": "STOCK STATEMENT",
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 2,
+          "cols": 16,
+          "type": "other_table",
+          "header0": [
+            "",
+            "",
+            "",
+            "OPENING",
+            "PURCHASE",
+            "",
+            "P-RETURN",
+            "",
+            "G-SALE",
+            "S.RET",
+            "NET SALE",
+            "",
+            "",
+            "OTHERS",
+            "CLOSING",
+            ""
+          ],
+          "header1": [
+            "ID",
+            "DESCRIPTION",
+            "TP",
+            "QTY+BNS",
+            "QTY",
+            "BNS",
+            "QTY",
+            "BN\nS",
+            "QTY",
+            "QTY+BNS",
+            "QTY",
+            "BNS",
+            "VALUE",
+            "QTY",
+            "QTY",
+            "Value"
+          ],
+          "header0_norm": [
+            "opening",
+            "purchase",
+            "p-return",
+            "g-sale",
+            "s.ret",
+            "net sale",
+            "others",
+            "closing"
+          ],
+          "header1_norm": [
+            "id",
+            "description",
+            "tp",
+            "qty+bns",
+            "qty",
+            "bns",
+            "qty",
+            "bn s",
+            "qty",
+            "qty+bns"
+          ]
+        },
+        {
+          "page": 1,
+          "table_index": 1,
+          "rows": 29,
+          "cols": 18,
+          "type": "other_table",
+          "header0": [
+            "2320",
+            "052034*AMINAL 120ML SYP",
+            "90",
+            "-",
+            "149",
+            "15",
+            "-",
+            "-",
+            "-",
+            "-",
+            "-",
+            "-",
+            "",
+            "-",
+            "",
+            "-"
+          ],
+          "header1": [
+            "2302",
+            "052006*APIVO 120ML SYP",
+            "85",
+            "-",
+            "6",
+            "-",
+            "-",
+            "-",
+            "-",
+            "-",
+            "-",
+            "-",
+            "",
+            "-",
+            "",
+            "-"
+          ],
+          "header0_norm": [
+            "2320",
+            "052034*aminal 120ml syp",
+            "90",
+            "-",
+            "149",
+            "15",
+            "-",
+            "-",
+            "-",
+            "-"
+          ],
+          "header1_norm": [
+            "2302",
+            "052006*apivo 120ml syp",
+            "85",
+            "-",
+            "6",
+            "-",
+            "-",
+            "-",
+            "-",
+            "-"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        16,
+        [
+          "opening",
+          "purchase",
+          "p-return",
+          "g-sale",
+          "s.ret",
+          "net sale"
+        ],
+        [
+          "id",
+          "description",
+          "tp",
+          "qty+bns",
+          "qty",
+          "bns"
+        ]
+      ],
+      "extract": {
+        "template_used": "fmt-medicronis-erp-statement",
+        "distributor_hint": "fmt-medicronis-erp-statement",
+        "distributor_name_hint": "RUMAN MEDICINE",
+        "row_count": 18,
+        "rows_with_sales": 18,
+        "confidence": 0.95,
+        "sample_products": [
+          "052008*GeeT.N 30G OINTMENT",
+          "052002*G-TAX 1G INJ",
+          "052009*KHAAJ GO BAR"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "Shafiq Medicine Company Khanpur.pdf",
+      "pages": 2,
+      "has_text": true,
+      "distributor_hint": "SHAFIQUE MEDICINE COMPANY - KHANPUR",
+      "detected_pattern": null,
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 2,
+          "cols": 14,
+          "type": "other_table",
+          "header0": [
+            "Item Description",
+            "Rate",
+            "Pack",
+            "Opening\nBalance",
+            "PURCHASE",
+            "",
+            "",
+            "SALE",
+            "",
+            "",
+            "CLOSING",
+            "",
+            "Today\nSale",
+            "Today\nReturn"
+          ],
+          "header1": [
+            "",
+            "",
+            "",
+            "",
+            "Purchase",
+            "Return",
+            "Total",
+            "Net Sales",
+            "Bonus",
+            "Value",
+            "Balance",
+            "Value",
+            "",
+            ""
+          ],
+          "header0_norm": [
+            "item description",
+            "rate",
+            "pack",
+            "opening balance",
+            "purchase",
+            "sale",
+            "closing",
+            "today sale",
+            "today return"
+          ],
+          "header1_norm": [
+            "purchase",
+            "return",
+            "total",
+            "net sales",
+            "bonus",
+            "value",
+            "balance",
+            "value"
+          ]
+        },
+        {
+          "page": 1,
+          "table_index": 1,
+          "rows": 29,
+          "cols": 14,
+          "type": "other_table",
+          "header0": [
+            "128036 AMINAL 120ML SYP",
+            "90.00",
+            "",
+            "73 11",
+            "- -",
+            "- -",
+            "73 11",
+            "19",
+            "1",
+            "1710",
+            "54 10",
+            "4860",
+            "-",
+            "-"
+          ],
+          "header1": [
+            "128005 APIVO 120ML SYP",
+            "85.00",
+            "",
+            "- -",
+            "- -",
+            "- -",
+            "- -",
+            "-",
+            "-",
+            "-",
+            "- -",
+            "-",
+            "-",
+            "-"
+          ],
+          "header0_norm": [
+            "128036 aminal 120ml syp",
+            "90.00",
+            "73 11",
+            "- -",
+            "- -",
+            "73 11",
+            "19",
+            "1",
+            "1710",
+            "54 10"
+          ],
+          "header1_norm": [
+            "128005 apivo 120ml syp",
+            "85.00",
+            "- -",
+            "- -",
+            "- -",
+            "- -",
+            "-",
+            "-",
+            "-",
+            "- -"
+          ]
+        },
+        {
+          "page": 2,
+          "table_index": 0,
+          "rows": 15,
+          "cols": 14,
+          "type": "other_table",
+          "header0": [
+            "Item Description",
+            "Rate",
+            "Pack",
+            "Opening\nBalance",
+            "PURCHASE",
+            "",
+            "",
+            "SALE",
+            "",
+            "",
+            "CLOSING",
+            "",
+            "Today\nSale",
+            "Today\nReturn"
+          ],
+          "header1": [
+            "",
+            "",
+            "",
+            "",
+            "Purchase",
+            "Return",
+            "Total",
+            "Net Sales",
+            "Bonus",
+            "Value",
+            "Balance",
+            "Value",
+            "",
+            ""
+          ],
+          "header0_norm": [
+            "item description",
+            "rate",
+            "pack",
+            "opening balance",
+            "purchase",
+            "sale",
+            "closing",
+            "today sale",
+            "today return"
+          ],
+          "header1_norm": [
+            "purchase",
+            "return",
+            "total",
+            "net sales",
+            "bonus",
+            "value",
+            "balance",
+            "value"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        14,
+        [
+          "item description",
+          "rate",
+          "pack",
+          "opening balance",
+          "purchase",
+          "sale"
+        ],
+        [
+          "purchase",
+          "return",
+          "total",
+          "net sales",
+          "bonus",
+          "value"
+        ]
+      ],
+      "extract": {
+        "template_used": "fmt-item-desc-net-sales",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "SHAFIQUE MEDICINE COMPANY - KHANPUR",
+        "row_count": 18,
+        "rows_with_sales": 18,
+        "confidence": 0.7,
+        "sample_products": [
+          "128036 AMINAL 120ML SYP",
+          "128040 BERRY FLOW SACHET",
+          "128007 CEFPAK 1GM INJ IV"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "The Hamza Traders Kasur.pdf",
+      "pages": 2,
+      "has_text": true,
+      "distributor_hint": "THE HAMZA TRADERS KASUR",
+      "detected_pattern": null,
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 1,
+          "rows": 2,
+          "cols": 1,
+          "type": "other_table",
+          "header0": [
+            "MEDICRONIS PHARMACEUTICAL"
+          ],
+          "header1": [
+            "TRADING GROUP"
+          ],
+          "header0_norm": [
+            "medicronis pharmaceutical"
+          ],
+          "header1_norm": [
+            "trading group"
+          ]
+        },
+        {
+          "page": 1,
+          "table_index": 2,
+          "rows": 31,
+          "cols": 10,
+          "type": "other_table",
+          "header0": [
+            "AMINAL PLUS SYP",
+            "90.00",
+            "71",
+            "",
+            "71",
+            "10",
+            "900.00",
+            "1",
+            "60",
+            "5,400.00"
+          ],
+          "header1": [
+            "BERRY FLOW SACHET",
+            "115.00",
+            "40",
+            "60",
+            "100",
+            "28",
+            "3,220.00",
+            "",
+            "72",
+            "8,280.00"
+          ],
+          "header0_norm": [
+            "aminal plus syp",
+            "90.00",
+            "71",
+            "71",
+            "10",
+            "900.00",
+            "1",
+            "60",
+            "5,400.00"
+          ],
+          "header1_norm": [
+            "berry flow sachet",
+            "115.00",
+            "40",
+            "60",
+            "100",
+            "28",
+            "3,220.00",
+            "72",
+            "8,280.00"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        1,
+        [
+          "medicronis pharmaceutical"
+        ],
+        [
+          "trading group"
+        ]
+      ],
+      "extract": {
+        "template_used": "generic",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "THE HAMZA TRADERS KASUR",
+        "row_count": 25,
+        "rows_with_sales": 6,
+        "confidence": 0.7,
+        "sample_products": [
+          "AMINAL PLUS SYP",
+          "MEDEGAR SYP",
+          "MEDELAC SYP"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "Umar Medicine Swabi.PDF",
+      "pages": 2,
+      "has_text": true,
+      "distributor_hint": "UMAR MEDICINE DISTRIBUTION",
+      "detected_pattern": null,
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 2,
+          "cols": 19,
+          "type": "other_table",
+          "header0": [
+            "Product Name T.P. Tax",
+            "Opening",
+            "",
+            "Purchase",
+            "",
+            "",
+            "B.C",
+            "Sale",
+            "",
+            "Sale Return",
+            "",
+            "Net Sale",
+            "",
+            "",
+            "P.R",
+            "Transfer / Av."
+          ],
+          "header1": [
+            "",
+            "Qty.",
+            "Value",
+            "Qty.",
+            "Bon",
+            "Value",
+            "S. In",
+            "Qty.",
+            "Bon",
+            "Qty.",
+            "Bon",
+            "Qty.",
+            "Bon",
+            "Value",
+            "S. Out",
+            "Out"
+          ],
+          "header0_norm": [
+            "product name t.p. tax",
+            "opening",
+            "purchase",
+            "b.c",
+            "sale",
+            "sale return",
+            "net sale",
+            "p.r",
+            "transfer / av.",
+            "closing balance"
+          ],
+          "header1_norm": [
+            "qty.",
+            "value",
+            "qty.",
+            "bon",
+            "value",
+            "s. in",
+            "qty.",
+            "bon",
+            "qty.",
+            "bon"
+          ]
+        },
+        {
+          "page": 2,
+          "table_index": 0,
+          "rows": 2,
+          "cols": 19,
+          "type": "other_table",
+          "header0": [
+            "Product Name T.P. Tax",
+            "Opening",
+            "",
+            "Purchase",
+            "",
+            "",
+            "B.C",
+            "Sale",
+            "",
+            "Sale Return",
+            "",
+            "Net Sale",
+            "",
+            "",
+            "P.R",
+            "Transfer / Av."
+          ],
+          "header1": [
+            "",
+            "Qty.",
+            "Value",
+            "Qty.",
+            "Bon",
+            "Value",
+            "S. In",
+            "Qty.",
+            "Bon",
+            "Qty.",
+            "Bon",
+            "Qty.",
+            "Bon",
+            "Value",
+            "S. Out",
+            "Out"
+          ],
+          "header0_norm": [
+            "product name t.p. tax",
+            "opening",
+            "purchase",
+            "b.c",
+            "sale",
+            "sale return",
+            "net sale",
+            "p.r",
+            "transfer / av.",
+            "closing balance"
+          ],
+          "header1_norm": [
+            "qty.",
+            "value",
+            "qty.",
+            "bon",
+            "value",
+            "s. in",
+            "qty.",
+            "bon",
+            "qty.",
+            "bon"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        19,
+        [
+          "product name t.p. tax",
+          "opening",
+          "purchase",
+          "b.c",
+          "sale",
+          "sale return"
+        ],
+        [
+          "qty.",
+          "value",
+          "qty.",
+          "bon",
+          "value",
+          "s. in"
+        ]
+      ],
+      "extract": {
+        "template_used": "generic",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "UMAR MEDICINE DISTRIBUTION",
+        "row_count": 37,
+        "rows_with_sales": 0,
+        "confidence": 0.7,
+        "sample_products": []
+      },
+      "errors": []
+    },
+    {
+      "file": "Wellcome Pharma alipur.pdf",
+      "pages": 1,
+      "has_text": true,
+      "distributor_hint": "Wellcome Pharma (ALIPUR)",
+      "detected_pattern": "STOCK STATEMENT",
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 46,
+          "cols": 15,
+          "type": "other_table",
+          "header0": [
+            "Sales and Stock Statement",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "header1": [
+            "From Date:01/07/2026 To Date:31/07/2026 Printing Date: 31/07/2026\nCompany:MEDICRONICS LABORTARIES ,Selected groups, Sale Calculated on Sale price Printing Time: 8:46:07PM",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "header0_norm": [
+            "sales and stock statement"
+          ],
+          "header1_norm": [
+            "from date:01/07/2026 to date:31/07/2026 printing date: 31/07/2026 company:medicronics labortaries ,selected groups, sale calculated on sale price printing time: 8:46:07pm"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        15,
+        [
+          "sales and stock statement"
+        ],
+        [
+          "from date:01/07/2026 to date:31/07/2026 printing date: 31/07/2026 company:medicronics labortaries ,selected groups, sale calculated on sale price printing time: 8:46:07pm"
+        ]
+      ],
+      "extract": {
+        "template_used": "fmt-medicronis-erp-statement",
+        "distributor_hint": "fmt-medicronis-erp-statement",
+        "distributor_name_hint": "Wellcome Pharma (ALIPUR)",
+        "row_count": 30,
+        "rows_with_sales": 30,
+        "confidence": 0.95,
+        "sample_products": [
+          "AMINAL SYP(120ML)",
+          "BERRYFLOW SACHETY(10S)",
+          "CIPAK INF(100ML)"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "Zafar & Sons NWS.pdf",
+      "pages": 2,
+      "has_text": true,
+      "distributor_hint": "COMPANY WISE STOCK & SALES STATEMENT (TP)",
+      "detected_pattern": null,
+      "tables": [],
+      "family_key": [
+        "no_table",
+        true,
+        2
+      ],
+      "extract": {
+        "template_used": "generic",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "COMPANY NAME : MEDICRONIS PHARMACEUTICALS PVT",
+        "row_count": 0,
+        "rows_with_sales": 0,
+        "confidence": 0.2,
+        "sample_products": []
+      },
+      "errors": []
+    },
+    {
+      "file": "Zavion Pharma Jhang.pdf",
+      "pages": 2,
+      "has_text": true,
+      "distributor_hint": "SALES & STOCK REPORT v5 ZAVION MARKETING",
+      "detected_pattern": null,
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 2,
+          "cols": 14,
+          "type": "other_table",
+          "header0": [
+            "Code",
+            "Product",
+            "TP",
+            "Opening",
+            "",
+            "Purchase",
+            "",
+            "",
+            "Net Sale",
+            "",
+            "",
+            "Purchase Return",
+            "",
+            ""
+          ],
+          "header1": [
+            "",
+            "",
+            "",
+            "Qty",
+            "Value",
+            "Qty",
+            "Bon.",
+            "Value",
+            "Qty",
+            "Bon.",
+            "Value",
+            "Qty",
+            "Bon.",
+            "Value"
+          ],
+          "header0_norm": [
+            "code",
+            "product",
+            "tp",
+            "opening",
+            "purchase",
+            "net sale",
+            "purchase return"
+          ],
+          "header1_norm": [
+            "qty",
+            "value",
+            "qty",
+            "bon.",
+            "value",
+            "qty",
+            "bon.",
+            "value",
+            "qty",
+            "bon."
+          ]
+        },
+        {
+          "page": 1,
+          "table_index": 1,
+          "rows": 2,
+          "cols": 2,
+          "type": "other_table",
+          "header0": [
+            "Closing",
+            ""
+          ],
+          "header1": [
+            "Qty",
+            "Value"
+          ],
+          "header0_norm": [
+            "closing"
+          ],
+          "header1_norm": [
+            "qty",
+            "value"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        14,
+        [
+          "code",
+          "product",
+          "tp",
+          "opening",
+          "purchase",
+          "net sale"
+        ],
+        [
+          "qty",
+          "value",
+          "qty",
+          "bon.",
+          "value",
+          "qty"
+        ]
+      ],
+      "extract": {
+        "template_used": "generic",
+        "distributor_hint": "generic",
+        "distributor_name_hint": "CIVIL LINE NEAR UBL CHOWK BOOK SOURCE STREET JHANG",
+        "row_count": 13,
+        "rows_with_sales": 0,
+        "confidence": 0.7,
+        "sample_products": []
+      },
+      "errors": []
+    },
+    {
+      "file": "sHAHZAIB pHARMA Okara30.pdf",
+      "pages": 1,
+      "has_text": true,
+      "distributor_hint": "Shahzaib Pharma Distributors (Okara)",
+      "detected_pattern": "STOCK STATEMENT",
+      "tables": [
+        {
+          "page": 1,
+          "table_index": 0,
+          "rows": 46,
+          "cols": 15,
+          "type": "other_table",
+          "header0": [
+            "Sales and Stock Statement",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "header1": [
+            "From Date:01/07/2026 To Date:30/07/2026 Printing Date: 30/07/2026\nCompany:Medicronis Pharmaceutical ,Selected groups, Sale Calculated on Sale price Printing Time: 8:31:25PM",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "header0_norm": [
+            "sales and stock statement"
+          ],
+          "header1_norm": [
+            "from date:01/07/2026 to date:30/07/2026 printing date: 30/07/2026 company:medicronis pharmaceutical ,selected groups, sale calculated on sale price printing time: 8:31:25pm"
+          ]
+        }
+      ],
+      "family_key": [
+        "other_table",
+        15,
+        [
+          "sales and stock statement"
+        ],
+        [
+          "from date:01/07/2026 to date:30/07/2026 printing date: 30/07/2026 company:medicronis pharmaceutical ,selected groups, sale calculated on sale price printing time: 8:31:25pm"
+        ]
+      ],
+      "extract": {
+        "template_used": "fmt-medicronis-erp-statement",
+        "distributor_hint": "fmt-medicronis-erp-statement",
+        "distributor_name_hint": "Shahzaib Pharma Distributors (Okara)",
+        "row_count": 28,
+        "rows_with_sales": 28,
+        "confidence": 0.95,
+        "sample_products": [
+          "Aminal Syp.(120ml)",
+          "Berryflow Sachet.(10,s)",
+          "Cipak-200mg Infusion(1,s)"
+        ]
+      },
+      "errors": []
+    }
+  ]
+}

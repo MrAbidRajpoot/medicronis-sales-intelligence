@@ -1,0 +1,24 @@
+{
+  "distributor_code": "fmt-medicronis-erp-statement",
+  "name": "Medicronis ERP — Sales and Stock Statement",
+  "detection": {
+    "title_patterns": [
+      "SALES AND STOCK STATEMENT"
+    ],
+    "header_keywords": ["PR.ID", "PRODUCT", "NET SALE"]
+  },
+  "table_format": "medicronis_erp_statement",
+  "table_settings": {
+    "skip_rows_containing": [
+      "total",
+      "group:",
+      "grand total",
+      "page",
+      "developed by",
+      "softronix",
+      "net opening value",
+      "net purchase value",
+      "net sale value"
+    ]
+  }
+}

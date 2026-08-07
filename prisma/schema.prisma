@@ -1,0 +1,366 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ??? Enums ???????????????????????????????????????????????????????????????????
+
+enum DocumentStatus {
+  UPLOADED
+  PROCESSING
+  EXTRACTED
+  REVIEW_REQUIRED
+  APPROVED
+  FAILED
+}
+
+enum ExtractionRunStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum ExtractedRowStatus {
+  PENDING
+  MATCHED
+  UNMATCHED
+  REVIEWED
+  REJECTED
+}
+
+enum SalesBatchStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  EXPORTED
+}
+
+enum SsrReportStatus {
+  GENERATING
+  READY
+  FAILED
+}
+
+enum SsrViewType {
+  DAY
+  WEEK
+  MONTH
+}
+
+enum DistributorRegion {
+  SOUTH
+  CENTER_1
+  CENTER_2
+  NORTH_1
+  NORTH_2
+}
+
+enum DistributorCountry {
+  PAK_1
+  PAK_2
+}
+
+// ??? Master Data ?????????????????????????????????????????????????????????????
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  documents   Document[]
+  salesBatches SalesBatch[]
+  ssrReports  SsrReport[]
+}
+
+model Manager {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  distributors Distributor[]
+}
+
+model Manufacturer {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products Product[]
+}
+
+model Distributor {
+  id        String              @id @default(cuid())
+  code      String              @unique
+  name      String
+  region    DistributorRegion?
+  country   DistributorCountry?
+  city      String?
+  managerId String?
+  isActive  Boolean             @default(true)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  manager         Manager?                  @relation(fields: [managerId], references: [id])
+  templates       DistributorTemplate[]
+  productMappings DistributorProductMapping[]
+  documents       Document[]
+  salesBatches    SalesBatch[]
+  dailySalesFacts DailySalesFact[]
+
+  @@index([managerId])
+}
+
+model DistributorTemplate {
+  id            String   @id @default(cuid())
+  distributorId String
+  name          String
+  description   String?
+  version       Int      @default(1)
+  isActive      Boolean  @default(true)
+  config        Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  distributor Distributor @relation(fields: [distributorId], references: [id])
+  documents   Document[]
+
+  @@index([distributorId])
+}
+
+model Product {
+  id                 String   @id @default(cuid())
+  sku                String   @unique
+  name               String
+  category           String?
+  composition        String?
+  manufacturerId     String?
+  shipperSize        Int?
+  mrp                Decimal? @db.Decimal(12, 2)
+  tp                 Decimal? @db.Decimal(12, 2)
+  oldSp              Decimal? @db.Decimal(12, 2)
+  newSp              Decimal? @db.Decimal(12, 2)
+  netPrice           Decimal? @db.Decimal(12, 2)
+  tax                Decimal? @db.Decimal(12, 2)
+  netPriceWith1Pct   Decimal? @db.Decimal(12, 2)
+  bonus              String?
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  manufacturer        Manufacturer?             @relation(fields: [manufacturerId], references: [id])
+  aliases             ProductAlias[]
+  distributorMappings DistributorProductMapping[]
+  extractedRows       ExtractedRow[]
+  salesLines          SalesLine[]
+  dailySalesFacts     DailySalesFact[]
+
+  @@index([manufacturerId])
+}
+
+model ProductAlias {
+  id        String @id @default(cuid())
+  productId String
+  alias     String
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, alias])
+  @@index([alias])
+}
+
+model DistributorProductMapping {
+  id             String   @id @default(cuid())
+  distributorId  String
+  rawProductText String
+  productId      String
+  confidence     Float    @default(1.0)
+  isVerified     Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  distributor Distributor @relation(fields: [distributorId], references: [id])
+  product     Product     @relation(fields: [productId], references: [id])
+
+  @@unique([distributorId, rawProductText])
+  @@index([distributorId, rawProductText])
+}
+
+// ??? Documents & Extraction ??????????????????????????????????????????????????
+
+model Document {
+  id            String         @id @default(cuid())
+  fileName      String
+  filePath      String
+  fileHash      String
+  fileSize      Int
+  mimeType      String         @default("application/pdf")
+  status        DocumentStatus @default(UPLOADED)
+  distributorId String?
+  templateId    String?
+  uploadedById  String
+  periodStart   DateTime?
+  periodEnd     DateTime?
+  reportDate    DateTime       @db.Date
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  distributor      Distributor?         @relation(fields: [distributorId], references: [id])
+  template         DistributorTemplate? @relation(fields: [templateId], references: [id])
+  uploadedBy       User                 @relation(fields: [uploadedById], references: [id])
+  extractionRuns   ExtractionRun[]
+  salesBatches     SalesBatch[]
+  dailySalesFacts  DailySalesFact[]
+
+  @@index([fileHash])
+  @@index([status])
+  @@index([distributorId])
+  @@index([distributorId, reportDate])
+}
+
+model ExtractionRun {
+  id           String              @id @default(cuid())
+  documentId   String
+  status       ExtractionRunStatus @default(PENDING)
+  startedAt    DateTime?
+  completedAt  DateTime?
+  rowCount     Int                 @default(0)
+  matchedCount Int                 @default(0)
+  errorMessage String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  document      Document       @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  extractedRows ExtractedRow[]
+
+  @@index([documentId])
+  @@index([status])
+}
+
+model ExtractedRow {
+  id              String             @id @default(cuid())
+  extractionRunId String
+  rowIndex        Int
+  rawProductText  String
+  quantity        Decimal            @db.Decimal(12, 2)
+  unitPrice       Decimal?           @db.Decimal(12, 2)
+  lineTotal       Decimal?           @db.Decimal(12, 2)
+  status          ExtractedRowStatus @default(PENDING)
+  productId       String?
+  distributorId   String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  extractionRun ExtractionRun @relation(fields: [extractionRunId], references: [id], onDelete: Cascade)
+  product       Product?      @relation(fields: [productId], references: [id])
+  salesLine     SalesLine?
+
+  @@index([extractionRunId])
+  @@index([status])
+  @@index([distributorId, rawProductText])
+}
+
+// ??? Sales & SSR ?????????????????????????????????????????????????????????????
+
+model SalesBatch {
+  id            String           @id @default(cuid())
+  batchCode     String           @unique
+  distributorId String
+  documentId    String?
+  periodStart   DateTime
+  periodEnd     DateTime
+  status        SalesBatchStatus @default(DRAFT)
+  lineCount     Int              @default(0)
+  totalQuantity Decimal          @default(0) @db.Decimal(14, 2)
+  totalValue    Decimal          @default(0) @db.Decimal(14, 2)
+  createdById   String
+  approvedAt    DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  distributor Distributor @relation(fields: [distributorId], references: [id])
+  document    Document?   @relation(fields: [documentId], references: [id])
+  createdBy   User        @relation(fields: [createdById], references: [id])
+  salesLines  SalesLine[]
+  ssrReports  SsrReport[]
+
+  @@index([distributorId])
+  @@index([periodStart, periodEnd])
+  @@index([status])
+}
+
+model SalesLine {
+  id             String   @id @default(cuid())
+  salesBatchId   String
+  productId      String
+  extractedRowId String?  @unique
+  quantity       Decimal  @db.Decimal(12, 2)
+  unitPrice      Decimal? @db.Decimal(12, 2)
+  lineTotal      Decimal? @db.Decimal(12, 2)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  salesBatch   SalesBatch    @relation(fields: [salesBatchId], references: [id], onDelete: Cascade)
+  product      Product       @relation(fields: [productId], references: [id])
+  extractedRow ExtractedRow? @relation(fields: [extractedRowId], references: [id])
+
+  @@index([salesBatchId])
+  @@index([productId])
+}
+
+model DailySalesFact {
+  id               String    @id @default(cuid())
+  distributorId    String
+  productId        String
+  saleDate         DateTime  @db.Date
+  quantity         Decimal   @db.Decimal(12, 2)
+  unitPrice        Decimal?  @db.Decimal(12, 2)
+  salesValue       Decimal?  @db.Decimal(14, 2)
+  closingStock     Decimal?  @db.Decimal(12, 2)
+  returnsQty       Decimal?  @db.Decimal(12, 2)
+  sourceDocumentId String?
+  approvedAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  distributor    Distributor @relation(fields: [distributorId], references: [id])
+  product        Product     @relation(fields: [productId], references: [id])
+  sourceDocument Document?   @relation(fields: [sourceDocumentId], references: [id])
+
+  @@unique([distributorId, productId, saleDate])
+  @@index([saleDate])
+  @@index([distributorId, saleDate])
+  @@index([sourceDocumentId])
+}
+
+model SsrReport {
+  id            String          @id @default(cuid())
+  salesBatchId  String?
+  viewType      SsrViewType?
+  asOfDate      DateTime?       @db.Date
+  filePath      String?
+  pdfFilePath   String?
+  status        SsrReportStatus @default(GENERATING)
+  generatedById String
+  generatedAt   DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  salesBatch  SalesBatch? @relation(fields: [salesBatchId], references: [id])
+  generatedBy User        @relation(fields: [generatedById], references: [id])
+
+  @@index([salesBatchId])
+  @@index([asOfDate, viewType])
+  @@index([status])
+}

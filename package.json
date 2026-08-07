@@ -1,0 +1,32 @@
+{
+  "name": "medicronis",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=apps/web",
+    "worker:dev": "cd services/pdf-worker && python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload",
+    "build": "npm run build --workspace=apps/web",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio",
+    "db:setup-local": "powershell -ExecutionPolicy Bypass -File scripts/setup-local-db.ps1"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^20.14.0",
+    "bcryptjs": "^2.4.3",
+    "prisma": "^5.22.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0"
+  }
+}

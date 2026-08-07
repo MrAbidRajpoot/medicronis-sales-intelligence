@@ -1,0 +1,19 @@
+{
+  "distributor_code": "ssr-stock-return-16col",
+  "name": "Medicronis SSR — Sales, Stock & Return Report (16 columns)",
+  "detection": {
+    "title_patterns": [],
+    "header_keywords": ["ITEM", "RATE", "NET SALE"]
+  },
+  "table_format": "ssr_stock_return",
+  "column_indices": {
+    "raw_product_text": 0,
+    "unit_price": 1,
+    "returns_qty": 9,
+    "quantity": 11,
+    "gross_value": 13
+  },
+  "table_settings": {
+    "skip_rows_containing": ["total", "group:", "grand total", "page"]
+  }
+}

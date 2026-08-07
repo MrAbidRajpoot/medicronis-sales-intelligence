@@ -1,0 +1,21 @@
+{
+  "distributor_code": "DIST-001",
+  "name": "MedSupply Karachi Standard",
+  "detection": {
+    "title_patterns": ["MedSupply", "MEDSUPPLY", "DIST-001"],
+    "header_keywords": ["Product Name", "Qty", "Unit Price"]
+  },
+  "field_mapping": {
+    "raw_product_text": ["Product Name", "Product", "Item"],
+    "raw_product_code": ["Code", "SKU", "Product Code"],
+    "quantity": ["Qty", "Quantity", "Sold"],
+    "unit_price": ["Unit Price", "Rate", "Price"],
+    "gross_value": ["Amount", "Value", "Gross", "Total"],
+    "returns_qty": ["Returns", "Ret Qty"],
+    "transaction_date": ["Date", "Txn Date"],
+    "customer_name": ["Customer", "Outlet", "Pharmacy"]
+  },
+  "table_settings": {
+    "skip_rows_containing": ["Total", "Subtotal", "Grand Total", "Page"]
+  }
+}
