@@ -2,9 +2,82 @@ from __future__ import annotations
 
 from rapidfuzz import fuzz, process
 
+SUGGESTION_MIN_SCORE = 60
+SUGGESTION_MAX = 4
+
 
 def _normalize(text: str) -> str:
     return " ".join(text.upper().split())
+
+
+def get_product_suggestions(
+    raw_text: str,
+    products: list[dict],
+    aliases: list[dict],
+    *,
+    min_score: int = SUGGESTION_MIN_SCORE,
+    limit: int = SUGGESTION_MAX,
+) -> list[dict]:
+    """Catalog-only fuzzy suggestions for human review (aliases + product names)."""
+    norm = _normalize(raw_text)
+    if not norm:
+        return []
+
+    product_by_id = {p["id"]: p for p in products}
+    best_by_product: dict[str, tuple[float, str]] = {}
+
+    alias_index: dict[str, dict] = {}
+    for a in aliases:
+        alias_index[_normalize(a["alias"])] = product_by_id.get(a["product_id"], {})
+
+    alias_keys = list(alias_index.keys())
+    if alias_keys:
+        for matched_text, score, _ in process.extract(
+            norm,
+            alias_keys,
+            scorer=fuzz.token_sort_ratio,
+            score_cutoff=min_score,
+            limit=limit * 2,
+        ):
+            p = alias_index[matched_text]
+            if not p:
+                continue
+            pid = p["id"]
+            conf = score / 100
+            if pid not in best_by_product or conf > best_by_product[pid][0]:
+                best_by_product[pid] = (conf, "alias_fuzzy")
+
+    product_names = [(p["id"], _normalize(p["name"])) for p in products]
+    if product_names:
+        names = [n for _, n in product_names]
+        name_to_pid = {n: pid for pid, n in product_names}
+        for matched_text, score, _ in process.extract(
+            norm,
+            names,
+            scorer=fuzz.token_sort_ratio,
+            score_cutoff=min_score,
+            limit=limit * 2,
+        ):
+            pid = name_to_pid[matched_text]
+            conf = score / 100
+            if pid not in best_by_product or conf > best_by_product[pid][0]:
+                best_by_product[pid] = (conf, "product_fuzzy")
+
+    results: list[dict] = []
+    for pid, (conf, method) in sorted(best_by_product.items(), key=lambda x: x[1][0], reverse=True)[
+        :limit
+    ]:
+        p = product_by_id.get(pid, {})
+        results.append(
+            {
+                "product_id": pid,
+                "sku": p.get("sku"),
+                "name": p.get("name"),
+                "confidence": conf,
+                "match_method": method,
+            }
+        )
+    return results
 
 
 def match_rows(

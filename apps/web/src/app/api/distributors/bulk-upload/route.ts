@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { resolveManagerId } from "@/lib/distributor-helpers";
 import { parseDistributorImportFile } from "@/lib/distributor-import";
@@ -38,6 +39,16 @@ export async function POST(request: NextRequest) {
       ).map((d) => d.code)
     );
 
+    const defaultFormat = await prisma.pdfFormat.findFirst({
+      where: { code: "fmt-a-ssr-stock-return", isActive: true },
+    });
+    if (!defaultFormat) {
+      return NextResponse.json(
+        { error: "Default PDF format (family A) not seeded — run db:seed" },
+        { status: 500 }
+      );
+    }
+
     let created = 0;
     let skipped = 0;
     let failed = 0;
@@ -64,7 +75,18 @@ export async function POST(request: NextRequest) {
             region: row.region,
             country: row.country,
             city: row.city,
+            pdfFormatId: defaultFormat.id,
             ...(managerId !== undefined && managerId !== null && { managerId }),
+            templates: {
+              create: {
+                name: `${defaultFormat.name} — ${row.name}`,
+                description: `Format family ${defaultFormat.family} default config (bulk import)`,
+                version: 1,
+                isActive: true,
+                configuredAt: new Date(),
+                config: defaultFormat.defaultConfig as Prisma.InputJsonValue,
+              },
+            },
           },
         });
 

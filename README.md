@@ -29,8 +29,16 @@ You will be prompted for your **postgres superuser password** (set during Postgr
 Start PDF worker in a second terminal:
 
 ```bash
+npm run worker:dev
+```
+
+Or manually:
+
+```bash
 cd services/pdf-worker && pip install -r requirements.txt && uvicorn main:app --reload --port 8000
 ```
+
+See [services/pdf-worker/README.md](./services/pdf-worker/README.md) for API and extraction details.
 
 Open [http://localhost:3000](http://localhost:3000) — password: **`demo`**
 
@@ -107,7 +115,7 @@ Vercel serverless filesystem is **read-only** except `/tmp`. The app auto-uses `
 
 ## Known Demo Limitations
 
-- **3 PDF templates** (DIST-001, DIST-002, generic) — not all 48 distributors
+- **10 PDF format families (A–J)** — seeded in `PdfFormat`; each distributor has a DB-backed `TemplateConfig`
 - **OCR optional** — scanned PDFs may fail without Tesseract on worker
 - **No email, audit trail, or ERP modules**
 - **Single shared password** — not multi-user RBAC
@@ -129,6 +137,7 @@ python scripts/generate_sample_pdfs.py
 
 ```bash
 npm run dev              # Web app :3000
+npm run worker:dev       # PDF worker :8000
 npm run db:studio        # Prisma Studio
 docker compose up -d     # Local Postgres
 ```

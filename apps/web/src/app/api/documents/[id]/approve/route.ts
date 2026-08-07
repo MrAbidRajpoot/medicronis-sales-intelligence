@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getDemoUserId, getLatestExtractionRun } from "@/lib/db-helpers";
+import { getLatestExtractionRun } from "@/lib/db-helpers";
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +59,9 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
           : qty * (unitPrice ?? 0);
         totalValue += salesValue;
 
+        const closingStock = row.closingStock ? Number(row.closingStock) : null;
+        const returnsQty = row.returnsQty ? Number(row.returnsQty) : null;
+
         await tx.dailySalesFact.upsert({
           where: {
             distributorId_productId_saleDate: {
@@ -74,6 +77,8 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
             quantity: qty,
             unitPrice,
             salesValue,
+            closingStock,
+            returnsQty,
             sourceDocumentId: doc.id,
             approvedAt: now,
           },
@@ -81,6 +86,8 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
             quantity: qty,
             unitPrice,
             salesValue,
+            closingStock,
+            returnsQty,
             sourceDocumentId: doc.id,
             approvedAt: now,
           },
@@ -91,6 +98,13 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
         where: { id: doc.id },
         data: { status: "APPROVED" },
       });
+
+      if (doc.templateId && run.rowCount > 0) {
+        await tx.distributorTemplate.update({
+          where: { id: doc.templateId },
+          data: { lastSuccessfulRowCount: run.rowCount },
+        });
+      }
     });
 
     return NextResponse.json({

@@ -1,12 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { saveUploadedFile } from "@/lib/storage";
-import { extractPdf, matchRows } from "@/lib/pdf-worker";
+import { extractPdf, getPdfDistributorHint, matchRows } from "@/lib/pdf-worker";
 import { expandUploadFiles } from "@/lib/zip-utils";
 import { DocumentStatus, ExtractedRowStatus } from "@prisma/client";
 
-import { getDemoUserId, findDistributorByExtractHints } from "@/lib/db-helpers";
+import {
+  getDemoUserId,
+  findDistributorByExtractHints,
+  loadDistributorUploadContext,
+  TEMPLATE_MISMATCH_MESSAGE,
+  type DistributorUploadContext,
+} from "@/lib/db-helpers";
+import { detectTemplateMismatch } from "@/lib/template-mismatch";
 import { parseIsoDate, todayIsoDate, isFutureDate } from "@/lib/date-utils";
+import type { ExtractMethod } from "@/lib/pdf-template-types";
+
+function formatExtractMethod(method: ExtractMethod | undefined): string {
+  if (method === "line_fallback") return "Line parser fallback";
+  if (method === "alternate_settings") return "Alternate pdfplumber settings";
+  if (method === "table") return "Table extraction";
+  return "Unknown";
+}
 
 function mapRowStatus(matchStatus: string): ExtractedRowStatus {
   if (matchStatus === "matched") return "MATCHED";
@@ -14,18 +29,105 @@ function mapRowStatus(matchStatus: string): ExtractedRowStatus {
   return "UNMATCHED";
 }
 
-function mapDocumentStatus(matched: number, review: number, unknown: number, failed: boolean): DocumentStatus {
+function mapDocumentStatus(
+  matched: number,
+  review: number,
+  unknown: number,
+  templateMismatch: boolean,
+  failed: boolean
+): DocumentStatus {
   if (failed) return "FAILED";
+  if (templateMismatch) return "TEMPLATE_MISMATCH";
   if (review > 0 || unknown > 0) return "REVIEW_REQUIRED";
   if (matched > 0) return "EXTRACTED";
   return "EXTRACTED";
+}
+
+type UploadFileResult = {
+  id: string;
+  fileName: string;
+  status: string;
+  rowCount: number;
+  matchedCount: number;
+  extractMethod?: ExtractMethod;
+  error?: string;
+  distributorId?: string;
+  distributorName?: string;
+  suggestedDistributorId?: string;
+  suggestedDistributorName?: string;
+};
+
+type FileUploadContextResult =
+  | { ok: true; context: DistributorUploadContext }
+  | {
+      ok: false;
+      error: string;
+      suggestedDistributorId?: string;
+      suggestedDistributorName?: string;
+    };
+
+async function resolveFileUploadContext(
+  buffer: Buffer,
+  fileName: string,
+  forceContext: DistributorUploadContext | null
+): Promise<FileUploadContextResult> {
+  if (forceContext) {
+    return { ok: true, context: forceContext };
+  }
+
+  const hint = await getPdfDistributorHint(buffer, fileName);
+  const matched = await findDistributorByExtractHints({
+    distributor_name_hint: hint.distributor_name_hint,
+  });
+
+  if (!matched) {
+    const nameHint = hint.distributor_name_hint?.trim();
+    return {
+      ok: false,
+      error: nameHint
+        ? `Could not match distributor from PDF header: "${nameHint}".`
+        : "Could not detect distributor from PDF header.",
+      suggestedDistributorName: nameHint || undefined,
+    };
+  }
+
+  const loaded = await loadDistributorUploadContext(matched.id);
+  if (!loaded.ok) {
+    return {
+      ok: false,
+      error: loaded.error,
+      suggestedDistributorId: matched.id,
+      suggestedDistributorName: matched.name,
+    };
+  }
+
+  return { ok: true, context: loaded.context };
+}
+
+async function failDocument(
+  documentId: string,
+  runId: string,
+  status: DocumentStatus,
+  message: string
+) {
+  await prisma.extractionRun.update({
+    where: { id: runId },
+    data: { status: "FAILED", completedAt: new Date(), errorMessage: message },
+  });
+  await prisma.document.update({
+    where: { id: documentId },
+    data: { status },
+  });
 }
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const files = formData.getAll("files").filter((f): f is File => f instanceof File);
-    const distributorId = (formData.get("distributorId") as string) || null;
+    const forceDistributorId =
+      (formData.get("forceDistributorId") as string) ||
+      (formData.get("distributorId") as string) ||
+      null;
     const reportDateRaw = (formData.get("reportDate") as string) || todayIsoDate();
 
     const reportDate = parseIsoDate(reportDateRaw);
@@ -47,30 +149,52 @@ export async function POST(request: NextRequest) {
 
     const userId = await getDemoUserId();
 
-    let distributor = distributorId
-      ? await prisma.distributor.findUnique({ where: { id: distributorId } })
-      : null;
+    let forceUploadContext: DistributorUploadContext | null = null;
+    if (forceDistributorId) {
+      const loaded = await loadDistributorUploadContext(forceDistributorId);
+      if (!loaded.ok) {
+        return NextResponse.json({ error: loaded.error }, { status: 400 });
+      }
+      forceUploadContext = loaded.context;
+    }
 
-    const results: { id: string; fileName: string; status: string; rowCount: number; matchedCount: number }[] = [];
+    const results: UploadFileResult[] = [];
     const warnings: string[] = [];
 
-    if (distributorId) {
-      const existing = await prisma.document.findFirst({
+    for (const file of expanded) {
+      const buffer = file.buffer;
+
+      const resolved = await resolveFileUploadContext(buffer, file.name, forceUploadContext);
+      if (!resolved.ok) {
+        results.push({
+          id: "",
+          fileName: file.name,
+          status: "FAILED",
+          rowCount: 0,
+          matchedCount: 0,
+          error: resolved.error,
+          suggestedDistributorId: resolved.suggestedDistributorId,
+          suggestedDistributorName: resolved.suggestedDistributorName,
+        });
+        continue;
+      }
+
+      const fileContext = resolved.context;
+      const fileDistributor = fileContext.distributor;
+
+      const dup = await prisma.document.findFirst({
         where: {
-          distributorId,
+          distributorId: fileDistributor.id,
           reportDate,
           status: "APPROVED",
         },
       });
-      if (existing) {
+      if (dup) {
         warnings.push(
-          `An approved document already exists for this distributor on ${reportDateRaw} (${existing.fileName})`
+          `An approved document already exists for ${fileDistributor.name} on ${reportDateRaw} (${dup.fileName})`
         );
       }
-    }
 
-    for (const file of expanded) {
-      const buffer = file.buffer;
       const { filePath, fileHash, fileSize } = await saveUploadedFile(buffer, file.name);
 
       const document = await prisma.document.create({
@@ -80,7 +204,8 @@ export async function POST(request: NextRequest) {
           fileHash,
           fileSize,
           status: "UPLOADED",
-          distributorId: distributor?.id ?? null,
+          distributorId: fileDistributor.id,
+          templateId: fileContext.template.id,
           uploadedById: userId,
           reportDate,
         },
@@ -100,53 +225,65 @@ export async function POST(request: NextRequest) {
       });
 
       try {
-        const extractResult = await extractPdf(
-          buffer,
-          file.name,
-          distributor?.code ?? null
-        );
+        const extractResult = await extractPdf(buffer, file.name, {
+          distributorCode: fileDistributor.code,
+          formatCode: fileContext.distributor.pdfFormat.code,
+          templateConfig: fileContext.templateConfig,
+        });
 
-        if (!distributor) {
-          const detected = await findDistributorByExtractHints({
-            distributor_hint: extractResult.distributor_hint,
-            distributor_name_hint: extractResult.distributor_name_hint,
+        const extractMethod = (extractResult.extract_method ?? "table") as ExtractMethod;
+        const rowCount = extractResult.rows.length;
+        const templateMismatch = detectTemplateMismatch({
+          rowCount,
+          lastSuccessfulRowCount: fileContext.template.lastSuccessfulRowCount,
+          needsTemplateRemap: extractResult.needs_template_remap,
+          templateResolutionOk: extractResult.template_resolution_ok,
+        });
+        const resolutionFailed =
+          extractResult.needs_template_remap === true || extractResult.template_resolution_ok === false;
+
+        if (templateMismatch) {
+          const reason = extractResult.needs_template_remap
+            ? "PDF layout could not be parsed with the saved template — manual template re-map required."
+            : resolutionFailed
+            ? "Column headers could not be resolved from the saved template mapping."
+            : `Extracted ${rowCount} rows vs ${fileContext.template.lastSuccessfulRowCount} on last approved upload (>30% drop).`;
+
+          await failDocument(
+            document.id,
+            run.id,
+            "TEMPLATE_MISMATCH",
+            `${TEMPLATE_MISMATCH_MESSAGE} — ${reason}`
+          );
+
+          await prisma.extractionRun.update({
+            where: { id: run.id },
+            data: { extractMethod },
           });
-          if (detected) {
-            distributor = detected;
-            await prisma.document.update({
-              where: { id: document.id },
-              data: { distributorId: detected.id },
-            });
 
-            const dup = await prisma.document.findFirst({
-              where: {
-                distributorId: detected.id,
-                reportDate,
-                status: "APPROVED",
-                id: { not: document.id },
-              },
-            });
-            if (dup) {
-              warnings.push(
-                `An approved document already exists for ${detected.name} on ${reportDateRaw} (${dup.fileName})`
-              );
-            }
-          }
+          results.push({
+            id: document.id,
+            fileName: file.name,
+            status: "TEMPLATE_MISMATCH",
+            rowCount,
+            matchedCount: 0,
+            extractMethod,
+            error: TEMPLATE_MISMATCH_MESSAGE,
+            distributorId: fileDistributor.id,
+            distributorName: fileDistributor.name,
+          });
+          continue;
         }
 
-        const distId = distributor?.id ?? document.distributorId;
-
         const [mappings, products, aliases] = await Promise.all([
-          distId
-            ? prisma.distributorProductMapping.findMany({ where: { distributorId: distId } })
-            : Promise.resolve([]),
+          prisma.distributorProductMapping.findMany({ where: { distributorId: fileDistributor.id } }),
           prisma.product.findMany({ where: { isActive: true } }),
           prisma.productAlias.findMany(),
         ]);
 
         const matchResult = await matchRows({
           rows: extractResult.rows,
-          distributor_id: distId,
+          distributor_id: fileDistributor.id,
           mappings: mappings.map((m) => ({
             raw_product_text: m.rawProductText,
             product_id: m.productId,
@@ -165,39 +302,41 @@ export async function POST(request: NextRequest) {
               quantity: row.quantity ?? 0,
               unitPrice: row.unit_price ?? null,
               lineTotal: row.gross_value ?? null,
+              closingStock: row.closing_stock ?? null,
+              returnsQty: row.returns_qty ?? null,
               status: mapRowStatus(row.match_status),
               productId: row.match_status === "matched" ? row.suggested_product_id : null,
-              distributorId: distId,
+              distributorId: fileDistributor.id,
             })),
           });
         }
 
+        const failed = matchResult.rows.length === 0;
         const docStatus = mapDocumentStatus(
           matchResult.matched_count,
           matchResult.review_count,
           matchResult.unknown_count,
-          matchResult.rows.length === 0
+          false,
+          failed
         );
 
         await prisma.extractionRun.update({
           where: { id: run.id },
           data: {
-            status: matchResult.rows.length === 0 ? "FAILED" : "COMPLETED",
+            status: failed ? "FAILED" : "COMPLETED",
             completedAt: new Date(),
             rowCount: matchResult.rows.length,
             matchedCount: matchResult.matched_count,
-            errorMessage:
-              matchResult.rows.length === 0
-                ? `No rows extracted (template: ${extractResult.template_used})`
-                : null,
+            extractMethod,
+            errorMessage: failed
+              ? `No rows extracted (${formatExtractMethod(extractMethod)})`
+              : null,
           },
         });
 
         await prisma.document.update({
           where: { id: document.id },
-          data: {
-            status: docStatus,
-          },
+          data: { status: docStatus },
         });
 
         results.push({
@@ -206,6 +345,9 @@ export async function POST(request: NextRequest) {
           status: docStatus,
           rowCount: matchResult.rows.length,
           matchedCount: matchResult.matched_count,
+          extractMethod,
+          distributorId: fileDistributor.id,
+          distributorName: fileDistributor.name,
         });
       } catch (err) {
         const message = err instanceof Error ? err.message : "Extraction failed";
@@ -230,8 +372,23 @@ export async function POST(request: NextRequest) {
           status: "FAILED",
           rowCount: 0,
           matchedCount: 0,
+          error: message,
+          distributorId: fileDistributor.id,
+          distributorName: fileDistributor.name,
         });
       }
+    }
+
+    const hardFailures = results.filter((r) => r.status === "FAILED" && !r.id);
+    if (hardFailures.length === results.length && hardFailures.length > 0) {
+      return NextResponse.json(
+        {
+          error: hardFailures[0].error ?? "Upload failed",
+          documents: results,
+          warnings: warnings.length > 0 ? warnings : undefined,
+        },
+        { status: 400 }
+      );
     }
 
     return NextResponse.json({ documents: results, warnings: warnings.length > 0 ? warnings : undefined });

@@ -34,6 +34,7 @@ interface ReviewItem {
   suggestedSku: string | null;
   suggestedName: string | null;
   confidence: number;
+  suggestions: { productId: string; sku: string | null; name: string | null; confidence: number }[];
 }
 
 interface Product {
@@ -289,19 +290,23 @@ function ReviewCard({
                 <p className="mt-1 font-mono text-sm font-medium">{item.rawProductText}</p>
               </div>
               <div className="rounded-md border bg-emerald-50/50 p-3">
-                <p className="text-xs font-medium uppercase text-muted-foreground">
-                  Suggested Match
-                  {item.confidence > 0 && (
-                    <span className="ml-2 normal-case text-accent">
-                      {Math.round(item.confidence * 100)}% confidence
-                    </span>
-                  )}
-                </p>
-                {item.suggestedName ? (
-                  <div className="mt-1">
-                    <p className="text-sm font-medium">{item.suggestedName}</p>
-                    <p className="text-xs text-muted-foreground">{item.suggestedSku}</p>
-                  </div>
+                <p className="text-xs font-medium uppercase text-muted-foreground">Suggested Match</p>
+                {item.suggestions.length > 0 ? (
+                  <ul className="mt-2 space-y-1">
+                    {item.suggestions.map((s) => (
+                      <li key={s.productId}>
+                        <button
+                          type="button"
+                          onClick={() => onMapChange(s.productId)}
+                          className={`w-full rounded px-2 py-1.5 text-left text-sm transition-colors hover:bg-emerald-100/80 ${
+                            mapProduct === s.productId ? "bg-emerald-100 font-medium ring-1 ring-emerald-300" : ""
+                          }`}
+                        >
+                          {s.name} ({s.sku}) — {Math.round(s.confidence * 100)}%
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 ) : (
                   <p className="mt-1 text-sm text-muted-foreground">No suggestion — manual mapping required</p>
                 )}

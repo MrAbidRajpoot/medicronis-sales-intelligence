@@ -1,9 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Building2, Download, Loader2, Pencil, Plus, Trash2, Upload } from "lucide-react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Building2, Download, FileStack, Loader2, Pencil, Plus, Trash2, Upload } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
+import { TemplateCoverageKpis } from "@/components/template-coverage-kpis";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -37,6 +40,7 @@ interface Distributor {
   isActive: boolean;
   documentCount: number;
   mappingCount: number;
+  templateReady: boolean;
 }
 
 const emptyForm = {
@@ -51,6 +55,7 @@ const emptyForm = {
 };
 
 export default function DistributorsPage() {
+  const router = useRouter();
   const [items, setItems] = useState<Distributor[]>([]);
   const [managers, setManagers] = useState<ManagerOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -138,10 +143,16 @@ export default function DistributorsPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Save failed");
-      toast.success(editing ? "Distributor updated" : "Distributor created");
-      setDialogOpen(false);
-      load();
-      loadManagers();
+      if (editing) {
+        toast.success("Distributor updated");
+        setDialogOpen(false);
+        load();
+        loadManagers();
+      } else {
+        toast.success("Distributor created — configure PDF template next");
+        setDialogOpen(false);
+        router.push(`/distributors/${data.id}/template?setup=1`);
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Save failed");
     } finally {
@@ -236,6 +247,8 @@ export default function DistributorsPage() {
         }
       />
 
+      <TemplateCoverageKpis />
+
       {loading ? (
         <div className="flex justify-center py-16">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -260,6 +273,7 @@ export default function DistributorsPage() {
                 <TableHead>Manager</TableHead>
                 <TableHead className="text-right">Documents</TableHead>
                 <TableHead className="text-right">Mappings</TableHead>
+                <TableHead>Template</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -276,12 +290,24 @@ export default function DistributorsPage() {
                   <TableCell className="text-right">{item.documentCount}</TableCell>
                   <TableCell className="text-right">{item.mappingCount}</TableCell>
                   <TableCell>
+                    {item.templateReady ? (
+                      <Badge variant="success">Ready</Badge>
+                    ) : (
+                      <Badge variant="danger">Template required</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
                     <Badge variant={item.isActive ? "success" : "secondary"}>
                       {item.isActive ? "Active" : "Inactive"}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
+                      <Button variant="ghost" size="sm" asChild title="Configure PDF template">
+                        <Link href={`/distributors/${item.id}/template`}>
+                          <FileStack className="h-4 w-4" />
+                        </Link>
+                      </Button>
                       <Button variant="ghost" size="sm" onClick={() => openEdit(item)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -308,8 +334,28 @@ export default function DistributorsPage() {
         onClose={() => setDialogOpen(false)}
         title={editing ? "Edit Distributor" : "Add Distributor"}
         description="Distributor code is used for PDF template auto-detection"
+        className={editing ? "max-w-lg" : "max-w-lg"}
       >
         <form onSubmit={handleSave} className="space-y-4">
+          {!editing && (
+            <div className="rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-muted-foreground">
+              After creating the distributor you will configure the PDF column mapping template
+              before uploads are enabled.
+            </div>
+          )}
+          {editing && !editing.templateReady && (
+            <div className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm">
+              <span className="font-medium text-destructive">Template required</span>
+              {" — "}
+              <Link
+                href={`/distributors/${editing.id}/template?setup=1`}
+                className="text-primary underline"
+                onClick={() => setDialogOpen(false)}
+              >
+                Configure PDF template
+              </Link>
+            </div>
+          )}
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="code">Code</Label>
@@ -444,6 +490,13 @@ export default function DistributorsPage() {
             <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
               Cancel
             </Button>
+            {editing && (
+              <Button type="button" variant="outline" asChild>
+                <Link href={`/distributors/${editing.id}/template`} onClick={() => setDialogOpen(false)}>
+                  Update PDF Template
+                </Link>
+              </Button>
+            )}
             <Button type="submit" variant="accent" disabled={saving}>
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editing ? "Update" : "Create"}
             </Button>

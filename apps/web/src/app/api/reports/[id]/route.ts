@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { fetchSsrGridMasters } from "@/lib/db-helpers";
 import { buildDataSheetRows, buildDateRange, getSsrExportFactBounds, reportCodeFor, type SsrViewTypeLabel } from "@/lib/ssr-data";
 import { toIsoDate } from "@/lib/date-utils";
 
@@ -32,9 +33,11 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     orderBy: [{ distributor: { name: "asc" } }, { product: { name: "asc" } }],
   });
 
+  const masters = await fetchSsrGridMasters();
   const lines = buildDataSheetRows(facts, range, {
     asOfDate: report.asOfDate,
     viewType,
+    masters,
   });
 
   return NextResponse.json({
@@ -69,6 +72,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       lmtdSalesValue: l.lmtdSalesValue,
       lmtdDifferenceValue: l.lmtdDifferenceValue,
       lmtdPercent: l.lmtdPercent,
+      closingStock: l.closingStock,
+      stockValue: l.stockValue,
     })),
   });
 }

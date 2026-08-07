@@ -3,6 +3,7 @@ export type DocumentStatus =
   | "PROCESSING"
   | "EXTRACTED"
   | "REVIEW_REQUIRED"
+  | "TEMPLATE_MISMATCH"
   | "APPROVED"
   | "FAILED";
 

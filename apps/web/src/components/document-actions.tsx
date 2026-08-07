@@ -11,10 +11,11 @@ import { DocumentStatus } from "@prisma/client";
 interface DocumentActionsProps {
   documentId: string;
   status: DocumentStatus;
+  distributorId?: string | null;
   hasUnresolved?: boolean;
 }
 
-export function DocumentActions({ documentId, status, hasUnresolved }: DocumentActionsProps) {
+export function DocumentActions({ documentId, status, distributorId, hasUnresolved }: DocumentActionsProps) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
 
@@ -59,6 +60,24 @@ export function DocumentActions({ documentId, status, hasUnresolved }: DocumentA
           <Link href="/upload">
             <RefreshCw className="mr-2 h-4 w-4" />
             Retry Upload
+          </Link>
+        </Button>
+      )}
+
+      {status === "TEMPLATE_MISMATCH" && distributorId && (
+        <Button variant="accent" asChild>
+          <Link href={`/distributors/${distributorId}/template?returnTo=/documents/${documentId}`}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Re-map PDF Template
+          </Link>
+        </Button>
+      )}
+
+      {status === "TEMPLATE_MISMATCH" && !distributorId && (
+        <Button variant="outline" asChild>
+          <Link href="/upload">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Re-upload After Template Fix
           </Link>
         </Button>
       )}

@@ -169,6 +169,8 @@ const DATA_HEADERS = [
   "LMTD Sales Value",
   "LMTD Difference",
   "LMTD %age",
+  "Closing Stock",
+  "Stock Value",
 ];
 
 const DATA_NUM_FMT = {
@@ -199,6 +201,8 @@ function dataRowValues(line: SsrDataLine): (string | number)[] {
     line.lmtdSalesValue,
     line.lmtdDifferenceValue,
     line.lmtdPercent,
+    line.closingStock ?? 0,
+    line.stockValue ?? 0,
   ];
 }
 
@@ -233,7 +237,8 @@ export async function generateSsrDataExcel(
     { width: 16 },
     { width: 16 },
     { width: 16 },
-    { width: 12 },
+    { width: 14 },
+    { width: 14 },
   ];
 
   const colCount = DATA_HEADERS.length;
@@ -269,6 +274,8 @@ export async function generateSsrDataExcel(
       if (i === 10 || i === 12 || i === 13 || i === 16 || i === 17) cell.numFmt = DATA_NUM_FMT.money;
       if (i === 15) cell.numFmt = DATA_NUM_FMT.integer;
       if (i === 18 && typeof val === "number") cell.numFmt = DATA_NUM_FMT.percent;
+      if (i === 19) cell.numFmt = DATA_NUM_FMT.integer;
+      if (i === 20) cell.numFmt = DATA_NUM_FMT.money;
     });
   });
 

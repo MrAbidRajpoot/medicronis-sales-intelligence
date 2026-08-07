@@ -82,6 +82,7 @@ function statusLabel(status: string): string {
     PROCESSING: "Processing",
     EXTRACTED: "Extraction Complete",
     REVIEW_REQUIRED: "Review Required",
+    TEMPLATE_MISMATCH: "Template Mismatch",
     APPROVED: "Document Approved",
     FAILED: "Upload Failed",
   };

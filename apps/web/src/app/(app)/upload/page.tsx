@@ -3,10 +3,12 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, FileText, X, AlertCircle } from "lucide-react";
+import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { ProcessingStepper, type ProcessingStep } from "@/components/processing-stepper";
 import { UploadSuccessOverlay } from "@/components/upload-success";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -27,6 +29,29 @@ interface DistributorOption {
   code: string;
   name: string;
   region: string | null;
+  templateReady?: boolean;
+}
+
+interface UploadDocumentResult {
+  id: string;
+  fileName: string;
+  status: string;
+  rowCount: number;
+  matchedCount: number;
+  extractMethod?: string;
+  error?: string;
+  distributorId?: string;
+  distributorName?: string;
+  suggestedDistributorId?: string;
+  suggestedDistributorName?: string;
+}
+
+function isZipFile(file: File): boolean {
+  return (
+    file.type === "application/zip" ||
+    file.type === "application/x-zip-compressed" ||
+    file.name.toLowerCase().endsWith(".zip")
+  );
 }
 
 const IDLE_STEPS: ProcessingStep[] = [
@@ -40,14 +65,19 @@ export default function UploadPage() {
   const router = useRouter();
   const [files, setFiles] = useState<File[]>([]);
   const [distributor, setDistributor] = useState<string>("");
+  const [applyToAll, setApplyToAll] = useState(false);
   const [reportDate, setReportDate] = useState(todayIsoDate());
   const [distributors, setDistributors] = useState<DistributorOption[]>([]);
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploadResults, setUploadResults] = useState<UploadDocumentResult[]>([]);
   const [steps, setSteps] = useState<ProcessingStep[]>(IDLE_STEPS);
   const [showStepper, setShowStepper] = useState(false);
+
+  const isBulkUpload = files.length > 1 || files.some(isZipFile);
+  const useForceDistributor = isBulkUpload ? applyToAll : Boolean(distributor);
 
   useEffect(() => {
     fetch("/api/distributors")
@@ -79,7 +109,25 @@ export default function UploadPage() {
     setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const selectedDistributor = distributors.find((d) => d.id === distributor);
+  const distributorReady = !useForceDistributor || selectedDistributor?.templateReady !== false;
+
   const handleUpload = async () => {
+    if (useForceDistributor && !distributor) {
+      toast.error(isBulkUpload ? "Select a distributor to apply to all files" : "Select a distributor override");
+      return;
+    }
+
+    if (useForceDistributor && !distributorReady) {
+      toast.error("Selected distributor needs a PDF template — configure it first");
+      return;
+    }
+
+    if (files.length === 0) {
+      toast.error("Add at least one PDF or ZIP file");
+      return;
+    }
+
     if (reportDate > todayIsoDate()) {
       toast.error("Report date cannot be in the future");
       return;
@@ -87,6 +135,7 @@ export default function UploadPage() {
 
     setUploading(true);
     setError(null);
+    setUploadResults([]);
     setShowStepper(true);
     setSteps([
       { id: "1", label: "Upload", status: "active", description: "Saving PDF..." },
@@ -97,7 +146,9 @@ export default function UploadPage() {
 
     const formData = new FormData();
     files.forEach((f) => formData.append("files", f));
-    if (distributor) formData.append("distributorId", distributor);
+    if (useForceDistributor && distributor) {
+      formData.append("forceDistributorId", distributor);
+    }
     formData.append("reportDate", reportDate);
 
     try {
@@ -113,6 +164,10 @@ export default function UploadPage() {
 
       const res = await fetch("/api/documents/upload", { method: "POST", body: formData });
       const data = await res.json();
+
+      if (data.documents?.length) {
+        setUploadResults(data.documents);
+      }
 
       if (!res.ok) {
         throw new Error(data.error ?? "Upload failed");
@@ -132,18 +187,41 @@ export default function UploadPage() {
       ]);
 
       toast.success(`Processed ${data.documents?.length ?? 0} document(s)`);
+      const methods = data.documents
+        ?.map((d: { extractMethod?: string }) => d.extractMethod)
+        .filter(Boolean);
+      if (methods?.length) {
+        const unique = Array.from(new Set(methods)) as string[];
+        const labels = unique.map((m) =>
+          m === "line_fallback"
+            ? "line parser"
+            : m === "alternate_settings"
+              ? "alternate pdfplumber"
+              : "table"
+        );
+        toast.success(`Extraction method: ${labels.join(", ")}`);
+      }
+      const templateMismatch = data.documents?.some(
+        (d: { status: string }) => d.status === "TEMPLATE_MISMATCH"
+      );
+      if (templateMismatch) {
+        toast.error("One or more documents have a template layout mismatch — re-map the distributor template.");
+      }
       if (data.warnings?.length) {
         data.warnings.forEach((w: string) => toast.error(w));
       }
       setSuccess(true);
 
-      const first = data.documents?.[0];
-      setTimeout(() => {
-        if (first) {
+      const successfulDocs = (data.documents as UploadDocumentResult[] | undefined)?.filter(
+        (d) => d.id && d.status !== "FAILED"
+      );
+      const first = successfulDocs?.[0];
+      if (first && !isBulkUpload && successfulDocs?.length === 1) {
+        setTimeout(() => {
           router.push(`/documents/${first.id}`);
           router.refresh();
-        }
-      }, 900);
+        }, 900);
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Upload failed";
       setError(msg);
@@ -251,32 +329,143 @@ export default function UploadPage() {
 
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Distributor Override</CardTitle>
+                <CardTitle className="text-base">Distributor</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  <Label>Optional — auto-detected from PDF if blank</Label>
-                  <Select value={distributor} onValueChange={setDistributor}>
-                    <SelectTrigger className="min-h-[44px]">
-                      <SelectValue placeholder="Auto-detect distributor" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {distributors.map((d) => (
-                        <SelectItem key={d.id} value={d.id}>
-                          {d.name} ({d.code})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {isBulkUpload ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      Each PDF is matched to a distributor from its header. No manual selection needed unless you
+                      want the same distributor for every file.
+                    </p>
+                    <label className="flex min-h-[44px] cursor-pointer items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={applyToAll}
+                        onChange={(e) => {
+                          setApplyToAll(e.target.checked);
+                          if (!e.target.checked) setDistributor("");
+                        }}
+                        className="h-4 w-4 rounded border-input"
+                      />
+                      Apply same distributor to all files
+                    </label>
+                    {applyToAll && (
+                      <div className="space-y-2">
+                        <Label>Distributor override</Label>
+                        <Select value={distributor} onValueChange={setDistributor}>
+                          <SelectTrigger className="min-h-[44px]">
+                            <SelectValue placeholder="Select distributor" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {distributors.map((d) => (
+                              <SelectItem
+                                key={d.id}
+                                value={d.id}
+                                disabled={d.templateReady === false}
+                              >
+                                {d.name} ({d.code})
+                                {d.templateReady === false ? " — Template required" : ""}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label>Optional override — leave on auto-detect to read the PDF header</Label>
+                    <Select
+                      value={distributor || "auto"}
+                      onValueChange={(value) => setDistributor(value === "auto" ? "" : value)}
+                    >
+                      <SelectTrigger className="min-h-[44px]">
+                        <SelectValue placeholder="Auto-detect from PDF" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="auto">Auto-detect from PDF header</SelectItem>
+                        {distributors.map((d) => (
+                          <SelectItem
+                            key={d.id}
+                            value={d.id}
+                            disabled={d.templateReady === false}
+                          >
+                            {d.name} ({d.code})
+                            {d.templateReady === false ? " — Template required" : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                {useForceDistributor && selectedDistributor && !distributorReady && (
+                  <div className="mt-2 flex flex-wrap items-center gap-2 pt-1">
+                    <Badge variant="danger">Template required</Badge>
+                    <Link
+                      href={`/distributors/${selectedDistributor.id}/template?setup=1&returnTo=/upload`}
+                      className="text-sm text-primary underline"
+                    >
+                      Configure PDF template
+                    </Link>
+                  </div>
+                )}
               </CardContent>
             </Card>
+
+            {uploadResults.length > 0 && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Upload Results</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {uploadResults.map((result) => (
+                    <div
+                      key={`${result.fileName}-${result.id || "failed"}`}
+                      className="rounded-md border bg-muted/30 px-3 py-2.5 text-sm"
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="min-w-0 flex-1 truncate font-medium">{result.fileName}</span>
+                        <Badge
+                          variant={
+                            result.status === "FAILED" || result.status === "TEMPLATE_MISMATCH"
+                              ? "danger"
+                              : result.status === "REVIEW_REQUIRED"
+                                ? "warning"
+                                : "default"
+                          }
+                        >
+                          {result.status}
+                        </Badge>
+                      </div>
+                      <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                        {result.distributorName ? (
+                          <p>
+                            Distributor: <span className="text-foreground">{result.distributorName}</span>
+                          </p>
+                        ) : result.suggestedDistributorName ? (
+                          <p>
+                            Suggested: <span className="text-foreground">{result.suggestedDistributorName}</span>
+                          </p>
+                        ) : null}
+                        {result.error && <p className="text-destructive">{result.error}</p>}
+                        {result.id && result.status !== "FAILED" && (
+                          <Link href={`/documents/${result.id}`} className="text-primary underline">
+                            Open document
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
 
             <Button
               variant="accent"
               size="lg"
               className="w-full min-h-[48px] sm:w-auto"
-              disabled={files.length === 0 || uploading || success}
+              disabled={files.length === 0 || !distributorReady || uploading || success}
               onClick={handleUpload}
             >
               {uploading ? "Processing..." : `Upload ${files.length || ""} Document${files.length !== 1 ? "s" : ""}`}

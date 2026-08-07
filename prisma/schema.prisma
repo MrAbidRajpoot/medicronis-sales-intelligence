@@ -14,6 +14,7 @@ enum DocumentStatus {
   PROCESSING
   EXTRACTED
   REVIEW_REQUIRED
+  TEMPLATE_MISMATCH
   APPROVED
   FAILED
 }
@@ -65,7 +66,33 @@ enum DistributorCountry {
   PAK_2
 }
 
+enum PdfHeaderStructure {
+  single_row
+  grouped_two_row
+  title_block_then_table
+  line_fallback
+}
+
 // ??? Master Data ?????????????????????????????????????????????????????????????
+
+/// Layout family preset (A–J). Distributors assign pdfFormatId + active DistributorTemplate.config.
+/// TemplateConfig shape: see apps/web/src/lib/pdf-template-types.ts
+model PdfFormat {
+  id              String             @id @default(cuid())
+  code            String             @unique
+  name            String
+  family          String             // A–J
+  headerStructure PdfHeaderStructure
+  defaultConfig   Json
+  isActive        Boolean            @default(true)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  distributors Distributor[]
+
+  @@index([family])
+  @@index([isActive])
+}
 
 model User {
   id           String   @id @default(cuid())
@@ -101,18 +128,20 @@ model Manufacturer {
 }
 
 model Distributor {
-  id        String              @id @default(cuid())
-  code      String              @unique
-  name      String
-  region    DistributorRegion?
-  country   DistributorCountry?
-  city      String?
-  managerId String?
-  isActive  Boolean             @default(true)
-  createdAt DateTime            @default(now())
-  updatedAt DateTime            @updatedAt
+  id          String              @id @default(cuid())
+  code        String              @unique
+  name        String
+  region      DistributorRegion?
+  country     DistributorCountry?
+  city        String?
+  managerId   String?
+  pdfFormatId String?
+  isActive    Boolean             @default(true)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
 
   manager         Manager?                  @relation(fields: [managerId], references: [id])
+  pdfFormat       PdfFormat?                @relation(fields: [pdfFormatId], references: [id])
   templates       DistributorTemplate[]
   productMappings DistributorProductMapping[]
   documents       Document[]
@@ -120,18 +149,24 @@ model Distributor {
   dailySalesFacts DailySalesFact[]
 
   @@index([managerId])
+  @@index([pdfFormatId])
 }
 
+/// Active template per distributor holds TemplateConfig overrides (see pdf-template-types.ts).
 model DistributorTemplate {
-  id            String   @id @default(cuid())
-  distributorId String
-  name          String
-  description   String?
-  version       Int      @default(1)
-  isActive      Boolean  @default(true)
-  config        Json?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                      String   @id @default(cuid())
+  distributorId           String
+  name                    String
+  description             String?
+  version                 Int      @default(1)
+  isActive                Boolean  @default(true)
+  config                  Json?
+  /// Set when the mapping wizard is saved; upload blocked until configured.
+  configuredAt            DateTime?
+  /// Row count from last successful extraction (for layout drift detection).
+  lastSuccessfulRowCount  Int?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
 
   distributor Distributor @relation(fields: [distributorId], references: [id])
   documents   Document[]
@@ -237,6 +272,8 @@ model ExtractionRun {
   completedAt  DateTime?
   rowCount     Int                 @default(0)
   matchedCount Int                 @default(0)
+  // table | line_fallback | alternate_settings
+  extractMethod String?
   errorMessage String?
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
@@ -256,6 +293,8 @@ model ExtractedRow {
   quantity        Decimal            @db.Decimal(12, 2)
   unitPrice       Decimal?           @db.Decimal(12, 2)
   lineTotal       Decimal?           @db.Decimal(12, 2)
+  closingStock    Decimal?           @db.Decimal(12, 2)
+  returnsQty      Decimal?           @db.Decimal(12, 2)
   status          ExtractedRowStatus @default(PENDING)
   productId       String?
   distributorId   String?

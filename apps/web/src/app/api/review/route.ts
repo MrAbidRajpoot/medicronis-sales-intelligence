@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { matchRows } from "@/lib/pdf-worker";
+import {
+  getMatchSuggestions,
+  matchRows,
+  SUGGESTION_MAX,
+  SUGGESTION_MIN_SCORE,
+} from "@/lib/pdf-worker";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +28,9 @@ export async function GET() {
     prisma.productAlias.findMany(),
   ]);
 
+  const productPayload = products.map((p) => ({ id: p.id, sku: p.sku, name: p.name }));
+  const aliasPayload = aliases.map((a) => ({ alias: a.alias, product_id: a.productId }));
+
   const items = await Promise.all(
     rows.map(async (row) => {
       const doc = row.extractionRun.document;
@@ -33,6 +41,29 @@ export async function GET() {
       let suggestedName: string | null = null;
       let confidence = 0;
       let mappingStatus: "review" | "unknown" = "unknown";
+
+      const suggestionResult = await getMatchSuggestions({
+        raw_product_text: row.rawProductText,
+        products: productPayload,
+        aliases: aliasPayload,
+        min_score: SUGGESTION_MIN_SCORE,
+        limit: SUGGESTION_MAX,
+      });
+
+      const suggestions = suggestionResult.suggestions.map((s) => ({
+        productId: s.product_id,
+        sku: s.sku ?? null,
+        name: s.name ?? null,
+        confidence: s.confidence,
+      }));
+
+      const top = suggestions[0];
+      if (top) {
+        suggestedProductId = top.productId;
+        suggestedSku = top.sku;
+        suggestedName = top.name;
+        confidence = top.confidence;
+      }
 
       if (distId) {
         const mappings = await prisma.distributorProductMapping.findMany({
@@ -54,8 +85,8 @@ export async function GET() {
             product_id: m.productId,
             confidence: m.confidence,
           })),
-          products: products.map((p) => ({ id: p.id, sku: p.sku, name: p.name })),
-          aliases: aliases.map((a) => ({ alias: a.alias, product_id: a.productId })),
+          products: productPayload,
+          aliases: aliasPayload,
         });
 
         const matched = matchResult.rows[0];
@@ -66,13 +97,7 @@ export async function GET() {
                 ? "review"
                 : "unknown"
               : "review";
-          if (matched.suggested_product_id) {
-            suggestedProductId = matched.suggested_product_id;
-            suggestedSku = matched.suggested_product_sku ?? null;
-            suggestedName = matched.suggested_product_name ?? null;
-            confidence = matched.confidence;
-            if (matched.match_status === "matched") mappingStatus = "review";
-          }
+          if (matched.match_status === "matched") mappingStatus = "review";
         }
       }
 
@@ -89,6 +114,7 @@ export async function GET() {
         suggestedSku,
         suggestedName,
         confidence,
+        suggestions,
       };
     })
   );

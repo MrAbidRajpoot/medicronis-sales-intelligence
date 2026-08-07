@@ -79,6 +79,13 @@ export interface SsrDateExportMeta {
 /** Master data carried on facts (distributor + product relations). */
 export type SsrMasters = Record<string, never>;
 
+export type DistributorWithManager = Distributor & { manager: Manager | null };
+
+export interface SsrGridMasters {
+  distributors: DistributorWithManager[];
+  products: Product[];
+}
+
 type BatchWithLines = SalesBatch & {
   distributor: Distributor;
   salesLines: (SalesLine & { product: Product })[];
@@ -254,8 +261,42 @@ function aggregateFactsInRange(
   return groups;
 }
 
+function productDefaultPrice(product: Product): number {
+  if (product.newSp != null) return Number(product.newSp);
+  if (product.netPrice != null) return Number(product.netPrice);
+  if (product.tp != null) return Number(product.tp);
+  return 0;
+}
+
+function distributorIdsInRange(facts: FactWithRelations[], range: SsrDateRange): string[] {
+  const ids = new Set<string>();
+  for (const fact of facts) {
+    const saleTime = fact.saleDate.getTime();
+    if (saleTime >= range.start.getTime() && saleTime <= range.end.getTime()) {
+      ids.add(fact.distributorId);
+    }
+  }
+  return Array.from(ids);
+}
+
+/** Distributors with facts in range + all active products for SSR grid export. */
+export function resolveSsrGridMasters(
+  facts: FactWithRelations[],
+  range: SsrDateRange,
+  masters: SsrGridMasters
+): SsrGridMasters {
+  const distributorIds = new Set(distributorIdsInRange(facts, range));
+  const distributors = masters.distributors.filter((d) => distributorIds.has(d.id));
+  return { distributors, products: masters.products };
+}
+
 function lookupTotals(map: Map<string, AggTotals>, key: string): AggTotals {
   return map.get(key) ?? { salesUnits: 0, salesValue: 0 };
+}
+
+function unitPriceForStock(fact: FactWithRelations | undefined, product: Product): number {
+  if (fact?.unitPrice != null) return Number(fact.unitPrice);
+  return productDefaultPrice(product);
 }
 
 function computeLmtdPercent(lmtdSalesValue: number, lmtdDifferenceValue: number): number | "-" {
@@ -266,7 +307,8 @@ function computeLmtdPercent(lmtdSalesValue: number, lmtdDifferenceValue: number)
 /** Latest closing stock on asOfDate per distributor + product (when populated on facts). */
 function latestClosingStockByKey(
   facts: FactWithRelations[],
-  asOfDate: Date
+  asOfDate: Date,
+  productsById: Map<string, Product>
 ): Map<string, { closingStock: number; stockValue: number }> {
   const asOfTime = asOfDate.getTime();
   const latest = new Map<string, { closingStock: number; stockValue: number }>();
@@ -276,7 +318,8 @@ function latestClosingStockByKey(
 
     const key = factKey(fact.distributorId, fact.productId);
     const closingStock = Number(fact.closingStock);
-    const unitPrice = fact.unitPrice ? Number(fact.unitPrice) : 0;
+    const product = productsById.get(fact.productId);
+    const unitPrice = unitPriceForStock(fact, product ?? fact.product);
     latest.set(key, {
       closingStock,
       stockValue: closingStock * unitPrice,
@@ -295,57 +338,55 @@ export function viewTypeLabel(viewType: SsrViewTypeLabel): string {
   return labels[viewType];
 }
 
-/** Aggregate facts over a date range by distributor + product (partial week/month supported). */
+/** Full product master × distributor grid; left-join aggregated facts (zeros where no sale). */
 export function buildDataSheetRows(
   facts: FactWithRelations[],
   range: SsrDateRange,
-  options?: { asOfDate?: Date; viewType?: SsrViewTypeLabel }
+  options: {
+    asOfDate?: Date;
+    viewType?: SsrViewTypeLabel;
+    masters: SsrGridMasters;
+  }
 ): SsrDataLine[] {
-  const asOfDate = options?.asOfDate ?? range.end;
-  const viewType = options?.viewType ?? "day";
+  const asOfDate = options.asOfDate ?? range.end;
+  const viewType = options.viewType ?? "day";
+  const { distributors, products } = resolveSsrGridMasters(facts, range, options.masters);
 
+  if (distributors.length === 0 || products.length === 0) return [];
+
+  const productsById = new Map(products.map((p) => [p.id, p]));
   const periodAgg = aggregateFactsInRange(facts, range);
   const yesterdayAgg = aggregateFactsInRange(facts, yesterdayRange(asOfDate));
   const priorPeriodAgg = aggregateFactsInRange(facts, priorPeriodRange(viewType, asOfDate));
   const lmtdAgg = aggregateFactsInRange(facts, lmtdRange(asOfDate));
   const priorLmtdAgg = aggregateFactsInRange(facts, priorLmtdRange(asOfDate));
-  const closingStockByKey = latestClosingStockByKey(facts, asOfDate);
+  const closingStockByKey = latestClosingStockByKey(facts, asOfDate, productsById);
 
-  const groups = new Map<
-    string,
-    {
-      fact: FactWithRelations;
-      salesUnits: number;
-      salesValue: number;
-    }
-  >();
-
+  const asOfFactByKey = new Map<string, FactWithRelations>();
+  const asOfTime = asOfDate.getTime();
   for (const fact of facts) {
-    const saleTime = fact.saleDate.getTime();
-    if (saleTime < range.start.getTime() || saleTime > range.end.getTime()) continue;
-
-    const key = factKey(fact.distributorId, fact.productId);
-    const quantity = Number(fact.quantity);
-    const lineValue = factLineValue(fact);
-    const existing = groups.get(key);
-
-    if (existing) {
-      existing.salesUnits += quantity;
-      existing.salesValue += lineValue;
-    } else {
-      groups.set(key, { fact, salesUnits: quantity, salesValue: lineValue });
+    if (fact.saleDate.getTime() === asOfTime) {
+      asOfFactByKey.set(factKey(fact.distributorId, fact.productId), fact);
     }
   }
 
-  return Array.from(groups.values())
-    .sort((a, b) => {
-      const nameCmp = a.fact.distributor.name.localeCompare(b.fact.distributor.name);
-      if (nameCmp !== 0) return nameCmp;
-      return a.fact.product.name.localeCompare(b.fact.product.name);
-    })
-    .map(({ fact, salesUnits, salesValue }) => {
-      const key = factKey(fact.distributorId, fact.productId);
-      const sellingPrice = salesUnits > 0 ? salesValue / salesUnits : fact.unitPrice ? Number(fact.unitPrice) : 0;
+  const rows: SsrDataLine[] = [];
+
+  for (const distributor of distributors) {
+    for (const product of products) {
+      const key = factKey(distributor.id, product.id);
+      const period = lookupTotals(periodAgg, key);
+      const salesUnits = period.salesUnits;
+      const salesValue = period.salesValue;
+
+      const asOfFact = asOfFactByKey.get(key);
+      const defaultPrice = productDefaultPrice(product);
+      const sellingPrice =
+        salesUnits > 0
+          ? salesValue / salesUnits
+          : asOfFact?.unitPrice
+            ? Number(asOfFact.unitPrice)
+            : defaultPrice;
 
       const yesterday = lookupTotals(yesterdayAgg, key);
       const priorPeriod = lookupTotals(priorPeriodAgg, key);
@@ -356,21 +397,19 @@ export function buildDataSheetRows(
       const lmtdDifferenceValue = lmtd.salesValue - priorLmtd.salesValue;
 
       const difference =
-        viewType === "day"
-          ? salesValue - yesterday.salesValue
-          : salesValue - priorPeriod.salesValue;
+        viewType === "day" ? salesValue - yesterday.salesValue : salesValue - priorPeriod.salesValue;
 
       const stock = closingStockByKey.get(key);
 
-      return {
-        distributorName: fact.distributor.name,
-        city: fact.distributor.city ?? "",
-        region: formatRegion(fact.distributor.region),
-        country: formatCountry(fact.distributor.country),
+      rows.push({
+        distributorName: distributor.name,
+        city: distributor.city ?? "",
+        region: formatRegion(distributor.region),
+        country: formatCountry(distributor.country),
         category: "",
-        group: fact.product.category ?? "",
-        manager: fact.distributor.manager?.name ?? "",
-        productName: fact.product.name,
+        group: product.category ?? "",
+        manager: distributor.manager?.name ?? "",
+        productName: product.name,
         sellingPrice,
         salesUnits,
         salesValue,
@@ -384,15 +423,25 @@ export function buildDataSheetRows(
         lmtdPercent: computeLmtdPercent(lmtd.salesValue, lmtdDifferenceValue),
         closingStock: stock?.closingStock ?? null,
         stockValue: stock?.stockValue ?? null,
-      };
-    });
+      });
+    }
+  }
+
+  return rows.sort((a, b) => {
+    const nameCmp = a.distributorName.localeCompare(b.distributorName);
+    if (nameCmp !== 0) return nameCmp;
+    return a.productName.localeCompare(b.productName);
+  });
 }
 
-export function buildSsrDataLines(facts: FactWithRelations[]): SsrDataLine[] {
+export function buildSsrDataLines(
+  facts: FactWithRelations[],
+  masters: SsrGridMasters
+): SsrDataLine[] {
   if (facts.length === 0) return [];
   const asOfDate = facts[0]!.saleDate;
   const range = { start: asOfDate, end: asOfDate };
-  return buildDataSheetRows(facts, range, { asOfDate, viewType: "day" });
+  return buildDataSheetRows(facts, range, { asOfDate, viewType: "day", masters });
 }
 
 export function reportCodeFor(asOfDate: Date, viewType: string): string {

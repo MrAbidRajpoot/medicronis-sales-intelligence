@@ -9,6 +9,7 @@ const documentStatusConfig: Record<
   PROCESSING: { label: "Processing", variant: "info" },
   EXTRACTED: { label: "Extracted", variant: "default" },
   REVIEW_REQUIRED: { label: "Review Required", variant: "warning" },
+  TEMPLATE_MISMATCH: { label: "Template Mismatch", variant: "danger" },
   APPROVED: { label: "Approved", variant: "success" },
   FAILED: { label: "Failed", variant: "danger" },
 };

@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "test:template": "tsx src/lib/__tests__/template-mismatch.test.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

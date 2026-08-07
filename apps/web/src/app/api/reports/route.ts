@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { fetchSsrGridMasters } from "@/lib/db-helpers";
 import { toIsoDate } from "@/lib/date-utils";
 import { buildDataSheetRows, buildDateRange, getSsrExportFactBounds, type SsrViewTypeLabel } from "@/lib/ssr-data";
 
@@ -16,6 +17,8 @@ export async function GET() {
     where: { salesBatchId: { equals: null }, asOfDate: { not: null } },
     orderBy: { createdAt: "desc" },
   });
+
+  const masters = await fetchSsrGridMasters();
 
   const factCounts = await Promise.all(
     reports.map(async (r) => {
@@ -37,6 +40,7 @@ export async function GET() {
       const lines = buildDataSheetRows(facts, range, {
         asOfDate: r.asOfDate!,
         viewType,
+        masters,
       });
       const totalValue = lines.reduce((sum, line) => sum + line.salesValue, 0);
       return { id: r.id, count: lines.length, totalValue, range };

@@ -1,0 +1,136 @@
+"""Header grid analysis for the distributor template mapping wizard."""
+
+from __future__ import annotations
+
+import io
+from typing import Any
+
+import pdfplumber
+
+from column_resolver import (
+    REQUIRED_FIELDS,
+    build_detected_groups,
+    build_leaf_columns,
+    find_header_span,
+    resolve_label_columns,
+)
+from presets import preset_config_for_code, suggest_pdf_format
+from table_extractor import is_likely_data_table
+
+
+def _cell_str(value: str | None) -> str:
+    return str(value or "").strip()
+
+
+def _header_grid_from_table(
+    table: list[list[str | None]],
+    header_start: int,
+    structure: str,
+) -> list[list[str]]:
+    if structure == "grouped_two_row":
+        row0 = table[header_start]
+        row1 = table[header_start + 1] if header_start + 1 < len(table) else []
+        width = max(len(row0), len(row1))
+        return [
+            [_cell_str(row0[i] if i < len(row0) else None) for i in range(width)],
+            [_cell_str(row1[i] if i < len(row1) else None) for i in range(width)],
+        ]
+
+    row = table[header_start]
+    return [[_cell_str(cell) for cell in row]]
+
+
+def _pick_best_header_table(
+    pdf_bytes: bytes,
+    config: dict[str, Any],
+) -> tuple[list[list[str | None]] | None, tuple[int, int] | None, int]:
+    """Return (table, header_span, col_count) for the best product table in the PDF."""
+    best_table: list[list[str | None]] | None = None
+    best_span: tuple[int, int] | None = None
+    best_score = -1
+    best_cols = 0
+
+    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+        for page in pdf.pages[:3]:
+            for table in page.extract_tables() or []:
+                if not table or len(table) < 1:
+                    continue
+                span = find_header_span(table, config)
+                if span is None:
+                    continue
+                width = max(len(r) for r in table)
+                score = width
+                if is_likely_data_table(table, config):
+                    score += 1000
+                if score > best_score:
+                    best_score = score
+                    best_table = table
+                    best_span = span
+                    best_cols = width
+
+    return best_table, best_span, best_cols
+
+
+def _unresolved_fields(table: list[list[str | None]] | None, config: dict[str, Any]) -> list[str]:
+    if not table:
+        return list(REQUIRED_FIELDS)
+    resolved = resolve_label_columns(table, config)
+    return [field for field in REQUIRED_FIELDS if field not in resolved]
+
+
+def analyze_headers(
+    pdf_bytes: bytes,
+    template_config: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """
+    Analyze PDF header layout for the mapping wizard.
+    Returns header grid, detected groups, leaf columns, and preset suggested mappings.
+    Does not run full row extraction.
+    """
+    suggestion = suggest_pdf_format(pdf_bytes)
+    suggested_code = suggestion["code"]
+    confidence = suggestion["confidence"]
+
+    table, header_span, col_count = _pick_best_header_table(
+        pdf_bytes,
+        template_config or preset_config_for_code(suggested_code),
+    )
+
+    if template_config:
+        config = dict(template_config)
+        suggested_code = config.get("_formatCode") or suggested_code
+    else:
+        config = preset_config_for_code(suggested_code, col_count or None)
+
+    header_structure = config.get("headerStructure", "single_row")
+    header_grid: list[list[str]] = []
+    detected_groups: list[str] = []
+    leaf_columns: list[dict[str, Any]] = []
+
+    if table and header_span is not None:
+        header_start, _ = header_span
+        header_grid = _header_grid_from_table(table, header_start, header_structure)
+        row0 = table[header_start]
+        row1 = (
+            table[header_start + 1]
+            if header_structure == "grouped_two_row" and header_start + 1 < len(table)
+            else None
+        )
+        detected_groups = build_detected_groups(row0)
+        leaf_columns = build_leaf_columns(row0, row1)
+
+    suggested_mappings = dict(config.get("fields") or {})
+    unresolved = _unresolved_fields(table, config)
+
+    return {
+        "suggestedFormatCode": suggested_code,
+        "confidence": confidence,
+        "family": suggestion["family"],
+        "headerStructure": header_structure,
+        "headerGrid": header_grid,
+        "detectedGroups": detected_groups,
+        "leafColumns": leaf_columns,
+        "suggestedMappings": suggested_mappings,
+        "unresolvedFields": unresolved,
+        "colCount": col_count or None,
+    }

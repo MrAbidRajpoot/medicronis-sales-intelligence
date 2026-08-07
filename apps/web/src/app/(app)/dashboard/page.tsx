@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/page-header";
 import { KpiCard } from "@/components/kpi-card";
 import { DataTable } from "@/components/data-table";
 import { SalesByDistributorChart } from "@/components/sales-chart";
+import { TemplateCoverageSection } from "@/components/template-coverage-section";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
@@ -79,6 +80,7 @@ export default async function DashboardPage() {
     { label: "Approved", count: statusMap["APPROVED"] ?? 0, color: "bg-emerald-500" },
     { label: "Review Required", count: statusMap["REVIEW_REQUIRED"] ?? 0, color: "bg-amber-500" },
     { label: "Processing", count: (statusMap["PROCESSING"] ?? 0) + (statusMap["UPLOADED"] ?? 0), color: "bg-sky-500" },
+    { label: "Template Mismatch", count: statusMap["TEMPLATE_MISMATCH"] ?? 0, color: "bg-orange-500" },
     { label: "Failed", count: statusMap["FAILED"] ?? 0, color: "bg-red-500" },
   ];
 
@@ -145,6 +147,8 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
+      <TemplateCoverageSection />
+
       <DataTable
         title="Recent Activity"
         description="Latest document and report events"
@@ -183,6 +187,7 @@ function statusLabel(status: string): string {
     PROCESSING: "Processing",
     EXTRACTED: "Extraction Complete",
     REVIEW_REQUIRED: "Review Required",
+    TEMPLATE_MISMATCH: "Template Mismatch",
     APPROVED: "Document Approved",
     FAILED: "Upload Failed",
   };

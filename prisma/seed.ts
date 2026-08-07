@@ -1,15 +1,12 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, PdfHeaderStructure } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { PDF_FORMAT_PRESETS } from "./pdf-format-presets";
+import { JULY_CLOSING_DISTRIBUTORS } from "./july-closing-distributors";
+import type { TemplateConfig } from "../apps/web/src/lib/pdf-template-types";
 
 const prisma = new PrismaClient();
 
-const DISTRIBUTORS = [
-  { code: "DIST-001", name: "MedSupply Karachi", region: "SOUTH", country: "PAK_1", city: "Karachi" },
-  { code: "DIST-002", name: "PharmaLink Lahore", region: "CENTER_1", country: "PAK_1", city: "Lahore" },
-  { code: "DIST-003", name: "HealthFirst Islamabad", region: "CENTER_2", country: "PAK_1", city: "Islamabad" },
-  { code: "DIST-004", name: "CarePlus Peshawar", region: "NORTH_1", country: "PAK_1", city: "Peshawar" },
-  { code: "DIST-005", name: "Wellness Hub Quetta", region: "NORTH_2", country: "PAK_2", city: "Quetta" },
-] as const;
+const DISTRIBUTORS = JULY_CLOSING_DISTRIBUTORS;
 
 const MANAGERS = ["Ahmed Khan", "Sara Malik", "Usman Ali"];
 
@@ -61,22 +58,52 @@ const ALIASES: Record<string, string[]> = {
   "MED-020": ["Multi Vit", "MULTIVITAMIN"],
 };
 
-// 10 pre-mapped distributor product texts (2 per distributor for first 5)
 const DISTRIBUTOR_MAPPINGS = [
-  { distCode: "DIST-001", rawText: "AMOXICILLIN 500MG CAPS", sku: "MED-001" },
-  { distCode: "DIST-001", rawText: "PARACETAMOL TAB 500", sku: "MED-002" },
-  { distCode: "DIST-002", rawText: "Omeprazole 20mg", sku: "MED-003" },
-  { distCode: "DIST-002", rawText: "Metformin HCl 500", sku: "MED-004" },
-  { distCode: "DIST-003", rawText: "Atorvastatin-10", sku: "MED-005" },
-  { distCode: "DIST-003", rawText: "Amlodipine Besylate 5mg", sku: "MED-006" },
-  { distCode: "DIST-004", rawText: "Azithro 250mg", sku: "MED-008" },
-  { distCode: "DIST-004", rawText: "Ciprofloxacin HCl 500", sku: "MED-009" },
-  { distCode: "DIST-005", rawText: "Salbutamol MDI 100", sku: "MED-015" },
-  { distCode: "DIST-005", rawText: "Vit D3 50000", sku: "MED-017" },
+  { distCode: "AIM-HYD", rawText: "AMOXICILLIN 500MG CAPS", sku: "MED-001" },
+  { distCode: "AIM-HYD", rawText: "PARACETAMOL TAB 500", sku: "MED-002" },
+  { distCode: "AL-SHIFA-JAMPUR", rawText: "Omeprazole 20mg", sku: "MED-003" },
+  { distCode: "AL-REHMAN-LHR", rawText: "Metformin HCl 500", sku: "MED-004" },
+  { distCode: "AQ-SARGODHA", rawText: "Atorvastatin-10", sku: "MED-005" },
+  { distCode: "BASHIR-GUJ", rawText: "Azithro 250mg", sku: "MED-008" },
 ];
+
+function toPrismaHeaderStructure(value: string): PdfHeaderStructure {
+  return value as PdfHeaderStructure;
+}
+
+async function seedPdfFormats(): Promise<Map<string, string>> {
+  const formatMap = new Map<string, string>();
+
+  for (const preset of PDF_FORMAT_PRESETS) {
+    const row = await prisma.pdfFormat.upsert({
+      where: { code: preset.code },
+      update: {
+        name: preset.name,
+        family: preset.family,
+        headerStructure: toPrismaHeaderStructure(preset.headerStructure),
+        defaultConfig: preset.defaultConfig,
+        isActive: preset.isActive ?? true,
+      },
+      create: {
+        code: preset.code,
+        name: preset.name,
+        family: preset.family,
+        headerStructure: toPrismaHeaderStructure(preset.headerStructure),
+        defaultConfig: preset.defaultConfig,
+        isActive: preset.isActive ?? true,
+      },
+    });
+    formatMap.set(preset.code, row.id);
+  }
+
+  return formatMap;
+}
 
 async function main() {
   console.log("Seeding Medicronis demo data...");
+
+  const formatMap = await seedPdfFormats();
+  console.log(`  PdfFormats: ${PDF_FORMAT_PRESETS.length} (families A–J)`);
 
   const passwordHash = await bcrypt.hash("demo", 10);
   const admin = await prisma.user.upsert({
@@ -104,36 +131,63 @@ async function main() {
   const distributorMap = new Map<string, string>();
   for (let i = 0; i < DISTRIBUTORS.length; i++) {
     const d = DISTRIBUTORS[i];
+    const pdfFormatId = formatMap.get(d.formatCode)!;
+    const preset = PDF_FORMAT_PRESETS.find((p) => p.code === d.formatCode)!;
+    const templateConfig = (d.templateConfig ?? preset.defaultConfig) as TemplateConfig;
+
     const dist = await prisma.distributor.upsert({
       where: { code: d.code },
-      update: {},
+      update: {
+        name: d.name,
+        region: d.region,
+        country: d.country,
+        city: d.city,
+        pdfFormatId,
+        managerId: managerMap.get(MANAGERS[i % MANAGERS.length]),
+      },
       create: {
         code: d.code,
         name: d.name,
         region: d.region,
         country: d.country,
         city: d.city,
+        pdfFormatId,
         managerId: managerMap.get(MANAGERS[i % MANAGERS.length]),
       },
     });
     distributorMap.set(d.code, dist.id);
 
     const existingTemplate = await prisma.distributorTemplate.findFirst({
-      where: { distributorId: dist.id, name: "Default PDF Template" },
+      where: { distributorId: dist.id, isActive: true },
+      orderBy: { version: "desc" },
     });
-    if (!existingTemplate) {
+
+    if (existingTemplate) {
+      await prisma.distributorTemplate.update({
+        where: { id: existingTemplate.id },
+        data: {
+          name: `${preset.name} — ${d.name}`,
+          description: `Format family ${preset.family} config for ${d.name}`,
+          config: templateConfig,
+          isActive: true,
+          configuredAt: existingTemplate.configuredAt ?? new Date(),
+        },
+      });
+    } else {
       await prisma.distributorTemplate.create({
         data: {
           distributorId: dist.id,
-          name: "Default PDF Template",
-          description: `Standard sales report format for ${d.name}`,
+          name: `${preset.name} — ${d.name}`,
+          description: `Format family ${preset.family} config for ${d.name}`,
           version: 1,
           isActive: true,
+          config: templateConfig,
+          configuredAt: new Date(),
         },
       });
     }
   }
-  console.log(`  Distributors: ${DISTRIBUTORS.length}`);
+  console.log(`  Distributors: ${DISTRIBUTORS.length} (July Closing set, all with pdfFormat + template)`);
 
   const manufacturerMap = new Map<string, string>();
   for (const name of MANUFACTURERS) {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getDemoUserId } from "@/lib/db-helpers";
+import { getDemoUserId, fetchSsrGridMasters } from "@/lib/db-helpers";
 import { isFutureDate, parseIsoDate } from "@/lib/date-utils";
 import { generateSsrDataExcel } from "@/lib/ssr-export";
 import {
@@ -95,11 +95,13 @@ export async function POST(request: NextRequest) {
       orderBy: [{ distributor: { name: "asc" } }, { product: { name: "asc" } }],
     });
 
+    const masters = await fetchSsrGridMasters();
     const generatedAt = new Date();
     const reportCode = `${reportCodeFor(resolvedAsOfDate, resolvedViewLabel)}-${Date.now().toString(36).toUpperCase()}`;
     const lines = buildDataSheetRows(facts, range, {
       asOfDate: resolvedAsOfDate,
       viewType: resolvedViewLabel,
+      masters,
     });
 
     const { filePath } = await generateSsrDataExcel(

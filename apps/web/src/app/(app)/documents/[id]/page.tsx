@@ -23,6 +23,13 @@ function getTimeline(status: DocumentStatus, errorMessage?: string | null): Proc
     ];
   }
 
+  if (status === "TEMPLATE_MISMATCH") {
+    return [
+      { id: "upload", label: "Uploaded", status: "complete" },
+      { id: "extract", label: "Template Mismatch", status: "error", description: errorMessage ?? "Layout changed — re-map template" },
+    ];
+  }
+
   const order: DocumentStatus[] = ["UPLOADED", "PROCESSING", "EXTRACTED", "REVIEW_REQUIRED", "APPROVED"];
   const idx = order.indexOf(status);
 
@@ -142,10 +149,31 @@ export default async function DocumentDetailPage({ params }: { params: { id: str
                   {run && run.rowCount > 0 ? `${matchRate}% (${run.matchedCount}/${run.rowCount})` : "—"}
                 </dd>
               </div>
+              {run?.extractMethod && (
+                <div>
+                  <dt className="text-xs font-medium uppercase text-muted-foreground">Extract Method</dt>
+                  <dd className="mt-1 text-sm font-medium">
+                    {run.extractMethod === "line_fallback"
+                      ? "Line parser fallback"
+                      : run.extractMethod === "alternate_settings"
+                        ? "Alternate pdfplumber settings"
+                        : "Table extraction"}
+                  </dd>
+                </div>
+              )}
               {run?.errorMessage && (
                 <div className="sm:col-span-2">
                   <dt className="text-xs font-medium uppercase text-muted-foreground">Error</dt>
                   <dd className="mt-1 text-sm text-destructive">{run.errorMessage}</dd>
+                  {doc.status === "TEMPLATE_MISMATCH" && doc.distributorId && (
+                    <dd className="mt-2">
+                      <Button variant="accent" size="sm" asChild>
+                        <Link href={`/distributors/${doc.distributorId}/template?returnTo=/documents/${doc.id}`}>
+                          Re-map PDF Template
+                        </Link>
+                      </Button>
+                    </dd>
+                  )}
                 </div>
               )}
             </dl>
@@ -214,6 +242,7 @@ export default async function DocumentDetailPage({ params }: { params: { id: str
       <DocumentActions
         documentId={doc.id}
         status={doc.status}
+        distributorId={doc.distributorId}
         hasUnresolved={hasUnresolved}
       />
     </div>

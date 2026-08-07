@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { prisma } from "@/lib/prisma";
+import { fetchSsrGridMasters } from "@/lib/db-helpers";
 import { buildDataSheetRows, buildDateRange, formatPeriod, formatSalesTillDate, getSsrExportFactBounds, reportCodeFor, viewTypeLabel, type SsrViewTypeLabel } from "@/lib/ssr-data";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { toIsoDate } from "@/lib/date-utils";
@@ -38,9 +39,11 @@ export default async function ReportDetailPage({ params }: { params: { id: strin
     orderBy: [{ distributor: { name: "asc" } }, { product: { name: "asc" } }],
   });
 
+  const masters = await fetchSsrGridMasters();
   const dataLines = buildDataSheetRows(facts, range, {
     asOfDate: report.asOfDate,
     viewType,
+    masters,
   });
   const reportCode = reportCodeFor(report.asOfDate, viewType);
   const subtotal = dataLines.reduce((sum, l) => sum + l.salesValue, 0);

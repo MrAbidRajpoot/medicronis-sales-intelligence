@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Eye, Upload, FileText } from "lucide-react";
+import { Eye, Upload, FileText, RefreshCw } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { DataTable } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
@@ -25,6 +25,7 @@ export default async function DocumentsPage() {
     return {
       id: doc.id,
       fileName: doc.fileName,
+      distributorId: doc.distributorId,
       distributorName: doc.distributor?.name ?? "—",
       status: doc.status,
       reportDate: doc.reportDate.toISOString(),
@@ -119,13 +120,24 @@ export default async function DocumentsPage() {
               key: "actions",
               header: "",
               cell: (row) => (
-                <Button variant="ghost" size="sm" asChild>
-                  <Link href={`/documents/${row.id}`}>
-                    <Eye className="h-4 w-4" />
-                  </Link>
-                </Button>
+                <div className="flex justify-end gap-1">
+                  {row.status === "TEMPLATE_MISMATCH" && row.distributorId && (
+                    <Button variant="ghost" size="sm" asChild title="Re-map PDF template">
+                      <Link
+                        href={`/distributors/${row.distributorId}/template?returnTo=/documents/${row.id}`}
+                      >
+                        <RefreshCw className="h-4 w-4 text-destructive" />
+                      </Link>
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link href={`/documents/${row.id}`}>
+                      <Eye className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                </div>
               ),
-              className: "w-12",
+              className: "w-20",
             },
           ]}
         />
