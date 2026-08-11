@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { recalculateDocumentStatus } from "@/lib/db-helpers";
 import {
   buildProductDataFields,
@@ -12,28 +13,14 @@ import {
 
 export const dynamic = "force-dynamic";
 
-function mapProduct(p: {
-  id: string;
-  sku: string;
-  name: string;
-  category: string | null;
-  composition: string | null;
-  manufacturerId: string | null;
-  shipperSize: number | null;
-  mrp: { toString(): string } | null;
-  tp: { toString(): string } | null;
-  oldSp: { toString(): string } | null;
-  newSp: { toString(): string } | null;
-  netPrice: { toString(): string } | null;
-  tax: { toString(): string } | null;
-  netPriceWith1Pct: { toString(): string } | null;
-  bonus: string | null;
-  isActive: boolean;
-  createdAt: Date;
-  manufacturer?: { name: string } | null;
-  aliases: { alias: string }[];
-  _count: { salesLines: number };
-}) {
+type ProductListRow = Prisma.ProductGetPayload<{
+  include: {
+    aliases: true;
+    manufacturer: { select: { name: true } };
+    _count: { select: { salesLines: true } };
+  };
+}>;
+function mapProduct(p: ProductListRow) {
   return {
     ...serializeProductDecimals(p),
     manufacturerName: p.manufacturer?.name ?? null,
