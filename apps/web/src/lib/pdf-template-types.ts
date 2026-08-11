@@ -54,13 +54,17 @@ export interface TemplateDetectionConfig {
 
 export interface LineParserConfig {
   enabled: boolean;
-  /** regex | rate_and_columns | trailing_integers */
-  mode?: "regex" | "rate_and_columns" | "trailing_integers";
+  /** regex | rate_and_columns | trailing_integers | pipe_table */
+  mode?: "regex" | "rate_and_columns" | "trailing_integers" | "pipe_table";
   /** Optional regex with groups: product, qty, price, amount */
   pattern?: string;
   /** Named capture group indices when using regex mode */
   groups?: Partial<Record<"product" | "unit_price" | "sales_qty" | "sales_amount", number>>;
   ratePattern?: string;
+  /** 0-based column index in pipe-delimited rows (pipe_table mode) */
+  productColumn?: number;
+  /** 0-based column index for unit rate in pipe-delimited rows (pipe_table mode) */
+  rateColumn?: number;
   /** 0-based index into numeric tokens after rate (or trailing block) */
   salesQtyColumn?: number;
   salesAmountColumn?: number;

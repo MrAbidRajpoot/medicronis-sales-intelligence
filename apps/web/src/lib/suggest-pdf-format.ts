@@ -3,7 +3,7 @@
  * Mirrors services/pdf-worker/presets.suggest_pdf_format scoring logic.
  */
 
-import { PDF_FORMAT_PRESETS } from "../../../prisma/pdf-format-presets";
+import { PDF_FORMAT_PRESETS } from "../../../../prisma/pdf-format-presets";
 import type { TemplateConfig } from "./pdf-template-types";
 
 export interface TableHints {

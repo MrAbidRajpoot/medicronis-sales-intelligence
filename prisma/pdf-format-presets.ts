@@ -1,8 +1,8 @@
-import type { PdfFormatPreset, TemplateConfig } from "../apps/web/src/lib/pdf-template-types";
+import type { PdfFormatPreset, PdfPlumberSettings, TemplateConfig } from "../apps/web/src/lib/pdf-template-types";
 
 const SSR_SKIP = ["total", "group:", "grand total", "page"];
 
-export const PDFPLUMBER_ALT_SETTINGS: import("./pdf-template-types").PdfPlumberSettings = {
+export const PDFPLUMBER_ALT_SETTINGS: PdfPlumberSettings = {
   vertical_strategy: "text",
   horizontal_strategy: "text",
   snap_tolerance: 5,
