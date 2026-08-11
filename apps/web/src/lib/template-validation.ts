@@ -9,6 +9,7 @@ import {
   isHeaderStructure,
   REQUIRED_CANONICAL_FIELDS,
 } from "@/lib/pdf-template-types";
+import { isLineFallbackStructure, isLineParserConfigured } from "@/lib/line-fallback-utils";
 
 const WARN_IF_MISSING: CanonicalField[] = ["unit_price", "closing_stock"];
 
@@ -21,11 +22,31 @@ function mappingIsDefined(config: TemplateConfig, field: CanonicalField): boolea
 }
 
 export function getUnresolvedRequiredFields(config: TemplateConfig): CanonicalField[] {
+  if (isLineFallbackStructure(config.headerStructure)) {
+    return [];
+  }
   return REQUIRED_CANONICAL_FIELDS.filter((field) => !mappingIsDefined(config, field));
 }
 
 export function getMissingRecommendedFields(config: TemplateConfig): CanonicalField[] {
+  if (isLineFallbackStructure(config.headerStructure)) {
+    return [];
+  }
   return WARN_IF_MISSING.filter((field) => !mappingIsDefined(config, field));
+}
+
+function validateLineParserConfig(config: TemplateConfig): string | null {
+  const lp = config.lineParser;
+  if (!lp?.enabled) {
+    return "lineParser.enabled is required for line_fallback templates";
+  }
+  if (!lp.mode) {
+    return "lineParser.mode is required";
+  }
+  if (!isLineParserConfigured(lp)) {
+    return "lineParser settings are incomplete for the selected mode";
+  }
+  return null;
 }
 
 export function validateTemplateConfig(config: unknown):
@@ -53,6 +74,22 @@ export function validateTemplateConfig(config: unknown):
         return { ok: false, error: `${key}.col must be a number` };
       }
     }
+  }
+
+  if (isLineFallbackStructure(candidate.headerStructure)) {
+    const lineError = validateLineParserConfig(candidate);
+    if (lineError) {
+      return { ok: false, error: lineError };
+    }
+    return {
+      ok: true,
+      config: {
+        ...candidate,
+        fields: candidate.fields ?? {},
+        tableExtractionDisabled: true,
+        lineParser: { enabled: true, ...candidate.lineParser },
+      },
+    };
   }
 
   const unresolved = getUnresolvedRequiredFields(candidate);

@@ -72,6 +72,12 @@ def _pick_best_header_table(
 
 
 def _unresolved_fields(table: list[list[str | None]] | None, config: dict[str, Any]) -> list[str]:
+    if config.get("headerStructure") == "line_fallback":
+        line_cfg = config.get("lineParser") or {}
+        if line_cfg.get("enabled") and line_cfg.get("mode"):
+            return []
+        return list(REQUIRED_FIELDS)
+
     if not table:
         return list(REQUIRED_FIELDS)
     resolved = resolve_label_columns(table, config)
@@ -102,12 +108,24 @@ def analyze_headers(
     else:
         config = preset_config_for_code(suggested_code, col_count or None)
 
+    if template_config:
+        config = dict(template_config)
+        suggested_code = config.get("_formatCode") or suggested_code
+    else:
+        config = preset_config_for_code(suggested_code, col_count or None)
+
     header_structure = config.get("headerStructure", "single_row")
+    if header_structure == "line_fallback" or suggested_code == "fmt-j-no-table":
+        header_structure = "line_fallback"
+        config = dict(config)
+        config["headerStructure"] = "line_fallback"
+        config.setdefault("tableExtractionDisabled", True)
+
     header_grid: list[list[str]] = []
     detected_groups: list[str] = []
     leaf_columns: list[dict[str, Any]] = []
 
-    if table and header_span is not None:
+    if header_structure != "line_fallback" and table and header_span is not None:
         header_start, _ = header_span
         header_grid = _header_grid_from_table(table, header_start, header_structure)
         row0 = table[header_start]
@@ -133,4 +151,5 @@ def analyze_headers(
         "suggestedMappings": suggested_mappings,
         "unresolvedFields": unresolved,
         "colCount": col_count or None,
+        "usesLineParser": header_structure == "line_fallback",
     }

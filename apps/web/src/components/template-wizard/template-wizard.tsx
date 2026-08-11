@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/page-header";
 import { SamplePdfUpload } from "@/components/template-wizard/sample-pdf-upload";
 import { FormatFamilySelect, type PdfFormatOption } from "@/components/template-wizard/format-family-select";
 import { HeaderMappingGrid } from "@/components/template-wizard/header-mapping-grid";
+import { LineParserSettings } from "@/components/template-wizard/line-parser-settings";
 import { ExtractionPreviewTable } from "@/components/template-wizard/extraction-preview-table";
 import { AdvancedTemplateSettings } from "@/components/template-wizard/advanced-template-settings";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -15,8 +16,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/components/toast-provider";
 import type { ExtractedRowPayload } from "@/lib/pdf-worker";
-import type { HeaderStructure, PdfPlumberSettings, TemplateConfig } from "@/lib/pdf-template-types";
+import type { HeaderStructure, LineParserConfig, PdfPlumberSettings, TemplateConfig } from "@/lib/pdf-template-types";
 import { getUnresolvedRequiredFields } from "@/lib/template-validation";
+import { getDistributorLinePreset } from "@/lib/distributor-line-presets";
+import {
+  DEFAULT_LINE_PARSER,
+  getLineFallbackIssues,
+  isLineFallbackStructure,
+  mergeLineParser,
+} from "@/lib/line-fallback-utils";
 import {
   assignmentsFromConfig,
   assignmentsFromSuggestedMappings,
@@ -37,6 +45,7 @@ interface PreviewResponse {
   extractConfidence?: number;
   extractMethod?: string;
   templateResolutionOk?: boolean;
+  usesLineParser?: boolean;
 }
 
 interface TemplateWizardProps {
@@ -70,6 +79,7 @@ export function TemplateWizard({
   const [skipRowsContaining, setSkipRowsContaining] = useState("");
   const [pdfPlumberSettings, setPdfPlumberSettings] = useState<PdfPlumberSettings>({});
   const [tableExtractionDisabled, setTableExtractionDisabled] = useState(false);
+  const [lineParser, setLineParser] = useState<LineParserConfig>(DEFAULT_LINE_PARSER);
 
   const [analyzing, setAnalyzing] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -78,6 +88,18 @@ export function TemplateWizard({
   const [initialLoaded, setInitialLoaded] = useState(false);
 
   const selectedFormat = formats.find((f) => f.id === pdfFormatId) ?? null;
+  const isLineFallback = isLineFallbackStructure(headerStructure);
+
+  function resolveLineParser(
+    formatConfig?: TemplateConfig | null,
+    existing?: LineParserConfig
+  ): LineParserConfig {
+    const distPreset = getDistributorLinePreset(distributorCode);
+    return mergeLineParser(
+      formatConfig?.lineParser,
+      mergeLineParser(distPreset?.lineParser, existing)
+    );
+  }
 
   const config = useMemo(
     () =>
@@ -92,7 +114,8 @@ export function TemplateWizard({
           .map((s) => s.trim())
           .filter(Boolean),
         pdfPlumberSettings,
-        tableExtractionDisabled,
+        tableExtractionDisabled: isLineFallback ? true : tableExtractionDisabled,
+        lineParser: isLineFallback ? lineParser : undefined,
       }),
     [
       headerStructure,
@@ -103,17 +126,20 @@ export function TemplateWizard({
       skipRowsContaining,
       pdfPlumberSettings,
       tableExtractionDisabled,
+      lineParser,
+      isLineFallback,
     ]
   );
 
   const unresolved = getUnresolvedRequiredFields(config);
-  const dupes = duplicateFieldColumns(columnAssignments);
+  const lineFallbackIssues = isLineFallback ? getLineFallbackIssues(config, previewRows.length) : [];
+  const dupes = isLineFallback ? [] : duplicateFieldColumns(columnAssignments);
   const canSave =
     !!sampleFile &&
     !!pdfFormatId &&
-    unresolved.length === 0 &&
-    dupes.length === 0 &&
-    headerGrid.length > 0;
+    (isLineFallback
+      ? lineFallbackIssues.length === 0
+      : unresolved.length === 0 && dupes.length === 0 && headerGrid.length > 0);
 
   const loadFormats = useCallback(async () => {
     const res = await fetch("/api/pdf-formats");
@@ -139,14 +165,20 @@ export function TemplateWizard({
       setSkipRowsContaining((existing.skipRowsContaining ?? []).join(", "));
       setPdfPlumberSettings(existing.pdfPlumberSettings ?? {});
       setTableExtractionDisabled(existing.tableExtractionDisabled ?? false);
-      if (existing.fields && Object.keys(existing.fields).length > 0) {
+      if (existing.lineParser) {
+        setLineParser(resolveLineParser(null, existing.lineParser));
+      }
+      if (isLineFallbackStructure(existing.headerStructure)) {
+        setHeaderGrid([]);
+        setColumnAssignments([]);
+      } else if (existing.fields && Object.keys(existing.fields).length > 0) {
         const colCount =
           Math.max(...Object.values(existing.fields).map((m) => m?.col ?? -1), 0) + 1;
         setColumnAssignments(assignmentsFromConfig(existing, colCount));
       }
     }
     setInitialLoaded(true);
-  }, [distributorId]);
+  }, [distributorId, distributorCode]);
 
   useEffect(() => {
     loadFormats()
@@ -204,34 +236,52 @@ export function TemplateWizard({
         const preview = data as PreviewResponse;
         setSuggestedCode(preview.suggestedFormatCode);
         setConfidence(preview.confidence);
-        setHeaderGrid(preview.headerGrid ?? []);
-        setHeaderStructure(preview.headerStructure ?? "grouped_two_row");
         setPreviewRows(preview.previewRows ?? []);
-
-        const colCount = Math.max(
-          preview.headerGrid?.[0]?.length ?? 0,
-          preview.headerGrid?.[1]?.length ?? 0,
-          1
-        );
 
         const formatForSuggest = formats.find((f) => f.code === preview.suggestedFormatCode);
         if (formatForSuggest && !formatId) {
           setPdfFormatId(formatForSuggest.id);
         }
 
-        const preset = formatForSuggest?.defaultConfig ?? selectedFormat?.defaultConfig;
-        setColumnAssignments(
-          assignmentsFromSuggestedMappings(
-            colCount,
-            preview.suggestedMappings ?? preset?.fields ?? {}
-          )
-        );
+        const preset =
+          formatForSuggest?.defaultConfig ??
+          selectedFormat?.defaultConfig ??
+          (formatId ? formats.find((f) => f.id === formatId)?.defaultConfig : null);
+
+        const lineMode =
+          isLineFallbackStructure(preview.headerStructure) ||
+          preview.usesLineParser ||
+          isLineFallbackStructure(preset?.headerStructure);
+
+        if (lineMode) {
+          setHeaderStructure("line_fallback");
+          setHeaderGrid([]);
+          setColumnAssignments([]);
+          setTableExtractionDisabled(true);
+          setLineParser(resolveLineParser(preset));
+        } else {
+          setHeaderStructure(preview.headerStructure ?? "grouped_two_row");
+          setHeaderGrid(preview.headerGrid ?? []);
+          const colCount = Math.max(
+            preview.headerGrid?.[0]?.length ?? 0,
+            preview.headerGrid?.[1]?.length ?? 0,
+            0
+          );
+          setColumnAssignments(
+            assignmentsFromSuggestedMappings(
+              colCount,
+              preview.suggestedMappings ?? preset?.fields ?? {}
+            )
+          );
+        }
 
         if (preset) {
           setSkipRowsBeforeHeader(preset.skipRowsBeforeHeader ?? 0);
           setSkipRowsContaining((preset.skipRowsContaining ?? []).join(", "));
           setPdfPlumberSettings(preset.pdfPlumberSettings ?? {});
-          setTableExtractionDisabled(preset.tableExtractionDisabled ?? false);
+          if (!lineMode) {
+            setTableExtractionDisabled(preset.tableExtractionDisabled ?? false);
+          }
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Analysis failed");
@@ -239,7 +289,7 @@ export function TemplateWizard({
         setAnalyzing(false);
       }
     },
-    [distributorId, formats, selectedFormat]
+    [distributorId, distributorCode, formats, selectedFormat]
   );
 
   useEffect(() => {
@@ -249,7 +299,8 @@ export function TemplateWizard({
   }, [sampleFile]);
 
   useEffect(() => {
-    if (!sampleFile || !pdfFormatId || !initialLoaded || headerGrid.length === 0) return;
+    if (!sampleFile || !pdfFormatId || !initialLoaded) return;
+    if (!isLineFallback && headerGrid.length === 0) return;
 
     if (previewTimer.current) clearTimeout(previewTimer.current);
     previewTimer.current = setTimeout(() => {
@@ -259,7 +310,7 @@ export function TemplateWizard({
     return () => {
       if (previewTimer.current) clearTimeout(previewTimer.current);
     };
-  }, [sampleFile, pdfFormatId, config, headerGrid.length, initialLoaded, runPreview]);
+  }, [sampleFile, pdfFormatId, config, headerGrid.length, initialLoaded, isLineFallback, runPreview]);
 
   function handleFormatChange(formatId: string) {
     setPdfFormatId(formatId);
@@ -271,7 +322,14 @@ export function TemplateWizard({
       }
       setSkipRowsContaining((format.defaultConfig.skipRowsContaining ?? []).join(", "));
       setPdfPlumberSettings(format.defaultConfig.pdfPlumberSettings ?? {});
-      setTableExtractionDisabled(format.defaultConfig.tableExtractionDisabled ?? false);
+      if (isLineFallbackStructure(format.headerStructure)) {
+        setTableExtractionDisabled(true);
+        setHeaderGrid([]);
+        setColumnAssignments([]);
+        setLineParser(resolveLineParser(format.defaultConfig));
+      } else {
+        setTableExtractionDisabled(format.defaultConfig.tableExtractionDisabled ?? false);
+      }
     }
     if (sampleFile) {
       void analyzeSample(sampleFile, formatId);
@@ -350,8 +408,9 @@ export function TemplateWizard({
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Template required before upload</AlertTitle>
           <AlertDescription>
-            Complete this wizard to enable PDF uploads for this distributor. Map RETURN/QTY,
-            NET SALE/QTY, NET SALE/AMOUNT, and CLOSING/QTY for AIM-style reports.
+            {isLineFallback
+              ? "This PDF uses text-line parsing (Family J). Adjust sales qty/amount column indices until the live preview looks correct, then save."
+              : "Complete this wizard to enable PDF uploads. Map RETURN/QTY, NET SALE/QTY, NET SALE/AMOUNT, and CLOSING/QTY for AIM-style reports."}
           </AlertDescription>
         </Alert>
       )}
@@ -413,17 +472,27 @@ export function TemplateWizard({
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">3. Column Mapping</CardTitle>
+              <CardTitle className="text-base">
+                3. {isLineFallback ? "Line Parser Settings" : "Column Mapping"}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <HeaderMappingGrid
-                headerGrid={headerGrid}
-                headerStructure={headerStructure}
-                columnAssignments={columnAssignments}
-                onAssignmentChange={handleAssignmentChange}
-                config={config}
-                disabled={!sampleFile || analyzing}
-              />
+              {isLineFallback ? (
+                <LineParserSettings
+                  value={lineParser}
+                  onChange={setLineParser}
+                  disabled={!sampleFile || analyzing}
+                />
+              ) : (
+                <HeaderMappingGrid
+                  headerGrid={headerGrid}
+                  headerStructure={headerStructure}
+                  columnAssignments={columnAssignments}
+                  onAssignmentChange={handleAssignmentChange}
+                  config={config}
+                  disabled={!sampleFile || analyzing}
+                />
+              )}
             </CardContent>
           </Card>
 
@@ -466,15 +535,19 @@ export function TemplateWizard({
             <CardContent className="space-y-4 pt-6">
               <div className="space-y-2 text-sm">
                 <div className="flex items-center gap-2">
-                  {unresolved.length === 0 ? (
+                  {(isLineFallback ? lineFallbackIssues.length === 0 : unresolved.length === 0) ? (
                     <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                   ) : (
                     <AlertCircle className="h-4 w-4 text-destructive" />
                   )}
                   <span>
-                    {unresolved.length === 0
-                      ? "All required fields mapped"
-                      : `Missing: ${unresolved.join(", ")}`}
+                    {isLineFallback
+                      ? lineFallbackIssues.length === 0
+                        ? "Line parser ready — preview shows data"
+                        : lineFallbackIssues.join("; ")
+                      : unresolved.length === 0
+                        ? "All required fields mapped"
+                        : `Missing: ${unresolved.join(", ")}`}
                   </span>
                 </div>
               </div>

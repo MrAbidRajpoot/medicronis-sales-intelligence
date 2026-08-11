@@ -7,6 +7,11 @@ import {
 } from "@/lib/template-validation";
 import type { CanonicalField, TemplateConfig } from "@/lib/pdf-template-types";
 import { isCanonicalField } from "@/lib/pdf-template-types";
+import { getDistributorLinePreset } from "@/lib/distributor-line-presets";
+import {
+  isLineFallbackStructure,
+  mergeLineParser,
+} from "@/lib/line-fallback-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -80,12 +85,33 @@ export async function POST(
       presetConfig = (format?.defaultConfig as unknown as TemplateConfig) ?? null;
     }
 
+    const distributorPreset = getDistributorLinePreset(distributor.code);
+    const lineFallback =
+      isLineFallbackStructure(presetConfig?.headerStructure) ||
+      isLineFallbackStructure(overrideConfig?.headerStructure) ||
+      isLineFallbackStructure(analysis.headerStructure);
+
+    let mergedPreset = presetConfig;
+    if (lineFallback && (distributorPreset || presetConfig)) {
+      mergedPreset = {
+        ...(presetConfig ?? { headerStructure: "line_fallback", fields: {} }),
+        ...(distributorPreset ?? {}),
+        headerStructure: "line_fallback",
+        tableExtractionDisabled: true,
+        fields: {},
+        lineParser: mergeLineParser(
+          presetConfig?.lineParser,
+          distributorPreset?.lineParser ?? overrideConfig?.lineParser
+        ),
+      };
+    }
+
     const activeConfig: TemplateConfig =
       overrideConfig ??
       buildTemplateConfigFromPreset(
         analysis.headerStructure,
-        presetConfig ?? { headerStructure: analysis.headerStructure, fields: analysis.suggestedMappings },
-        analysis.suggestedMappings as TemplateConfig["fields"]
+        mergedPreset ?? { headerStructure: analysis.headerStructure, fields: analysis.suggestedMappings },
+        lineFallback ? {} : (analysis.suggestedMappings as TemplateConfig["fields"])
       );
 
     const extract = await extractPdf(buffer, file.name, {
@@ -94,7 +120,7 @@ export async function POST(
       templateConfig: activeConfig,
     });
 
-    const labelUnresolved = normalizeUnresolved(analysis.unresolvedFields);
+    const labelUnresolved = lineFallback ? [] : normalizeUnresolved(analysis.unresolvedFields);
     const configUnresolved = getUnresolvedRequiredFields(activeConfig);
     const unresolvedFields = Array.from(
       new Set([...labelUnresolved, ...configUnresolved])
@@ -114,6 +140,7 @@ export async function POST(
       extractConfidence: extract.confidence,
       extractMethod: extract.extract_method ?? "table",
       templateResolutionOk: extract.template_resolution_ok ?? true,
+      usesLineParser: analysis.usesLineParser ?? lineFallback,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Preview failed";

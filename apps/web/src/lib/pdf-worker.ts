@@ -185,6 +185,7 @@ export interface AnalyzeHeadersResult {
   suggestedMappings: Partial<Record<CanonicalField, { col?: number; group?: string; leaf?: string }>>;
   unresolvedFields: CanonicalField[];
   colCount?: number | null;
+  usesLineParser?: boolean;
 }
 
 export async function analyzeHeaders(

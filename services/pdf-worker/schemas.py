@@ -129,3 +129,4 @@ class AnalyzeHeadersResponse(BaseModel):
     suggestedMappings: dict[str, Any] = Field(default_factory=dict)
     unresolvedFields: list[str] = Field(default_factory=list)
     colCount: int | None = None
+    usesLineParser: bool = False
