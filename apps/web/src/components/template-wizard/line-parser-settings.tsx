@@ -35,8 +35,8 @@ export function LineParserSettings({ value, onChange, disabled }: LineParserSett
         <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
         <p>
           This PDF has no detectable table headers. Extraction uses a{" "}
-          <strong>line parser</strong> — map which numeric token positions are sales qty and
-          amount after the product name and rate.
+          <strong>line parser</strong> — map which numeric token positions are Sales Units and
+          Sales Value after the product name and rate.
         </p>
       </div>
 
@@ -65,7 +65,7 @@ export function LineParserSettings({ value, onChange, disabled }: LineParserSett
       {(mode === "rate_and_columns" || mode === "trailing_integers") && (
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="sales-qty-col">Sales qty column index</Label>
+            <Label htmlFor="sales-qty-col">Sales Units column index</Label>
             <Input
               id="sales-qty-col"
               type="number"
@@ -77,11 +77,11 @@ export function LineParserSettings({ value, onChange, disabled }: LineParserSett
               }
             />
             <p className="text-xs text-muted-foreground">
-              0-based index into numeric tokens after the rate (e.g. net sale qty).
+              0-based index into numeric tokens after the rate (e.g. Sales Units).
             </p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="sales-amt-col">Sales amount column index</Label>
+            <Label htmlFor="sales-amt-col">Sales Value column index</Label>
             <Input
               id="sales-amt-col"
               type="number"
@@ -95,7 +95,7 @@ export function LineParserSettings({ value, onChange, disabled }: LineParserSett
               }
             />
             <p className="text-xs text-muted-foreground">
-              0-based index for net sale value amount.
+              0-based index for Sales Value amount.
             </p>
           </div>
         </div>

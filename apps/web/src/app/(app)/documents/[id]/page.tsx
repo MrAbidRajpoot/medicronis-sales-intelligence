@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { ProcessingStepper, type ProcessingStep } from "@/components/processing-stepper";
-import { DataTable } from "@/components/data-table";
+import { DataTable, type Column } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
@@ -92,6 +92,72 @@ export default async function DocumentDetailPage({ params }: { params: { id: str
   const rows = run?.extractedRows ?? [];
   const matchRate = run && run.rowCount > 0 ? Math.round((run.matchedCount / run.rowCount) * 100) : 0;
   const hasUnresolved = rows.some((r) => r.status === "UNMATCHED" || r.status === "PENDING");
+  const showReturnsQty = rows.some((r) => r.returnsQty != null);
+  const showClosingStock = rows.some((r) => r.closingStock != null);
+
+  type ExtractedRowRow = (typeof rows)[number];
+  const columns: Column<ExtractedRowRow>[] = [
+    { key: "idx", header: "#", cell: (r) => r.rowIndex, className: "w-12" },
+    {
+      key: "raw",
+      header: "Raw Product Text",
+      cell: (r) => <span className="font-mono text-xs">{r.rawProductText}</span>,
+    },
+    {
+      key: "product",
+      header: "Matched Product",
+      cell: (r) =>
+        r.product ? (
+          <div>
+            <p className="text-sm">{r.product.name}</p>
+            <p className="text-xs text-muted-foreground">{r.product.sku}</p>
+          </div>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
+    },
+  ];
+  if (showReturnsQty) {
+    columns.push({
+      key: "returnsQty",
+      header: "Returns Qty",
+      cell: (r) => (r.returnsQty != null ? Number(r.returnsQty).toLocaleString() : "—"),
+      className: "text-right",
+    });
+  }
+  columns.push(
+    {
+      key: "qty",
+      header: "Sales Units",
+      cell: (r) => Number(r.quantity).toLocaleString(),
+      className: "text-right",
+    },
+    {
+      key: "price",
+      header: "S.P",
+      cell: (r) => (r.unitPrice ? formatCurrency(Number(r.unitPrice)) : "—"),
+      className: "text-right",
+    },
+    {
+      key: "total",
+      header: "Sales Value",
+      cell: (r) => (r.lineTotal ? formatCurrency(Number(r.lineTotal)) : "—"),
+      className: "text-right",
+    }
+  );
+  if (showClosingStock) {
+    columns.push({
+      key: "closingStock",
+      header: "Closing Stock",
+      cell: (r) => (r.closingStock != null ? Number(r.closingStock).toLocaleString() : "—"),
+      className: "text-right",
+    });
+  }
+  columns.push({
+    key: "status",
+    header: "Status",
+    cell: (r) => <StatusBadge status={r.status} type="row" />,
+  });
 
   return (
     <div className="space-y-6">
@@ -186,46 +252,7 @@ export default async function DocumentDetailPage({ params }: { params: { id: str
           title="Extracted Rows"
           description={`${rows.length} line items from PDF extraction`}
           data={rows}
-          columns={[
-            { key: "idx", header: "#", cell: (r) => r.rowIndex, className: "w-12" },
-            {
-              key: "raw",
-              header: "Raw Product Text",
-              cell: (r) => <span className="font-mono text-xs">{r.rawProductText}</span>,
-            },
-            {
-              key: "product",
-              header: "Matched Product",
-              cell: (r) =>
-                r.product ? (
-                  <div>
-                    <p className="text-sm">{r.product.name}</p>
-                    <p className="text-xs text-muted-foreground">{r.product.sku}</p>
-                  </div>
-                ) : (
-                  <span className="text-muted-foreground">—</span>
-                ),
-            },
-            {
-              key: "qty",
-              header: "Qty",
-              cell: (r) => Number(r.quantity).toLocaleString(),
-              className: "text-right",
-            },
-            {
-              key: "price",
-              header: "Unit Price",
-              cell: (r) => (r.unitPrice ? formatCurrency(Number(r.unitPrice)) : "—"),
-              className: "text-right",
-            },
-            {
-              key: "total",
-              header: "Line Total",
-              cell: (r) => (r.lineTotal ? formatCurrency(Number(r.lineTotal)) : "—"),
-              className: "text-right",
-            },
-            { key: "status", header: "Status", cell: (r) => <StatusBadge status={r.status} type="row" /> },
-          ]}
+          columns={columns}
         />
       ) : (
         <Card>

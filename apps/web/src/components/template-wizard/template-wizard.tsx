@@ -409,7 +409,7 @@ export function TemplateWizard({
           <AlertTitle>Template required before upload</AlertTitle>
           <AlertDescription>
             {isLineFallback
-              ? "This PDF uses text-line parsing (Family J). Adjust sales qty/amount column indices until the live preview looks correct, then save."
+              ? "This PDF uses text-line parsing (Family J). Adjust Sales Units / Sales Value column indices until the live preview looks correct, then save."
               : "Complete this wizard to enable PDF uploads. Map RETURN/QTY, NET SALE/QTY, NET SALE/AMOUNT, and CLOSING/QTY for AIM-style reports."}
           </AlertDescription>
         </Alert>

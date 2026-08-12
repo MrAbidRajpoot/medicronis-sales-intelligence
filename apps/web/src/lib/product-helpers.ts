@@ -79,6 +79,50 @@ export async function resolveManufacturerId(
   return undefined;
 }
 
+export const PRODUCT_GROUP_NAMES = ["Medicronis", "Transformer"] as const;
+
+export type ProductGroupName = (typeof PRODUCT_GROUP_NAMES)[number];
+
+export function isValidProductGroupName(name: string): name is ProductGroupName {
+  return (PRODUCT_GROUP_NAMES as readonly string[]).includes(name);
+}
+
+/** Resolve product group by id or exact name (Medicronis | Transformer). */
+export async function resolveProductGroupId(
+  prisma: {
+    productGroup: {
+      findUnique: Function;
+      findFirst: Function;
+    };
+  },
+  productGroupId?: string | null,
+  groupName?: string | null
+): Promise<string | null | undefined> {
+  if (groupName != null && String(groupName).trim()) {
+    const trimmed = String(groupName).trim();
+    if (!isValidProductGroupName(trimmed)) {
+      throw new Error(`Group must be one of: ${PRODUCT_GROUP_NAMES.join(" | ")}`);
+    }
+    const existing = await prisma.productGroup.findUnique({ where: { name: trimmed } });
+    if (!existing) {
+      throw new Error(`Product group "${trimmed}" not found — run prisma db seed`);
+    }
+    return existing.id;
+  }
+
+  if (productGroupId === null) return null;
+  if (productGroupId) {
+    const existing = await prisma.productGroup.findUnique({
+      where: { id: String(productGroupId) },
+    });
+    if (!existing) {
+      throw new Error("Invalid product group");
+    }
+    return existing.id;
+  }
+  return undefined;
+}
+
 export function buildProductDataFields(input: ProductFieldInput) {
   const data: Record<string, unknown> = {};
 

@@ -56,6 +56,11 @@ export function addMonths(date: Date, months: number): Date {
   return new Date(Date.UTC(y, m, Math.min(d, lastDay)));
 }
 
+/** Same UTC calendar day in the previous month, clamped at month end. */
+export function sameDayPriorMonth(date: Date): Date {
+  return addMonths(date, -1);
+}
+
 export function minDate(dates: Date[]): Date {
   return dates.reduce((min, d) => (d.getTime() < min.getTime() ? d : min));
 }

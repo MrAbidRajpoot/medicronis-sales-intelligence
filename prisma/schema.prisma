@@ -127,6 +127,16 @@ model Manufacturer {
   products Product[]
 }
 
+model ProductGroup {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products Product[]
+}
+
 model Distributor {
   id          String              @id @default(cuid())
   code        String              @unique
@@ -181,6 +191,7 @@ model Product {
   category           String?
   composition        String?
   manufacturerId     String?
+  productGroupId     String?
   shipperSize        Int?
   mrp                Decimal? @db.Decimal(12, 2)
   tp                 Decimal? @db.Decimal(12, 2)
@@ -195,6 +206,7 @@ model Product {
   updatedAt          DateTime @updatedAt
 
   manufacturer        Manufacturer?             @relation(fields: [manufacturerId], references: [id])
+  productGroup        ProductGroup?             @relation(fields: [productGroupId], references: [id])
   aliases             ProductAlias[]
   distributorMappings DistributorProductMapping[]
   extractedRows       ExtractedRow[]
@@ -202,6 +214,7 @@ model Product {
   dailySalesFacts     DailySalesFact[]
 
   @@index([manufacturerId])
+  @@index([productGroupId])
 }
 
 model ProductAlias {

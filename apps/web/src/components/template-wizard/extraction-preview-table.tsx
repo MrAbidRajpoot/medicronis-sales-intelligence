@@ -40,9 +40,10 @@ export function ExtractionPreviewTable({ rows, loading }: ExtractionPreviewTable
           <TableRow className="bg-primary/5 hover:bg-primary/5">
             <TableHead>Product</TableHead>
             <TableHead className="text-right">Returns Qty</TableHead>
-            <TableHead className="text-right">Net Sale Qty</TableHead>
-            <TableHead className="text-right">Net Sale Amount</TableHead>
-            <TableHead className="text-right">Closing Qty</TableHead>
+            <TableHead className="text-right">Sales Units</TableHead>
+            <TableHead className="text-right">S.P</TableHead>
+            <TableHead className="text-right">Sales Value</TableHead>
+            <TableHead className="text-right">Closing Stock</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -53,6 +54,7 @@ export function ExtractionPreviewTable({ rows, loading }: ExtractionPreviewTable
               </TableCell>
               <TableCell className="text-right tabular-nums">{fmtNum(row.returns_qty)}</TableCell>
               <TableCell className="text-right tabular-nums">{fmtNum(row.quantity)}</TableCell>
+              <TableCell className="text-right tabular-nums">{fmtNum(row.unit_price)}</TableCell>
               <TableCell className="text-right tabular-nums">{fmtNum(row.gross_value)}</TableCell>
               <TableCell className="text-right tabular-nums">{fmtNum(row.closing_stock)}</TableCell>
             </TableRow>

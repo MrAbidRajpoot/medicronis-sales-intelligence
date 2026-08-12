@@ -12,6 +12,8 @@ const MANAGERS = ["Ahmed Khan", "Sara Malik", "Usman Ali"];
 
 const MANUFACTURERS = ["Getz Pharma", "Searle", "Highnoon", "GlaxoSmithKline", "Abbott"];
 
+const PRODUCT_GROUPS = ["Medicronis", "Transformer"] as const;
+
 const PRODUCTS = [
   { sku: "MED-001", name: "Amoxicillin 500mg Caps", category: "Antibiotic", composition: "Amoxicillin 500mg", manufacturer: "Getz Pharma", shipperSize: 100, mrp: 450, tp: 380, oldSp: 360, newSp: 350, netPrice: 340, tax: 34, netPriceWith1Pct: 343.4, bonus: "4+1" },
   { sku: "MED-002", name: "Paracetamol 500mg Tab", category: "Analgesic", composition: "Paracetamol 500mg", manufacturer: "Searle", shipperSize: 200, mrp: 120, tp: 95, oldSp: 90, newSp: 88, netPrice: 85, tax: 8.5, netPriceWith1Pct: 85.85, bonus: "10+2" },
@@ -200,15 +202,31 @@ async function main() {
   }
   console.log(`  Manufacturers: ${MANUFACTURERS.length}`);
 
+  const productGroupMap = new Map<string, string>();
+  for (const name of PRODUCT_GROUPS) {
+    const group = await prisma.productGroup.upsert({
+      where: { name },
+      update: {},
+      create: { name },
+    });
+    productGroupMap.set(name, group.id);
+  }
+  console.log(`  ProductGroups: ${PRODUCT_GROUPS.length}`);
+
+  const defaultProductGroupId = productGroupMap.get("Medicronis")!;
+
   const productMap = new Map<string, string>();
   for (const p of PRODUCTS) {
     const { manufacturer, ...productData } = p;
     const product = await prisma.product.upsert({
       where: { sku: p.sku },
-      update: {},
+      update: {
+        productGroupId: defaultProductGroupId,
+      },
       create: {
         ...productData,
         manufacturerId: manufacturerMap.get(manufacturer),
+        productGroupId: defaultProductGroupId,
       },
     });
     productMap.set(p.sku, product.id);

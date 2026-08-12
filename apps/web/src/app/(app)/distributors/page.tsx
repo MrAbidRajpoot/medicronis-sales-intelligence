@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Building2, Download, FileStack, Loader2, Pencil, Plus, Trash2, Upload } from "lucide-react";
+import { Building2, Download, FileStack, Loader2, Pencil, Plus, Search, Trash2, Upload } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { TemplateCoverageKpis } from "@/components/template-coverage-kpis";
@@ -58,6 +58,7 @@ export default function DistributorsPage() {
   const router = useRouter();
   const [items, setItems] = useState<Distributor[]>([]);
   const [managers, setManagers] = useState<ManagerOption[]>([]);
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -98,6 +99,27 @@ export default function DistributorsPage() {
     load();
     loadManagers();
   }, [load, loadManagers]);
+
+  const filteredItems = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((item) => {
+      const haystack = [
+        item.code,
+        item.name,
+        item.city,
+        item.managerName,
+        item.region,
+        formatRegionLabel(item.region),
+        item.country,
+        formatCountryLabel(item.country),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [items, search]);
 
   function openCreate() {
     setEditing(null);
@@ -261,71 +283,92 @@ export default function DistributorsPage() {
           action={{ label: "Add Distributor", href: "#" }}
         />
       ) : (
-        <div className="rounded-lg border bg-white">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Code</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Region</TableHead>
-                <TableHead>Country</TableHead>
-                <TableHead>City</TableHead>
-                <TableHead>Manager</TableHead>
-                <TableHead className="text-right">Documents</TableHead>
-                <TableHead className="text-right">Mappings</TableHead>
-                <TableHead>Template</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {items.map((item) => (
-                <TableRow key={item.id} className={!item.isActive ? "opacity-60" : undefined}>
-                  <TableCell className="font-mono text-sm">{item.code}</TableCell>
-                  <TableCell className="font-medium">{item.name}</TableCell>
-                  <TableCell className="text-muted-foreground">{formatRegionLabel(item.region)}</TableCell>
-                  <TableCell className="text-muted-foreground">{formatCountryLabel(item.country)}</TableCell>
-                  <TableCell className="text-muted-foreground">{item.city ?? "—"}</TableCell>
-                  <TableCell className="text-muted-foreground">{item.managerName ?? "—"}</TableCell>
-                  <TableCell className="text-right">{item.documentCount}</TableCell>
-                  <TableCell className="text-right">{item.mappingCount}</TableCell>
-                  <TableCell>
-                    {item.templateReady ? (
-                      <Badge variant="success">Ready</Badge>
-                    ) : (
-                      <Badge variant="danger">Template required</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={item.isActive ? "success" : "secondary"}>
-                      {item.isActive ? "Active" : "Inactive"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="sm" asChild title="Configure PDF template">
-                        <Link href={`/distributors/${item.id}/template`}>
-                          <FileStack className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(item)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      {item.isActive ? (
-                        <Button variant="ghost" size="sm" onClick={() => handleDelete(item)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      ) : (
-                        <Button variant="outline" size="sm" onClick={() => handleReactivate(item)}>
-                          Reactivate
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        <div className="space-y-4">
+          <div className="relative max-w-md">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by code, name, city, manager, region, country…"
+              className="pl-9"
+              aria-label="Search distributors"
+            />
+          </div>
+
+          {filteredItems.length === 0 ? (
+            <EmptyState
+              icon={Search}
+              title="No matching distributors"
+              description="Try a different search term, or clear the search to see all distributors."
+            />
+          ) : (
+            <div className="rounded-lg border bg-white">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Region</TableHead>
+                    <TableHead>Country</TableHead>
+                    <TableHead>City</TableHead>
+                    <TableHead>Manager</TableHead>
+                    <TableHead className="text-right">Documents</TableHead>
+                    <TableHead className="text-right">Mappings</TableHead>
+                    <TableHead>Template</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredItems.map((item) => (
+                    <TableRow key={item.id} className={!item.isActive ? "opacity-60" : undefined}>
+                      <TableCell className="font-mono text-sm">{item.code}</TableCell>
+                      <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell className="text-muted-foreground">{formatRegionLabel(item.region)}</TableCell>
+                      <TableCell className="text-muted-foreground">{formatCountryLabel(item.country)}</TableCell>
+                      <TableCell className="text-muted-foreground">{item.city ?? "—"}</TableCell>
+                      <TableCell className="text-muted-foreground">{item.managerName ?? "—"}</TableCell>
+                      <TableCell className="text-right">{item.documentCount}</TableCell>
+                      <TableCell className="text-right">{item.mappingCount}</TableCell>
+                      <TableCell>
+                        {item.templateReady ? (
+                          <Badge variant="success">Ready</Badge>
+                        ) : (
+                          <Badge variant="danger">Template required</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={item.isActive ? "success" : "secondary"}>
+                          {item.isActive ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="sm" asChild title="Configure PDF template">
+                            <Link href={`/distributors/${item.id}/template`}>
+                              <FileStack className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => openEdit(item)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          {item.isActive ? (
+                            <Button variant="ghost" size="sm" onClick={() => handleDelete(item)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          ) : (
+                            <Button variant="outline" size="sm" onClick={() => handleReactivate(item)}>
+                              Reactivate
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </div>
       )}
 

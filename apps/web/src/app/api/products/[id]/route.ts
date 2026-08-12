@@ -6,6 +6,7 @@ import {
   parseOptionalDecimal,
   parseOptionalInt,
   resolveManufacturerId,
+  resolveProductGroupId,
   serializeProductDecimals,
 } from "@/lib/product-helpers";
 
@@ -17,6 +18,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     include: {
       aliases: true,
       manufacturer: { select: { id: true, name: true } },
+      productGroup: { select: { id: true, name: true } },
       _count: { select: { salesLines: true, extractedRows: true } },
     },
   });
@@ -29,6 +31,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     ...serializeProductDecimals(product),
     aliases: product.aliases.map((a) => a.alias),
     manufacturerName: product.manufacturer?.name ?? null,
+    productGroupId: product.productGroupId,
+    productGroupName: product.productGroup?.name ?? null,
     salesLineCount: product._count.salesLines,
     extractedRowCount: product._count.extractedRows,
   });
@@ -44,6 +48,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       composition,
       manufacturerId,
       manufacturerName,
+      productGroupId,
+      groupName,
       shipperSize,
       mrp,
       tp,
@@ -70,6 +76,25 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: "Bonus must be in format e.g. 4+1" }, { status: 400 });
     }
 
+    let resolvedProductGroupId: string | null | undefined;
+    if (productGroupId !== undefined || groupName !== undefined) {
+      try {
+        resolvedProductGroupId = await resolveProductGroupId(
+          prisma,
+          productGroupId as string | null | undefined,
+          groupName as string | null | undefined
+        );
+      } catch (err) {
+        return NextResponse.json(
+          { error: err instanceof Error ? err.message : "Invalid product group" },
+          { status: 400 }
+        );
+      }
+      if (resolvedProductGroupId === null || resolvedProductGroupId === undefined) {
+        return NextResponse.json({ error: "Product group is required" }, { status: 400 });
+      }
+    }
+
     const resolvedManufacturerId = await resolveManufacturerId(
       prisma,
       manufacturerId as string | null | undefined,
@@ -84,6 +109,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
           ...(name !== undefined && { name: String(name).trim() }),
           ...(category !== undefined && { category: category ? String(category).trim() || null : null }),
           ...(resolvedManufacturerId !== undefined && { manufacturerId: resolvedManufacturerId }),
+          ...(resolvedProductGroupId !== undefined && { productGroupId: resolvedProductGroupId }),
           ...(isActive !== undefined && { isActive: Boolean(isActive) }),
           ...buildProductDataFields({
             composition: composition as string | null | undefined,
@@ -134,7 +160,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
             bonus: bonus !== undefined ? (bonus != null ? String(bonus).trim() || null : null) : undefined,
           }),
         },
-        include: { manufacturer: { select: { name: true } } },
+        include: {
+          manufacturer: { select: { name: true } },
+          productGroup: { select: { id: true, name: true } },
+        },
       });
 
       if (aliases !== undefined) {
@@ -152,7 +181,12 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return updated;
     });
 
-    return NextResponse.json(serializeProductDecimals(product));
+    return NextResponse.json({
+      ...serializeProductDecimals(product),
+      manufacturerName: product.manufacturer?.name ?? null,
+      productGroupId: product.productGroupId,
+      productGroupName: product.productGroup?.name ?? null,
+    });
   } catch {
     return NextResponse.json({ error: "Update failed" }, { status: 500 });
   }

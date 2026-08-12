@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { parseProductImportFile } from "@/lib/product-import";
-import { buildProductDataFields, resolveManufacturerId } from "@/lib/product-helpers";
+import {
+  buildProductDataFields,
+  resolveManufacturerId,
+  resolveProductGroupId,
+} from "@/lib/product-helpers";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +60,9 @@ export async function POST(request: NextRequest) {
 
       try {
         const manufacturerId = await resolveManufacturerId(prisma, null, row.manufacturerName);
+        const productGroupId = row.groupName
+          ? await resolveProductGroupId(prisma, null, row.groupName)
+          : undefined;
 
         await prisma.$transaction(async (tx) => {
           const product = await tx.product.create({
@@ -64,6 +71,7 @@ export async function POST(request: NextRequest) {
               name: row.name,
               category: row.category,
               ...(manufacturerId !== undefined && manufacturerId !== null && { manufacturerId }),
+              ...(productGroupId !== undefined && productGroupId !== null && { productGroupId }),
               ...buildProductDataFields({
                 composition: row.composition,
                 shipperSize: row.shipperSize,

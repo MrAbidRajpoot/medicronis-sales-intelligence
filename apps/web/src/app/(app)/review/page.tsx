@@ -43,26 +43,34 @@ interface Product {
   name: string;
 }
 
+interface ProductGroupOption {
+  id: string;
+  name: string;
+}
+
 export default function ReviewPage() {
   const [items, setItems] = useState<ReviewItem[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [productGroups, setProductGroups] = useState<ProductGroupOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [resolving, setResolving] = useState<string | null>(null);
   const [mapProduct, setMapProduct] = useState<Record<string, string>>({});
   const [createFor, setCreateFor] = useState<ReviewItem | null>(null);
-  const [createForm, setCreateForm] = useState({ sku: "", name: "", category: "" });
+  const [createForm, setCreateForm] = useState({ sku: "", name: "", category: "", productGroupId: "" });
   const [creating, setCreating] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [reviewRes, prodRes] = await Promise.all([
+      const [reviewRes, prodRes, groupsRes] = await Promise.all([
         fetch("/api/review"),
         fetch("/api/products"),
+        fetch("/api/product-groups"),
       ]);
       const reviewData = await reviewRes.json();
       setItems(reviewData.items ?? []);
       if (prodRes.ok) setProducts(await prodRes.json());
+      if (groupsRes.ok) setProductGroups(await groupsRes.json());
     } catch {
       toast.error("Failed to load review queue");
     } finally {
@@ -106,6 +114,7 @@ export default function ReviewPage() {
           sku: createForm.sku,
           name: createForm.name,
           category: createForm.category,
+          productGroupId: createForm.productGroupId,
           alias: createFor.rawProductText,
           reviewRowId: createFor.id,
         }),
@@ -134,6 +143,7 @@ export default function ReviewPage() {
       sku: slug ? `NEW-${slug}` : "",
       name: item.rawProductText,
       category: "",
+      productGroupId: productGroups.find((g) => g.name === "Medicronis")?.id ?? "",
     });
     setCreateFor(item);
   }
@@ -219,6 +229,25 @@ export default function ReviewPage() {
             />
           </div>
           <div className="space-y-2">
+            <Label>Group</Label>
+            <Select
+              value={createForm.productGroupId}
+              onValueChange={(value) => setCreateForm((f) => ({ ...f, productGroupId: value }))}
+              required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select product group" />
+              </SelectTrigger>
+              <SelectContent>
+                {productGroups.map((g) => (
+                  <SelectItem key={g.id} value={g.id}>
+                    {g.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="create-category">Category</Label>
             <Input
               id="create-category"
@@ -278,7 +307,7 @@ function ReviewCard({
               <span>·</span>
               <span>{item.distributorName}</span>
               <span>·</span>
-              <span>Qty: {item.quantity.toLocaleString()}</span>
+              <span>Sales Units: {item.quantity.toLocaleString()}</span>
               <Badge variant={item.mappingStatus === "unknown" ? "danger" : "warning"}>
                 {item.mappingStatus}
               </Badge>

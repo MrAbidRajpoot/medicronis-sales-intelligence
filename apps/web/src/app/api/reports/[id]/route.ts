@@ -74,6 +74,12 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       lmtdPercent: l.lmtdPercent,
       closingStock: l.closingStock,
       stockValue: l.stockValue,
+      inventory: l.inventory,
+      order: l.order,
+      orderValue: l.orderValue,
+      excessStock: l.excessStock,
+      excessStockValue: l.excessStockValue,
+      inventoryValue: l.inventoryValue,
     })),
   });
 }

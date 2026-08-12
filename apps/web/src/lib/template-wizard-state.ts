@@ -14,9 +14,9 @@ export type ColumnAssignment = CanonicalField | "ignore";
 
 export const FIELD_LABELS: Record<CanonicalField, string> = {
   product_name: "Product Name",
-  sales_qty: "Sales Qty",
-  sales_amount: "Sales Amount",
-  unit_price: "Unit Price",
+  sales_qty: "Sales Units",
+  sales_amount: "Sales Value",
+  unit_price: "S.P",
   returns_qty: "Returns Qty",
   closing_stock: "Closing Stock",
 };

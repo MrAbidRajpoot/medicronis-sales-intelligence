@@ -8,6 +8,7 @@ import {
   parseOptionalDecimal,
   parseOptionalInt,
   resolveManufacturerId,
+  resolveProductGroupId,
   serializeProductDecimals,
 } from "@/lib/product-helpers";
 
@@ -17,13 +18,17 @@ type ProductListRow = Prisma.ProductGetPayload<{
   include: {
     aliases: true;
     manufacturer: { select: { name: true } };
+    productGroup: { select: { id: true; name: true } };
     _count: { select: { salesLines: true } };
   };
 }>;
+
 function mapProduct(p: ProductListRow) {
   return {
     ...serializeProductDecimals(p),
     manufacturerName: p.manufacturer?.name ?? null,
+    productGroupId: p.productGroupId,
+    productGroupName: p.productGroup?.name ?? null,
     aliases: p.aliases.map((a) => a.alias),
     salesLineCount: p._count.salesLines,
   };
@@ -40,6 +45,7 @@ export async function GET(request: NextRequest) {
       include: {
         aliases: true,
         manufacturer: { select: { name: true } },
+        productGroup: { select: { id: true, name: true } },
         _count: { select: { salesLines: true } },
       },
     });
@@ -50,10 +56,24 @@ export async function GET(request: NextRequest) {
   const products = await prisma.product.findMany({
     where: { isActive: true },
     orderBy: { name: "asc" },
-    select: { id: true, sku: true, name: true },
+    select: {
+      id: true,
+      sku: true,
+      name: true,
+      productGroupId: true,
+      productGroup: { select: { name: true } },
+    },
   });
 
-  return NextResponse.json(products);
+  return NextResponse.json(
+    products.map((p) => ({
+      id: p.id,
+      sku: p.sku,
+      name: p.name,
+      productGroupId: p.productGroupId,
+      productGroupName: p.productGroup?.name ?? null,
+    }))
+  );
 }
 
 export async function POST(request: NextRequest) {
@@ -66,6 +86,8 @@ export async function POST(request: NextRequest) {
       composition,
       manufacturerId,
       manufacturerName,
+      productGroupId,
+      groupName,
       shipperSize,
       mrp,
       tp,
@@ -93,6 +115,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Product SKU already exists" }, { status: 409 });
     }
 
+    let resolvedProductGroupId: string | null | undefined;
+    try {
+      resolvedProductGroupId = await resolveProductGroupId(
+        prisma,
+        productGroupId as string | null | undefined,
+        groupName as string | null | undefined
+      );
+    } catch (err) {
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : "Invalid product group" },
+        { status: 400 }
+      );
+    }
+
+    if (!resolvedProductGroupId) {
+      return NextResponse.json({ error: "Product group is required" }, { status: 400 });
+    }
+
     const resolvedManufacturerId = await resolveManufacturerId(
       prisma,
       manufacturerId as string | null | undefined,
@@ -105,6 +145,7 @@ export async function POST(request: NextRequest) {
           sku: String(sku).trim().toUpperCase(),
           name: String(name).trim(),
           category: category ? String(category).trim() || null : null,
+          productGroupId: resolvedProductGroupId,
           ...(resolvedManufacturerId !== undefined && { manufacturerId: resolvedManufacturerId }),
           ...buildProductDataFields({
             composition: composition as string | null | undefined,
@@ -122,7 +163,10 @@ export async function POST(request: NextRequest) {
             bonus: bonusValue,
           }),
         },
-        include: { manufacturer: { select: { name: true } } },
+        include: {
+          manufacturer: { select: { name: true } },
+          productGroup: { select: { id: true, name: true } },
+        },
       });
 
       const aliasTexts = new Set<string>();
@@ -186,7 +230,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json(serializeProductDecimals(product), { status: 201 });
+    return NextResponse.json(
+      {
+        ...serializeProductDecimals(product),
+        manufacturerName: product.manufacturer?.name ?? null,
+        productGroupId: product.productGroupId,
+        productGroupName: product.productGroup?.name ?? null,
+      },
+      { status: 201 }
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : "Create failed";
     return NextResponse.json({ error: message }, { status: 500 });

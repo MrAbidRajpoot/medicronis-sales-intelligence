@@ -14,7 +14,7 @@ from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 
 OUTPUT = Path(__file__).resolve().parent.parent / "docs" / "Medicronis-User-Manual.docx"
-MANUAL_VERSION = "1.1"
+MANUAL_VERSION = "1.2"
 
 
 @dataclass
@@ -223,13 +223,15 @@ def write_content(m: ManualBuilder) -> None:
         [
             "Upload single PDFs, multiple PDFs, or ZIP archives of distributor sales reports",
             "Auto-detect distributor from PDF header text (with optional manual override)",
-            "Automatic extraction of product rows from 10 PDF layout families (A–J)",
+            "Automatic extraction of product rows from 10 PDF layout families (A–J), including Family J line-parser mode",
             "Multiple extraction strategies: table parsing, line parser fallback, alternate pdfplumber settings",
             "Fuzzy matching against product catalog with distributor-specific mappings",
+            "Product groups (Medicronis | Transformer) required on every catalog product for SSR grouping",
             "Review queue for unmatched or ambiguous product rows",
             "Approve data and promote to daily sales facts",
-            "Generate and download SSR Excel reports (day, week, or month views)",
+            "Generate Medicronis-format SSR Excel (DATA sheet) for day, week, or month views",
             "Manage distributors, products, and per-distributor PDF templates",
+            "Bulk import distributors and products from Excel (.xlsx) templates",
         ]
     )
     m.heading("1.4 End-to-End Workflow Overview", 2)
@@ -531,9 +533,14 @@ def write_content(m: ManualBuilder) -> None:
         [
             ["Approve with Suggested Product", "System suggestion is correct", "Maps row to suggested catalog product; saves mapping for future uploads"],
             ["Select from Dropdown", "Correct product is in catalog but not top suggestion", "Maps row to selected product; saves mapping for future uploads"],
-            ["Create New Product", "Product is genuinely new", "Creates catalog entry and maps the row"],
+            ["Create New Product", "Product is genuinely new", "Creates catalog entry (Group required) and maps the row"],
             ["Reject Row", "Row is invalid, duplicate, or not a real product", "Excludes row from approved sales data"],
         ],
+    )
+    m.paragraph(
+        "When creating a new product from Review, you must select a product group "
+        "(Medicronis or Transformer). The form defaults to Medicronis when available. "
+        "Quantity on review cards is labeled Sales Units to match SSR terminology."
     )
     m.paragraph(
         "Important: Approved mappings are saved as DistributorProductMapping records. "
@@ -558,7 +565,8 @@ def write_content(m: ManualBuilder) -> None:
     m.heading("8. SSR Reports", 1)
     m.paragraph(
         "SSR (Secondary Sales Report) reports consolidate approved sales data into "
-        "Excel-format reports suitable for analysis and distribution."
+        "Medicronis-format Excel workbooks. The on-screen preview and downloaded file "
+        "both use the same DATA sheet column layout."
     )
     m.heading("8.1 Generating Reports from the Reports Page", 2)
     m.steps(
@@ -581,27 +589,65 @@ def write_content(m: ManualBuilder) -> None:
     )
     m.heading("8.3 Report Detail and Download", 2)
     m.paragraph(
-        "The report detail page (/reports/[id]) shows a preview grid of the SSR data "
-        "including product rows, quantities, sales values, and totals."
+        "The report detail page (/reports/[id]) shows a full DATA-sheet preview titled "
+        '"Updated Sales Till DD-MM-YY", with the same columns as the Excel download. '
+        "Product Name and Sales Value are emphasized for quick scanning."
     )
     m.steps(
         [
             "Open the report from the Reports list or after generation",
-            "Review the preview grid for accuracy",
-            'Click "Download Excel" to save the .xlsx file',
+            "Scroll horizontally through the preview grid to review all metrics",
+            'Click "Download Excel" to save the .xlsx file (DATA sheet)',
             "Open the downloaded file in Microsoft Excel or compatible spreadsheet software",
         ]
     )
-    m.heading("8.4 SSR Excel Contents", 2)
-    m.bullets(
+    m.heading("8.4 Report Views and Date Ranges", 2)
+    m.table(
+        ["View", "Period Covered", "Prior Comparison (\"Yesterday\" columns)"],
         [
-            "Product name and SKU",
-            "Quantity sold",
-            "Net sale value",
-            "Closing stock (where available in source PDF)",
-            "Distributor and date metadata",
-            "Summary totals row",
-        ]
+            ["Day", "Single as-of date", "Previous calendar day"],
+            ["Week", "Week containing the as-of date", "Prior week window"],
+            ["Month", "Month containing the as-of date", "Prior month matching window"],
+        ],
+    )
+    m.paragraph(
+        "LMTD (Last Month To Date) columns always compare against the same calendar day "
+        "in the prior month, regardless of Day/Week/Month view."
+    )
+    m.heading("8.5 SSR DATA Sheet Columns", 2)
+    m.paragraph(
+        "Each row is one distributor × product combination from the active master grid. "
+        "Products without sales in the period still appear with zero units where applicable."
+    )
+    m.table(
+        ["Column", "Description"],
+        [
+            ["Distributor Name, City, Region, Country", "Distributor master data"],
+            ["Category", "Always \"Distributor\" for this grid"],
+            ["Group", "Product group: Medicronis or Transformer"],
+            ["Manager", "Assigned sales manager for the distributor"],
+            ["Product Name", "Catalog product name"],
+            ["S.P", "Selling price used for value calculations"],
+            ["Sales Units", "Units sold in the selected period"],
+            ["Closing Stock", "Latest closing stock on/before as-of date (— if missing)"],
+            ["Sales Value", "Sales Units × S.P"],
+            ["Stock Value", "Closing Stock × S.P (0 when stock missing in Excel)"],
+            ["Yesterday / Yesterday Sale Value", "Prior-period units and value (label kept for Medicronis workbook parity)"],
+            ["Difference", "Current Sales Value − prior-period sale value"],
+            ["LMTD Sales Unit / Value", "Same-day-prior-month units and value"],
+            ["LMTD Difference (units / value)", "Current − LMTD for units and value"],
+            ["LMTD %age", "(Sales Value / LMTD Sales Value − 1), or \"-\" if LMTD value is zero"],
+            ["Inventory", "Sales Units × 1.5 (target stock heuristic)"],
+            ["Order / Order Value", "Units (and value) needed when Inventory > Closing Stock"],
+            ["Excess Stock / Excess Stock Value", "Units (and value) when Closing Stock > Inventory"],
+            ["Inventory Value", "Inventory × S.P"],
+        ],
+    )
+    m.heading("8.6 Related Export Layouts", 2)
+    m.paragraph(
+        "The primary user download from SSR Reports is the DATA sheet workbook described above. "
+        "The platform also supports a Wholeseller (Direct Party) line layout used in related "
+        "exports: Party Name, Product, Quatity, S.P, Value, with Total Direct Sale and Total Sales rows."
     )
 
     # --- 9. Distributors ---
@@ -612,9 +658,11 @@ def write_content(m: ManualBuilder) -> None:
     m.heading("9.1 Distributor List", 2)
     m.bullets(
         [
-            "View all registered distributors with code, name, region, and template status",
-            "Filter by active/inactive status",
-            "See which distributors have configured PDF templates (required for upload)",
+            "View all registered distributors with code, name, region, country, city, manager, and template status",
+            "Search by code, name, city, manager, region, or country",
+            "Filter visually by Active / Inactive status badges",
+            "See Template Ready vs Template required badges (template required before upload)",
+            "Document and mapping counts per distributor",
         ]
     )
     m.heading("9.2 Adding a Distributor", 2)
@@ -630,10 +678,10 @@ def write_content(m: ManualBuilder) -> None:
     m.heading("9.3 Bulk Upload", 2)
     m.steps(
         [
-            "On the Distributors page, locate the bulk upload option",
-            "Download the CSV template if needed",
-            "Fill in distributor details following the template format",
-            "Upload the completed CSV file",
+            "On the Distributors page, click the bulk upload option",
+            "Download the Excel (.xlsx) template if needed",
+            "Fill in distributor details following the template columns",
+            "Upload the completed .xlsx file",
             "Review imported records and configure templates as needed",
         ]
     )

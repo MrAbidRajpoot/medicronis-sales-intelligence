@@ -1,10 +1,11 @@
 import ExcelJS from "exceljs";
-import { isValidBonus } from "./product-helpers";
+import { isValidBonus, isValidProductGroupName, PRODUCT_GROUP_NAMES } from "./product-helpers";
 
 export const PRODUCT_IMPORT_HEADERS = [
   "SKU",
   "Product Name",
   "Category",
+  "Group",
   "Composition",
   "Manufacturer",
   "Shipper Size",
@@ -24,6 +25,7 @@ export interface ProductImportRow {
   sku: string;
   name: string;
   category: string | null;
+  groupName: string | null;
   composition: string | null;
   manufacturerName: string | null;
   shipperSize: number | null;
@@ -49,6 +51,7 @@ const SAMPLE_ROWS: Omit<ProductImportRow, "rowNumber">[] = [
     sku: "MED-001",
     name: "Amoxicillin 500mg Capsules",
     category: "Antibiotics",
+    groupName: "Medicronis",
     composition: "Amoxicillin 500mg",
     manufacturerName: "Getz Pharma",
     shipperSize: 100,
@@ -66,6 +69,7 @@ const SAMPLE_ROWS: Omit<ProductImportRow, "rowNumber">[] = [
     sku: "MED-002",
     name: "Paracetamol 500mg Tablets",
     category: "Analgesics",
+    groupName: "Transformer",
     composition: "Paracetamol 500mg",
     manufacturerName: "Searle",
     shipperSize: 200,
@@ -103,6 +107,7 @@ export async function generateProductImportTemplate(): Promise<Buffer> {
     { header: "SKU", key: "sku", width: 16 },
     { header: "Product Name", key: "name", width: 36 },
     { header: "Category", key: "category", width: 18 },
+    { header: "Group", key: "groupName", width: 14 },
     { header: "Composition", key: "composition", width: 24 },
     { header: "Manufacturer", key: "manufacturerName", width: 20 },
     { header: "Shipper Size", key: "shipperSize", width: 14 },
@@ -136,7 +141,8 @@ export async function generateProductImportTemplate(): Promise<Buffer> {
 
   ws.getCell("A1").note = "Required. Must be unique.";
   ws.getCell("B1").note = "Required.";
-  ws.getCell("N1").note = "Optional. Format: purchase+bonus e.g. 4+1";
+  ws.getCell("D1").note = `Optional. Must be exactly: ${PRODUCT_GROUP_NAMES.join(" | ")}`;
+  ws.getCell("O1").note = "Optional. Format: purchase+bonus e.g. 4+1";
 
   const instructions = wb.addWorksheet("Instructions");
   instructions.getColumn(1).width = 90;
@@ -144,10 +150,13 @@ export async function generateProductImportTemplate(): Promise<Buffer> {
   instructions.addRow([]);
   instructions.addRow(["1. Fill in the Products sheet starting from row 2."]);
   instructions.addRow(["2. SKU and Product Name are required for each row."]);
-  instructions.addRow(["3. Manufacturer names are added to the manufacturer bank automatically."]);
-  instructions.addRow(["4. Bonus format: purchase units + free units, e.g. 4+1 means buy 4 get 1 free."]);
-  instructions.addRow(["5. Delete the sample rows before uploading your data."]);
-  instructions.addRow(["6. Save as .xlsx and upload from the Products page."]);
+  instructions.addRow([
+    `3. Group (optional) must be exactly one of: ${PRODUCT_GROUP_NAMES.join(" | ")}.`,
+  ]);
+  instructions.addRow(["4. Manufacturer names are added to the manufacturer bank automatically."]);
+  instructions.addRow(["5. Bonus format: purchase units + free units, e.g. 4+1 means buy 4 get 1 free."]);
+  instructions.addRow(["6. Delete the sample rows before uploading your data."]);
+  instructions.addRow(["7. Save as .xlsx and upload from the Products page."]);
   instructions.getCell("A1").font = { bold: true, size: 14, color: { argb: "FF1A568E" } };
 
   return Buffer.from(await wb.xlsx.writeBuffer());
@@ -171,6 +180,7 @@ function findHeaderMap(headerRow: ExcelJS.Row): Map<string, number> | null {
     if (label === "sku" || label === "product code") map.set("sku", col);
     if (label === "product name" || label === "name") map.set("name", col);
     if (label === "category") map.set("category", col);
+    if (label === "group" || label === "product group") map.set("groupName", col);
     if (label === "composition") map.set("composition", col);
     if (label === "manufacturer") map.set("manufacturerName", col);
     if (label === "shipper size") map.set("shipperSize", col);
@@ -231,6 +241,8 @@ export async function parseProductImportFile(data: ArrayBuffer): Promise<{
     const sku = getCell("sku").toUpperCase();
     const name = getCell("name");
     const category = getCell("category") || null;
+    const groupRaw = getCell("groupName");
+    const groupName = groupRaw || null;
     const composition = getCell("composition") || null;
     const manufacturerName = getCell("manufacturerName") || null;
     const shipperSize = parseIntValue(getCell("shipperSize"));
@@ -258,6 +270,15 @@ export async function parseProductImportFile(data: ArrayBuffer): Promise<{
       continue;
     }
 
+    if (groupName && !isValidProductGroupName(groupName)) {
+      errors.push({
+        rowNumber: i,
+        sku,
+        message: `Group must be one of: ${PRODUCT_GROUP_NAMES.join(" | ")}`,
+      });
+      continue;
+    }
+
     if (bonus && !isValidBonus(bonus)) {
       errors.push({
         rowNumber: i,
@@ -278,6 +299,7 @@ export async function parseProductImportFile(data: ArrayBuffer): Promise<{
       sku,
       name,
       category,
+      groupName,
       composition,
       manufacturerName,
       shipperSize,

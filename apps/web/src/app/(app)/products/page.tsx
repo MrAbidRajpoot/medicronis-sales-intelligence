@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { Loader2, Package, Pencil, Plus, Trash2, Download, Upload } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Loader2, Package, Pencil, Plus, Search, Trash2, Download, Upload } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,11 @@ interface ManufacturerOption {
   name: string;
 }
 
+interface ProductGroupOption {
+  id: string;
+  name: string;
+}
+
 interface Product {
   id: string;
   sku: string;
@@ -27,6 +32,8 @@ interface Product {
   composition: string | null;
   manufacturerId: string | null;
   manufacturerName: string | null;
+  productGroupId: string | null;
+  productGroupName: string | null;
   shipperSize: number | null;
   mrp: number | null;
   tp: number | null;
@@ -45,6 +52,7 @@ const emptyForm = {
   sku: "",
   name: "",
   category: "",
+  productGroupId: "",
   composition: "",
   manufacturerId: "",
   manufacturerName: "",
@@ -70,6 +78,7 @@ function buildPayload(form: typeof emptyForm, aliases: string[]) {
     sku: form.sku,
     name: form.name,
     category: form.category || null,
+    productGroupId: form.productGroupId || null,
     composition: form.composition || null,
     manufacturerId: form.useNewManufacturer ? null : form.manufacturerId || null,
     manufacturerName: form.useNewManufacturer ? form.manufacturerName : null,
@@ -89,6 +98,8 @@ function buildPayload(form: typeof emptyForm, aliases: string[]) {
 export default function ProductsPage() {
   const [items, setItems] = useState<Product[]>([]);
   const [manufacturers, setManufacturers] = useState<ManufacturerOption[]>([]);
+  const [productGroups, setProductGroups] = useState<ProductGroupOption[]>([]);
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -113,6 +124,15 @@ export default function ProductsPage() {
     }
   }, []);
 
+  const loadProductGroups = useCallback(async () => {
+    try {
+      const res = await fetch("/api/product-groups");
+      setProductGroups(await res.json());
+    } catch {
+      toast.error("Failed to load product groups");
+    }
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -128,7 +148,27 @@ export default function ProductsPage() {
   useEffect(() => {
     load();
     loadManufacturers();
-  }, [load, loadManufacturers]);
+    loadProductGroups();
+  }, [load, loadManufacturers, loadProductGroups]);
+
+  const filteredItems = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((item) => {
+      const haystack = [
+        item.sku,
+        item.name,
+        item.manufacturerName,
+        item.productGroupName,
+        item.category,
+        ...item.aliases,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [items, search]);
 
   function openCreate() {
     setEditing(null);
@@ -142,6 +182,7 @@ export default function ProductsPage() {
       sku: item.sku,
       name: item.name,
       category: item.category ?? "",
+      productGroupId: item.productGroupId ?? "",
       composition: item.composition ?? "",
       manufacturerId: item.manufacturerId ?? "",
       manufacturerName: "",
@@ -162,6 +203,10 @@ export default function ProductsPage() {
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
+    if (!form.productGroupId) {
+      toast.error("Product group is required");
+      return;
+    }
     setSaving(true);
     try {
       const aliases = form.aliases
@@ -293,58 +338,79 @@ export default function ProductsPage() {
           action={{ label: "Add Product", href: "#" }}
         />
       ) : (
-        <div className="overflow-x-auto rounded-lg border bg-white">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>SKU</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Manufacturer</TableHead>
-                <TableHead>MRP</TableHead>
-                <TableHead>Bonus</TableHead>
-                <TableHead>Aliases</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {items.map((item) => (
-                <TableRow key={item.id} className={!item.isActive ? "opacity-60" : undefined}>
-                  <TableCell className="font-mono text-sm">{item.sku}</TableCell>
-                  <TableCell className="font-medium">{item.name}</TableCell>
-                  <TableCell className="text-muted-foreground">{item.category ?? "—"}</TableCell>
-                  <TableCell className="text-muted-foreground">{item.manufacturerName ?? "—"}</TableCell>
-                  <TableCell>{item.mrp != null ? formatCurrency(item.mrp) : "—"}</TableCell>
-                  <TableCell>{item.bonus ?? "—"}</TableCell>
-                  <TableCell className="max-w-[200px] truncate text-xs text-muted-foreground">
-                    {item.aliases.length > 0 ? item.aliases.join(", ") : "—"}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={item.isActive ? "success" : "secondary"}>
-                      {item.isActive ? "Active" : "Inactive"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(item)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      {item.isActive ? (
-                        <Button variant="ghost" size="sm" onClick={() => handleDelete(item)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      ) : (
-                        <Button variant="outline" size="sm" onClick={() => handleReactivate(item)}>
-                          Reactivate
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        <div className="space-y-4">
+          <div className="relative max-w-md">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by SKU, name, manufacturer, group, category, aliases…"
+              className="pl-9"
+              aria-label="Search products"
+            />
+          </div>
+
+          {filteredItems.length === 0 ? (
+            <EmptyState
+              icon={Search}
+              title="No matching products"
+              description="Try a different search term, or clear the search to see all products."
+            />
+          ) : (
+            <div className="overflow-x-auto rounded-lg border bg-white">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>SKU</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Group</TableHead>
+                    <TableHead>Manufacturer</TableHead>
+                    <TableHead>MRP</TableHead>
+                    <TableHead>Bonus</TableHead>
+                    <TableHead>Aliases</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredItems.map((item) => (
+                    <TableRow key={item.id} className={!item.isActive ? "opacity-60" : undefined}>
+                      <TableCell className="font-mono text-sm">{item.sku}</TableCell>
+                      <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell className="text-muted-foreground">{item.productGroupName ?? "—"}</TableCell>
+                      <TableCell className="text-muted-foreground">{item.manufacturerName ?? "—"}</TableCell>
+                      <TableCell>{item.mrp != null ? formatCurrency(item.mrp) : "—"}</TableCell>
+                      <TableCell>{item.bonus ?? "—"}</TableCell>
+                      <TableCell className="max-w-[200px] truncate text-xs text-muted-foreground">
+                        {item.aliases.length > 0 ? item.aliases.join(", ") : "—"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={item.isActive ? "success" : "secondary"}>
+                          {item.isActive ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => openEdit(item)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          {item.isActive ? (
+                            <Button variant="ghost" size="sm" onClick={() => handleDelete(item)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          ) : (
+                            <Button variant="outline" size="sm" onClick={() => handleReactivate(item)}>
+                              Reactivate
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </div>
       )}
 
@@ -368,13 +434,23 @@ export default function ProductsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Input
-                id="category"
-                value={form.category}
-                onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-                placeholder="Antibiotics"
-              />
+              <Label>Group</Label>
+              <Select
+                value={form.productGroupId}
+                onValueChange={(value) => setForm((f) => ({ ...f, productGroupId: value }))}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select product group" />
+                </SelectTrigger>
+                <SelectContent>
+                  {productGroups.map((g) => (
+                    <SelectItem key={g.id} value={g.id}>
+                      {g.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -386,6 +462,16 @@ export default function ProductsPage() {
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               placeholder="Amoxicillin 500mg Capsules"
               required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="category">Category</Label>
+            <Input
+              id="category"
+              value={form.category}
+              onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+              placeholder="Antibiotics"
             />
           </div>
 
@@ -536,7 +622,8 @@ export default function ProductsPage() {
           <div className="rounded-md border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
             Download the template first, fill in your products, then upload the .xlsx file here.
             Required columns: <span className="font-medium text-foreground">SKU</span>,{" "}
-            <span className="font-medium text-foreground">Product Name</span>.
+            <span className="font-medium text-foreground">Product Name</span>. Optional{" "}
+            <span className="font-medium text-foreground">Group</span> must be Medicronis or Transformer.
           </div>
 
           <div className="space-y-2">

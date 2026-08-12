@@ -11,6 +11,7 @@ export async function fetchSsrGridMasters(): Promise<SsrGridMasters> {
     }),
     prisma.product.findMany({
       where: { isActive: true },
+      include: { productGroup: true },
       orderBy: { name: "asc" },
     }),
   ]);

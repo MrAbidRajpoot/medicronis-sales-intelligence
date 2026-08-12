@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test:template": "tsx src/lib/__tests__/template-mismatch.test.ts"
+    "test:template": "tsx src/lib/__tests__/template-mismatch.test.ts",
+    "test:ssr-data": "tsx src/lib/__tests__/ssr-data.test.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

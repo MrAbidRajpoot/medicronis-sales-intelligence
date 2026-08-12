@@ -3,12 +3,21 @@ import type {
   Distributor,
   SalesLine,
   Product,
+  ProductGroup,
   DailySalesFact,
   Manager,
   DistributorRegion,
   DistributorCountry,
 } from "@prisma/client";
-import { addDays, addMonths, minDate, startOfMonth, startOfWeek, toIsoDate } from "@/lib/date-utils";
+import {
+  addDays,
+  addMonths,
+  minDate,
+  sameDayPriorMonth,
+  startOfMonth,
+  startOfWeek,
+  toIsoDate,
+} from "@/lib/date-utils";
 
 /** Line layout matching Medicronis SSR workbook (Wholeseller / Direct Party sheet). */
 export interface SsrLineData {
@@ -32,22 +41,96 @@ export interface SsrDataLine {
   sellingPrice: number;
   salesUnits: number;
   salesValue: number;
-  /** Sales units on asOfDate − 1 day (same distributor + product). */
+  /** Prior comparison units: previous day, week, or prior-month matching window. */
   yesterdayUnits: number;
-  /** Sales value on asOfDate − 1 day. */
+  /** Prior comparison units × resolved selling price. */
   yesterdaySalesValue: number;
-  /** Day: today value − yesterday value; week/month: period total − prior period total. */
+  /** Current period sales value − prior comparison value. */
   difference: number;
   lmtdSalesUnits: number;
-  /** Current LMTD units − prior-month same-window LMTD units. */
+  /** Current period units − same-day-prior-month units. */
   lmtdDifferenceUnits: number;
   lmtdSalesValue: number;
-  /** Current LMTD value − prior-month same-window LMTD value. */
+  /** Current period value − same-day-prior-month value. */
   lmtdDifferenceValue: number;
-  /** (lmtdDifferenceValue / lmtdSalesValue) when lmtdSalesValue ≠ 0, else "-". */
+  /** (salesValue / lmtdSalesValue − 1) when lmtdSalesValue ≠ 0, else "-". */
   lmtdPercent: number | "-";
-  closingStock?: number | null;
-  stockValue?: number | null;
+  closingStock: number | null;
+  stockValue: number | null;
+  inventory: number;
+  order: number;
+  orderValue: number;
+  excessStock: number;
+  excessStockValue: number;
+  inventoryValue: number;
+}
+
+export type SsrCellKind = "units" | "money" | "percent" | "closingStock";
+
+export interface SsrDataColumn {
+  label: string;
+  key: keyof SsrDataLine;
+  kind: SsrCellKind | "text";
+}
+
+/** Single source of truth for DATA sheet column order and labels (export + preview). */
+export const DATA_COLUMNS: readonly SsrDataColumn[] = [
+  { label: "Distributor Name", key: "distributorName", kind: "text" },
+  { label: "City", key: "city", kind: "text" },
+  { label: "Region", key: "region", kind: "text" },
+  { label: "Country", key: "country", kind: "text" },
+  { label: "Category", key: "category", kind: "text" },
+  { label: "Group", key: "group", kind: "text" },
+  { label: "Manager", key: "manager", kind: "text" },
+  { label: "Product Name", key: "productName", kind: "text" },
+  { label: "S.P", key: "sellingPrice", kind: "money" },
+  { label: "Sales Units", key: "salesUnits", kind: "units" },
+  { label: "Closing Stock", key: "closingStock", kind: "closingStock" },
+  { label: "Sales Value", key: "salesValue", kind: "money" },
+  { label: "Stock Value", key: "stockValue", kind: "money" },
+  { label: "Yesterday", key: "yesterdayUnits", kind: "units" },
+  { label: "Yesterday Sale Value", key: "yesterdaySalesValue", kind: "money" },
+  { label: "Difference", key: "difference", kind: "money" },
+  { label: "LMTD Sales Unit", key: "lmtdSalesUnits", kind: "units" },
+  { label: "LMTD Difference", key: "lmtdDifferenceUnits", kind: "units" },
+  { label: "LMTD Sales Value", key: "lmtdSalesValue", kind: "money" },
+  { label: "LMTD Difference", key: "lmtdDifferenceValue", kind: "money" },
+  { label: "LMTD %age", key: "lmtdPercent", kind: "percent" },
+  { label: "Inventory", key: "inventory", kind: "units" },
+  { label: "Order", key: "order", kind: "units" },
+  { label: "Order Value", key: "orderValue", kind: "money" },
+  { label: "Excess Stock", key: "excessStock", kind: "units" },
+  { label: "Excess Stock Value", key: "excessStockValue", kind: "money" },
+  { label: "Inventory Value", key: "inventoryValue", kind: "money" },
+];
+
+export const DATA_HEADERS: readonly string[] = DATA_COLUMNS.map((c) => c.label);
+
+/** Apply the workbook's display conventions to SSR values shown in the UI. */
+export function formatSsrCell(
+  value: number | null | "-",
+  kind: SsrCellKind
+): string {
+  if (kind === "percent") {
+    return value === "-" || value == null ? "-" : `${(value * 100).toFixed(2)}%`;
+  }
+  if (kind === "closingStock" && value == null) return "—";
+  const numericValue = typeof value === "number" ? value : 0;
+  if (kind === "money") {
+    return numericValue.toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
+  return numericValue.toLocaleString("en-US", { maximumFractionDigits: 2 });
+}
+
+/** Render one DATA line cell for its column; unset text and optional numerics show as "—". */
+export function formatSsrDataCell(line: SsrDataLine, column: SsrDataColumn): string {
+  const value = line[column.key];
+  if (column.kind === "text") return typeof value === "string" && value ? value : "—";
+  if (value == null) return "—";
+  return formatSsrCell(value as number | "-", column.kind);
 }
 
 export interface SsrExportMeta {
@@ -81,9 +164,11 @@ export type SsrMasters = Record<string, never>;
 
 export type DistributorWithManager = Distributor & { manager: Manager | null };
 
+export type ProductWithGroup = Product & { productGroup: ProductGroup | null };
+
 export interface SsrGridMasters {
   distributors: DistributorWithManager[];
-  products: Product[];
+  products: ProductWithGroup[];
 }
 
 type BatchWithLines = SalesBatch & {
@@ -164,30 +249,12 @@ export function priorPeriodRange(viewType: SsrViewTypeLabel, asOfDate: Date): Ss
   }
 }
 
-/** Month-to-date through asOfDate. */
-export function lmtdRange(asOfDate: Date): SsrDateRange {
-  return { start: startOfMonth(asOfDate), end: asOfDate };
-}
-
-/** Same calendar window in the prior month (day clamped to month length). */
-export function priorLmtdRange(asOfDate: Date): SsrDateRange {
-  return { start: addMonths(startOfMonth(asOfDate), -1), end: addMonths(asOfDate, -1) };
-}
-
-/** Single calendar day before asOfDate. */
-export function yesterdayRange(asOfDate: Date): SsrDateRange {
-  const yesterday = addDays(asOfDate, -1);
-  return { start: yesterday, end: yesterday };
-}
-
 export interface SsrExportFactBounds {
   min: Date;
   max: Date;
   periodRange: SsrDateRange;
-  yesterdayRange: SsrDateRange;
   priorPeriodRange: SsrDateRange;
-  lmtdRange: SsrDateRange;
-  priorLmtdRange: SsrDateRange;
+  lmtdDate: Date;
 }
 
 /** Date span for one DailySalesFact query covering all computed SSR columns. */
@@ -196,43 +263,30 @@ export function getSsrExportFactBounds(
   asOfDate: Date
 ): SsrExportFactBounds {
   const periodRange = buildDateRange(viewType, asOfDate);
-  const yesterday = yesterdayRange(asOfDate);
   const priorPeriod = priorPeriodRange(viewType, asOfDate);
-  const lmtd = lmtdRange(asOfDate);
-  const priorLmtd = priorLmtdRange(asOfDate);
+  const lmtdDate = sameDayPriorMonth(asOfDate);
 
   const min = minDate([
     periodRange.start,
-    yesterday.start,
     priorPeriod.start,
-    lmtd.start,
-    priorLmtd.start,
+    lmtdDate,
   ]);
 
   return {
     min,
     max: asOfDate,
     periodRange,
-    yesterdayRange: yesterday,
     priorPeriodRange: priorPeriod,
-    lmtdRange: lmtd,
-    priorLmtdRange: priorLmtd,
+    lmtdDate,
   };
 }
 
 interface AggTotals {
   salesUnits: number;
-  salesValue: number;
 }
 
 function factKey(distributorId: string, productId: string): string {
   return `${distributorId}:${productId}`;
-}
-
-function factLineValue(fact: FactWithRelations): number {
-  const quantity = Number(fact.quantity);
-  const unitPrice = fact.unitPrice ? Number(fact.unitPrice) : 0;
-  return fact.salesValue ? Number(fact.salesValue) : quantity * unitPrice;
 }
 
 function aggregateFactsInRange(
@@ -247,24 +301,21 @@ function aggregateFactsInRange(
 
     const key = factKey(fact.distributorId, fact.productId);
     const quantity = Number(fact.quantity);
-    const lineValue = factLineValue(fact);
     const existing = groups.get(key);
 
     if (existing) {
       existing.salesUnits += quantity;
-      existing.salesValue += lineValue;
     } else {
-      groups.set(key, { salesUnits: quantity, salesValue: lineValue });
+      groups.set(key, { salesUnits: quantity });
     }
   }
 
   return groups;
 }
 
-function productDefaultPrice(product: Product): number {
+function resolveSellingPrice(product: Product, asOfFact: FactWithRelations | undefined): number {
   if (product.newSp != null) return Number(product.newSp);
-  if (product.netPrice != null) return Number(product.netPrice);
-  if (product.tp != null) return Number(product.tp);
+  if (asOfFact?.unitPrice != null) return Number(asOfFact.unitPrice);
   return 0;
 }
 
@@ -291,39 +342,27 @@ export function resolveSsrGridMasters(
 }
 
 function lookupTotals(map: Map<string, AggTotals>, key: string): AggTotals {
-  return map.get(key) ?? { salesUnits: 0, salesValue: 0 };
+  return map.get(key) ?? { salesUnits: 0 };
 }
 
-function unitPriceForStock(fact: FactWithRelations | undefined, product: Product): number {
-  if (fact?.unitPrice != null) return Number(fact.unitPrice);
-  return productDefaultPrice(product);
-}
-
-function computeLmtdPercent(lmtdSalesValue: number, lmtdDifferenceValue: number): number | "-" {
+function computeLmtdPercent(salesValue: number, lmtdSalesValue: number): number | "-" {
   if (lmtdSalesValue === 0) return "-";
-  return lmtdDifferenceValue / lmtdSalesValue;
+  return salesValue / lmtdSalesValue - 1;
 }
 
 /** Latest closing stock on asOfDate per distributor + product (when populated on facts). */
 function latestClosingStockByKey(
   facts: FactWithRelations[],
-  asOfDate: Date,
-  productsById: Map<string, Product>
-): Map<string, { closingStock: number; stockValue: number }> {
+  asOfDate: Date
+): Map<string, number> {
   const asOfTime = asOfDate.getTime();
-  const latest = new Map<string, { closingStock: number; stockValue: number }>();
+  const latest = new Map<string, number>();
 
   for (const fact of facts) {
     if (fact.saleDate.getTime() !== asOfTime || fact.closingStock == null) continue;
 
     const key = factKey(fact.distributorId, fact.productId);
-    const closingStock = Number(fact.closingStock);
-    const product = productsById.get(fact.productId);
-    const unitPrice = unitPriceForStock(fact, product ?? fact.product);
-    latest.set(key, {
-      closingStock,
-      stockValue: closingStock * unitPrice,
-    });
+    latest.set(key, Number(fact.closingStock));
   }
 
   return latest;
@@ -354,13 +393,11 @@ export function buildDataSheetRows(
 
   if (distributors.length === 0 || products.length === 0) return [];
 
-  const productsById = new Map(products.map((p) => [p.id, p]));
   const periodAgg = aggregateFactsInRange(facts, range);
-  const yesterdayAgg = aggregateFactsInRange(facts, yesterdayRange(asOfDate));
   const priorPeriodAgg = aggregateFactsInRange(facts, priorPeriodRange(viewType, asOfDate));
-  const lmtdAgg = aggregateFactsInRange(facts, lmtdRange(asOfDate));
-  const priorLmtdAgg = aggregateFactsInRange(facts, priorLmtdRange(asOfDate));
-  const closingStockByKey = latestClosingStockByKey(facts, asOfDate, productsById);
+  const lmtdDate = sameDayPriorMonth(asOfDate);
+  const lmtdAgg = aggregateFactsInRange(facts, { start: lmtdDate, end: lmtdDate });
+  const closingStockByKey = latestClosingStockByKey(facts, asOfDate);
 
   const asOfFactByKey = new Map<string, FactWithRelations>();
   const asOfTime = asOfDate.getTime();
@@ -377,52 +414,59 @@ export function buildDataSheetRows(
       const key = factKey(distributor.id, product.id);
       const period = lookupTotals(periodAgg, key);
       const salesUnits = period.salesUnits;
-      const salesValue = period.salesValue;
 
       const asOfFact = asOfFactByKey.get(key);
-      const defaultPrice = productDefaultPrice(product);
-      const sellingPrice =
-        salesUnits > 0
-          ? salesValue / salesUnits
-          : asOfFact?.unitPrice
-            ? Number(asOfFact.unitPrice)
-            : defaultPrice;
+      const sellingPrice = resolveSellingPrice(product, asOfFact);
+      const salesValue = salesUnits * sellingPrice;
 
-      const yesterday = lookupTotals(yesterdayAgg, key);
-      const priorPeriod = lookupTotals(priorPeriodAgg, key);
+      const comparison = lookupTotals(priorPeriodAgg, key);
+      const yesterdayUnits = comparison.salesUnits;
+      const yesterdaySalesValue = yesterdayUnits * sellingPrice;
       const lmtd = lookupTotals(lmtdAgg, key);
-      const priorLmtd = lookupTotals(priorLmtdAgg, key);
+      const lmtdSalesUnits = lmtd.salesUnits;
+      const lmtdSalesValue = lmtdSalesUnits * sellingPrice;
+      const lmtdDifferenceUnits = salesUnits - lmtdSalesUnits;
+      const lmtdDifferenceValue = salesValue - lmtdSalesValue;
+      const difference = salesValue - yesterdaySalesValue;
 
-      const lmtdDifferenceUnits = lmtd.salesUnits - priorLmtd.salesUnits;
-      const lmtdDifferenceValue = lmtd.salesValue - priorLmtd.salesValue;
-
-      const difference =
-        viewType === "day" ? salesValue - yesterday.salesValue : salesValue - priorPeriod.salesValue;
-
-      const stock = closingStockByKey.get(key);
+      const closingStock = closingStockByKey.get(key) ?? null;
+      const stockValue = closingStock == null ? null : closingStock * sellingPrice;
+      const inventory = salesUnits * 1.5;
+      // Missing closing stock is displayed as "—", but Excel-style comparisons treat it as zero.
+      const closingStockForComparison = closingStock ?? 0;
+      const order =
+        inventory > closingStockForComparison ? inventory - closingStockForComparison : 0;
+      const excessStock =
+        inventory < closingStockForComparison ? closingStockForComparison - inventory : 0;
 
       rows.push({
         distributorName: distributor.name,
         city: distributor.city ?? "",
         region: formatRegion(distributor.region),
         country: formatCountry(distributor.country),
-        category: "",
-        group: product.category ?? "",
+        category: "Distributor",
+        group: product.productGroup?.name ?? "",
         manager: distributor.manager?.name ?? "",
         productName: product.name,
         sellingPrice,
         salesUnits,
         salesValue,
-        yesterdayUnits: yesterday.salesUnits,
-        yesterdaySalesValue: yesterday.salesValue,
+        yesterdayUnits,
+        yesterdaySalesValue,
         difference,
-        lmtdSalesUnits: lmtd.salesUnits,
+        lmtdSalesUnits,
         lmtdDifferenceUnits,
-        lmtdSalesValue: lmtd.salesValue,
+        lmtdSalesValue,
         lmtdDifferenceValue,
-        lmtdPercent: computeLmtdPercent(lmtd.salesValue, lmtdDifferenceValue),
-        closingStock: stock?.closingStock ?? null,
-        stockValue: stock?.stockValue ?? null,
+        lmtdPercent: computeLmtdPercent(salesValue, lmtdSalesValue),
+        closingStock,
+        stockValue,
+        inventory,
+        order,
+        orderValue: order * sellingPrice,
+        excessStock,
+        excessStockValue: excessStock * sellingPrice,
+        inventoryValue: inventory * sellingPrice,
       });
     }
   }

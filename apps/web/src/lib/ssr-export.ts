@@ -8,12 +8,14 @@ import {
   type SsrLineData,
   type SsrDataLine,
   type SsrDateExportMeta,
+  DATA_HEADERS,
   formatPeriod,
   formatSalesTillDate,
   viewTypeLabel,
 } from "@/lib/ssr-data";
 
 export type { SsrExportMeta, SsrLineData, SsrDataLine, SsrDateExportMeta };
+export { DATA_HEADERS };
 
 /** Header / total row fill — light blue (Excel theme 4 tint). */
 const HEADER_FILL = {
@@ -149,38 +151,14 @@ export async function generateSsrExcel(
   return { filePath, buffer };
 }
 
-const DATA_HEADERS = [
-  "Distributor Name",
-  "City",
-  "Region",
-  "Country",
-  "Category",
-  "Group",
-  "Manager",
-  "Product Name",
-  "S.P",
-  "Sales Units",
-  "Sales Value",
-  "Yesterday",
-  "Yesterday Sale Value",
-  "Difference",
-  "LMTD Sales Unit",
-  "LMTD Difference",
-  "LMTD Sales Value",
-  "LMTD Difference",
-  "LMTD %age",
-  "Closing Stock",
-  "Stock Value",
-];
-
 const DATA_NUM_FMT = {
   sp: "#,##0.00",
   integer: "#,##0",
   money: "#,##0.00",
-  percent: "0.00%",
+  percent: "0%",
 } as const;
 
-function dataRowValues(line: SsrDataLine): (string | number)[] {
+function dataRowValues(line: SsrDataLine): (string | number | null)[] {
   return [
     line.distributorName,
     line.city,
@@ -192,7 +170,9 @@ function dataRowValues(line: SsrDataLine): (string | number)[] {
     line.productName,
     line.sellingPrice,
     line.salesUnits,
+    line.closingStock,
     line.salesValue,
+    line.stockValue ?? 0,
     line.yesterdayUnits,
     line.yesterdaySalesValue,
     line.difference,
@@ -201,8 +181,12 @@ function dataRowValues(line: SsrDataLine): (string | number)[] {
     line.lmtdSalesValue,
     line.lmtdDifferenceValue,
     line.lmtdPercent,
-    line.closingStock ?? 0,
-    line.stockValue ?? 0,
+    line.inventory,
+    line.order,
+    line.orderValue,
+    line.excessStock,
+    line.excessStockValue,
+    line.inventoryValue,
   ];
 }
 
@@ -230,6 +214,7 @@ export async function generateSsrDataExcel(
     { width: 10 },
     { width: 12 },
     { width: 14 },
+    { width: 14 },
     { width: 12 },
     { width: 18 },
     { width: 12 },
@@ -239,18 +224,23 @@ export async function generateSsrDataExcel(
     { width: 16 },
     { width: 14 },
     { width: 14 },
+    { width: 14 },
+    { width: 14 },
+    { width: 16 },
+    { width: 16 },
+    { width: 18 },
+    { width: 16 },
   ];
 
   const colCount = DATA_HEADERS.length;
-  const lastCol = String.fromCharCode(64 + colCount);
 
-  ws.mergeCells(`A1:${lastCol}1`);
+  ws.mergeCells(1, 1, 1, colCount);
   const titleCell = ws.getCell("A1");
   titleCell.value = `Updated Sales Till ${formatSalesTillDate(meta.asOfDate)}`;
   titleCell.font = { bold: true, size: 14, color: { argb: "FF1A568E" } };
   titleCell.alignment = { horizontal: "center" };
 
-  ws.mergeCells(`A2:${lastCol}2`);
+  ws.mergeCells(2, 1, 2, colCount);
   ws.getCell("A2").value = `${viewTypeLabel(meta.viewType)} — ${formatPeriod(meta.periodStart, meta.periodEnd)}  |  Report: ${meta.reportCode}`;
   ws.getCell("A2").font = { size: 10, color: { argb: "FF64748B" } };
   ws.getCell("A2").alignment = { horizontal: "center" };
@@ -270,12 +260,11 @@ export async function generateSsrDataExcel(
       const cell = ws.getCell(r, i + 1);
       cell.value = val;
       if (i === 8) cell.numFmt = DATA_NUM_FMT.sp;
-      if (i === 9 || i === 11 || i === 14) cell.numFmt = DATA_NUM_FMT.integer;
-      if (i === 10 || i === 12 || i === 13 || i === 16 || i === 17) cell.numFmt = DATA_NUM_FMT.money;
-      if (i === 15) cell.numFmt = DATA_NUM_FMT.integer;
-      if (i === 18 && typeof val === "number") cell.numFmt = DATA_NUM_FMT.percent;
-      if (i === 19) cell.numFmt = DATA_NUM_FMT.integer;
-      if (i === 20) cell.numFmt = DATA_NUM_FMT.money;
+      if ([9, 10, 13, 16, 17, 21, 22, 24].includes(i)) cell.numFmt = DATA_NUM_FMT.integer;
+      if ([11, 12, 14, 15, 18, 19, 23, 25, 26].includes(i)) {
+        cell.numFmt = DATA_NUM_FMT.money;
+      }
+      if (i === 20 && typeof val === "number") cell.numFmt = DATA_NUM_FMT.percent;
     });
   });
 

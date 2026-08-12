@@ -8,11 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { prisma } from "@/lib/prisma";
 import { fetchSsrGridMasters } from "@/lib/db-helpers";
-import { buildDataSheetRows, buildDateRange, formatPeriod, formatSalesTillDate, getSsrExportFactBounds, reportCodeFor, viewTypeLabel, type SsrViewTypeLabel } from "@/lib/ssr-data";
-import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
+import { buildDataSheetRows, buildDateRange, DATA_COLUMNS, formatPeriod, formatSalesTillDate, formatSsrDataCell, getSsrExportFactBounds, reportCodeFor, viewTypeLabel, type SsrDataLine, type SsrViewTypeLabel } from "@/lib/ssr-data";
+import { cn, formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { toIsoDate } from "@/lib/date-utils";
 
 export const dynamic = "force-dynamic";
+
+const EMPHASIZED_COLUMNS = new Set<keyof SsrDataLine>(["productName", "salesValue"]);
 
 export default async function ReportDetailPage({ params }: { params: { id: string } }) {
   const report = await prisma.ssrReport.findUnique({
@@ -98,35 +100,41 @@ export default async function ReportDetailPage({ params }: { params: { id: strin
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <Table>
+          <Table className="min-w-max">
             <TableHeader>
               <TableRow className="bg-[#DCE6F1]">
-                <TableHead className="font-semibold">Distributor</TableHead>
-                <TableHead className="font-semibold">City</TableHead>
-                <TableHead className="font-semibold">Group</TableHead>
-                <TableHead className="font-semibold">Product</TableHead>
-                <TableHead className="text-right font-semibold">S.P</TableHead>
-                <TableHead className="text-right font-semibold">Units</TableHead>
-                <TableHead className="text-right font-semibold">Value</TableHead>
+                {DATA_COLUMNS.map((column) => (
+                  <TableHead
+                    key={column.key}
+                    className={cn("whitespace-nowrap font-semibold", column.kind !== "text" && "text-right")}
+                  >
+                    {column.label}
+                  </TableHead>
+                ))}
               </TableRow>
             </TableHeader>
             <TableBody>
               {dataLines.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
+                  <TableCell colSpan={DATA_COLUMNS.length} className="py-12 text-center text-muted-foreground">
                     No sales facts in this period.
                   </TableCell>
                 </TableRow>
               ) : (
                 dataLines.map((line, i) => (
                   <TableRow key={i}>
-                    <TableCell>{line.distributorName}</TableCell>
-                    <TableCell>{line.city || "—"}</TableCell>
-                    <TableCell>{line.group || "—"}</TableCell>
-                    <TableCell className="font-medium">{line.productName}</TableCell>
-                    <TableCell className="text-right">{line.sellingPrice.toFixed(2)}</TableCell>
-                    <TableCell className="text-right">{line.salesUnits.toLocaleString()}</TableCell>
-                    <TableCell className="text-right font-medium">{formatCurrency(line.salesValue)}</TableCell>
+                    {DATA_COLUMNS.map((column) => (
+                      <TableCell
+                        key={column.key}
+                        className={cn(
+                          "whitespace-nowrap",
+                          column.kind !== "text" && "text-right",
+                          EMPHASIZED_COLUMNS.has(column.key) && "font-medium"
+                        )}
+                      >
+                        {formatSsrDataCell(line, column)}
+                      </TableCell>
+                    ))}
                   </TableRow>
                 ))
               )}
