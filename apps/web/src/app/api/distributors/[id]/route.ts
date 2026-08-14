@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { resolveManagerId } from "@/lib/distributor-helpers";
 import { VALID_COUNTRIES, VALID_REGIONS } from "@/lib/distributor-options";
-import type { DistributorCountry, DistributorRegion } from "@prisma/client";
+import type { DistributorCountry, DistributorInputMode, DistributorRegion } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -25,16 +25,18 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const body = await request.json();
-    const { code, name, region, country, city, managerId, managerName, isActive } = body as {
-      code?: string;
-      name?: string;
-      region?: DistributorRegion | null;
-      country?: DistributorCountry | null;
-      city?: string | null;
-      managerId?: string | null;
-      managerName?: string | null;
-      isActive?: boolean;
-    };
+    const { code, name, region, country, city, managerId, managerName, isActive, inputMode } =
+      body as {
+        code?: string;
+        name?: string;
+        region?: DistributorRegion | null;
+        country?: DistributorCountry | null;
+        city?: string | null;
+        managerId?: string | null;
+        managerName?: string | null;
+        isActive?: boolean;
+        inputMode?: DistributorInputMode;
+      };
 
     if (code) {
       const existing = await prisma.distributor.findFirst({
@@ -53,6 +55,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: "Invalid country" }, { status: 400 });
     }
 
+    if (inputMode !== undefined && inputMode !== "BOTH" && inputMode !== "EXCEL_ONLY") {
+      return NextResponse.json({ error: "Invalid inputMode" }, { status: 400 });
+    }
+
     const resolvedManagerId = await resolveManagerId(managerId, managerName);
 
     const distributor = await prisma.distributor.update({
@@ -65,6 +71,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         ...(city !== undefined && { city: city?.trim() || null }),
         ...(resolvedManagerId !== undefined && { managerId: resolvedManagerId }),
         ...(isActive !== undefined && { isActive }),
+        ...(inputMode !== undefined && { inputMode }),
       },
       include: { manager: { select: { id: true, name: true } } },
     });

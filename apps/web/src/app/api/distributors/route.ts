@@ -3,10 +3,76 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { resolveManagerId } from "@/lib/distributor-helpers";
 import { VALID_COUNTRIES, VALID_REGIONS } from "@/lib/distributor-options";
-import { isDistributorUploadReady } from "@/lib/template-readiness";
-import type { DistributorCountry, DistributorRegion } from "@prisma/client";
+import {
+  isDistributorExcelReady,
+  isDistributorInputReady,
+  isDistributorUploadReady,
+} from "@/lib/template-readiness";
+import type { DistributorCountry, DistributorInputMode, DistributorRegion } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
+
+const templateSelect = {
+  config: true,
+  configuredAt: true,
+  excelConfig: true,
+  excelConfiguredAt: true,
+} as const;
+
+function mapDistributorRow(d: {
+  id: string;
+  code: string;
+  name: string;
+  region: DistributorRegion | null;
+  country: DistributorCountry | null;
+  city: string | null;
+  managerId: string | null;
+  pdfFormatId: string | null;
+  inputMode: DistributorInputMode;
+  manager?: { name: string } | null;
+  templates: Array<{
+    config: unknown;
+    configuredAt: Date | null;
+    excelConfig: unknown;
+    excelConfiguredAt: Date | null;
+  }>;
+  _count?: { documents: number; productMappings: number };
+  isActive?: boolean;
+  createdAt?: Date;
+}) {
+  const activeTemplate = d.templates[0] ?? null;
+  const templateReady = isDistributorUploadReady({
+    pdfFormatId: d.pdfFormatId,
+    activeTemplate,
+  });
+  const excelTemplateReady = isDistributorExcelReady({ activeTemplate });
+  const uploadReady = isDistributorInputReady({
+    pdfFormatId: d.pdfFormatId,
+    activeTemplate,
+    inputMode: d.inputMode,
+  });
+
+  return {
+    id: d.id,
+    code: d.code,
+    name: d.name,
+    region: d.region,
+    country: d.country,
+    city: d.city,
+    managerId: d.managerId,
+    managerName: d.manager?.name ?? null,
+    inputMode: d.inputMode,
+    templateReady,
+    excelTemplateReady,
+    uploadReady,
+    ...(d.isActive !== undefined && { isActive: d.isActive }),
+    ...(d._count && {
+      documentCount: d._count.documents,
+      mappingCount: d._count.productMappings,
+    }),
+    ...(d.createdAt && { createdAt: d.createdAt }),
+  };
+}
 
 export async function GET(request: NextRequest) {
   const includeInactive = request.nextUrl.searchParams.get("includeInactive") === "1";
@@ -18,7 +84,7 @@ export async function GET(request: NextRequest) {
       where: { isActive: true },
       orderBy: [{ version: "desc" as const }, { updatedAt: "desc" as const }],
       take: 1,
-      select: { config: true, configuredAt: true },
+      select: templateSelect,
     },
   };
 
@@ -28,30 +94,7 @@ export async function GET(request: NextRequest) {
       include,
     });
 
-    return NextResponse.json(
-      distributors.map((d) => {
-        const activeTemplate = d.templates[0] ?? null;
-        const templateReady = isDistributorUploadReady({
-          pdfFormatId: d.pdfFormatId,
-          activeTemplate,
-        });
-        return {
-          id: d.id,
-          code: d.code,
-          name: d.name,
-          region: d.region,
-          country: d.country,
-          city: d.city,
-          managerId: d.managerId,
-          managerName: d.manager?.name ?? null,
-          isActive: d.isActive,
-          documentCount: d._count.documents,
-          mappingCount: d._count.productMappings,
-          templateReady,
-          createdAt: d.createdAt,
-        };
-      })
-    );
+    return NextResponse.json(distributors.map((d) => mapDistributorRow(d)));
   }
 
   const distributors = await prisma.distributor.findMany({
@@ -66,42 +109,34 @@ export async function GET(request: NextRequest) {
       city: true,
       managerId: true,
       pdfFormatId: true,
+      inputMode: true,
       manager: { select: { name: true } },
       templates: {
         where: { isActive: true },
         orderBy: [{ version: "desc" }, { updatedAt: "desc" }],
         take: 1,
-        select: { config: true, configuredAt: true },
+        select: templateSelect,
       },
     },
   });
 
-  return NextResponse.json(
-    distributors.map((d) => {
-      const activeTemplate = d.templates[0] ?? null;
-      const templateReady = isDistributorUploadReady({
-        pdfFormatId: d.pdfFormatId,
-        activeTemplate,
-      });
-      return {
-        id: d.id,
-        code: d.code,
-        name: d.name,
-        region: d.region,
-        country: d.country,
-        city: d.city,
-        managerId: d.managerId,
-        managerName: d.manager?.name ?? null,
-        templateReady,
-      };
-    })
-  );
+  return NextResponse.json(distributors.map((d) => mapDistributorRow(d)));
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { code, name, region, country, city, managerId, managerName, pdfFormatId } = body as {
+    const {
+      code,
+      name,
+      region,
+      country,
+      city,
+      managerId,
+      managerName,
+      pdfFormatId,
+      inputMode,
+    } = body as {
       code?: string;
       name?: string;
       region?: DistributorRegion | null;
@@ -110,10 +145,15 @@ export async function POST(request: NextRequest) {
       managerId?: string | null;
       managerName?: string | null;
       pdfFormatId?: string;
+      inputMode?: DistributorInputMode;
     };
 
     if (!code?.trim() || !name?.trim()) {
       return NextResponse.json({ error: "Code and name are required" }, { status: 400 });
+    }
+
+    if (inputMode && inputMode !== "BOTH" && inputMode !== "EXCEL_ONLY") {
+      return NextResponse.json({ error: "Invalid inputMode" }, { status: 400 });
     }
 
     const pdfFormat = pdfFormatId?.trim()
@@ -147,6 +187,7 @@ export async function POST(request: NextRequest) {
       region: region ?? null,
       country: country ?? null,
       city: city?.trim() || null,
+      inputMode: inputMode ?? "BOTH",
       ...(pdfFormat && {
         pdfFormat: { connect: { id: pdfFormat.id } },
         templates: {

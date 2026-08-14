@@ -54,12 +54,25 @@ export function buildGroupHeaderSpans(
   return spans;
 }
 
+const GROUPED_HEADER_STRUCTURES: readonly HeaderStructure[] = [
+  "grouped_two_row",
+  "title_block_then_table",
+];
+
+/** True when the detected grid has a spanning group row above the leaf row. */
+export function isGroupedHeaderGrid(
+  headerStructure: HeaderStructure,
+  headerGrid: string[][]
+): boolean {
+  return GROUPED_HEADER_STRUCTURES.includes(headerStructure) && headerGrid.length >= 2;
+}
+
 export function leafLabelForColumn(
   headerGrid: string[][],
   col: number,
   headerStructure: HeaderStructure
 ): string {
-  if (headerStructure === "grouped_two_row" && headerGrid.length >= 2) {
+  if (isGroupedHeaderGrid(headerStructure, headerGrid)) {
     return (headerGrid[1][col] ?? "").trim();
   }
   return (headerGrid[0]?.[col] ?? "").trim();

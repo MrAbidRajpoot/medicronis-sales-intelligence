@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "test:template": "tsx src/lib/__tests__/template-mismatch.test.ts",
-    "test:ssr-data": "tsx src/lib/__tests__/ssr-data.test.ts"
+    "test:ssr-data": "tsx src/lib/__tests__/ssr-data.test.ts",
+    "test:dashboard-sales": "tsx --tsconfig tsconfig.json src/lib/__tests__/dashboard-sales.test.ts",
+    "test:sales-excel": "tsx --tsconfig tsconfig.json src/lib/__tests__/sales-excel-import.test.ts",
+    "test:filename-distributor": "tsx --tsconfig tsconfig.json src/lib/__tests__/filename-distributor-match.test.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, FileText, X, AlertCircle } from "lucide-react";
 import Link from "next/link";
@@ -30,6 +30,9 @@ interface DistributorOption {
   name: string;
   region: string | null;
   templateReady?: boolean;
+  excelTemplateReady?: boolean;
+  uploadReady?: boolean;
+  inputMode?: "BOTH" | "EXCEL_ONLY";
 }
 
 interface UploadDocumentResult {
@@ -54,9 +57,20 @@ function isZipFile(file: File): boolean {
   );
 }
 
+function isXlsxFile(file: File): boolean {
+  return (
+    file.name.toLowerCase().endsWith(".xlsx") ||
+    file.type === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  );
+}
+
+function isPdfFile(file: File): boolean {
+  return file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+}
+
 const IDLE_STEPS: ProcessingStep[] = [
-  { id: "1", label: "Upload", description: "PDF received and stored", status: "pending" },
-  { id: "2", label: "Extract", description: "Parsing line items from PDF", status: "pending" },
+  { id: "1", label: "Upload", description: "File received and stored", status: "pending" },
+  { id: "2", label: "Extract", description: "Parsing line items", status: "pending" },
   { id: "3", label: "Match Products", description: "Mapping to master catalog", status: "pending" },
   { id: "4", label: "Review Exceptions", description: "Human review if needed", status: "pending" },
 ];
@@ -76,8 +90,27 @@ export default function UploadPage() {
   const [steps, setSteps] = useState<ProcessingStep[]>(IDLE_STEPS);
   const [showStepper, setShowStepper] = useState(false);
 
-  const isBulkUpload = files.length > 1 || files.some(isZipFile);
-  const useForceDistributor = isBulkUpload ? applyToAll : Boolean(distributor);
+  const hasXlsx = files.some(isXlsxFile);
+  const hasZip = files.some(isZipFile);
+  const hasLoosePdf = files.some(isPdfFile);
+  const isBulkUpload = files.length > 1 || hasZip;
+  // Force when user opts in via apply-to-all (bulk/xlsx) or single-PDF override.
+  const useForceDistributor =
+    isBulkUpload || hasXlsx ? applyToAll : Boolean(distributor);
+
+  const selectedDistributor = distributors.find((d) => d.id === distributor);
+  const excelOnlySelected = selectedDistributor?.inputMode === "EXCEL_ONLY";
+
+  const acceptAttr = useMemo(() => {
+    if (excelOnlySelected) {
+      return ".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.zip,application/zip,application/x-zip-compressed";
+    }
+    return ".pdf,application/pdf,.zip,application/zip,application/x-zip-compressed,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  }, [excelOnlySelected]);
+
+  const dropHint = excelOnlySelected
+    ? "Excel (.xlsx) or ZIP of Excel files — PDFs in a ZIP are rejected server-side"
+    : "PDFs, Excel (.xlsx), or ZIP of both";
 
   useEffect(() => {
     fetch("/api/distributors")
@@ -86,22 +119,35 @@ export default function UploadPage() {
       .catch(() => setError("Could not load distributors"));
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragging(false);
-    const dropped = Array.from(e.dataTransfer.files).filter(
-      (f) =>
-        f.type === "application/pdf" ||
-        f.name.toLowerCase().endsWith(".pdf") ||
-        f.type === "application/zip" ||
-        f.name.toLowerCase().endsWith(".zip")
-    );
-    setFiles((prev) => [...prev, ...dropped]);
-  }, []);
+  // Clear incompatible loose PDFs when switching to EXCEL_ONLY (ZIP allowed)
+  useEffect(() => {
+    if (!excelOnlySelected) return;
+    setFiles((prev) => prev.filter((f) => isXlsxFile(f) || isZipFile(f)));
+  }, [excelOnlySelected]);
+
+  const filterIncomingFiles = useCallback(
+    (incoming: File[]) => {
+      return incoming.filter((f) => {
+        if (excelOnlySelected) return isXlsxFile(f) || isZipFile(f);
+        return isPdfFile(f) || isZipFile(f) || isXlsxFile(f);
+      });
+    },
+    [excelOnlySelected]
+  );
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragging(false);
+      const dropped = filterIncomingFiles(Array.from(e.dataTransfer.files));
+      setFiles((prev) => [...prev, ...dropped]);
+    },
+    [filterIncomingFiles]
+  );
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setFiles((prev) => [...prev, ...Array.from(e.target.files!)]);
+      setFiles((prev) => [...prev, ...filterIncomingFiles(Array.from(e.target.files!))]);
     }
   };
 
@@ -109,22 +155,59 @@ export default function UploadPage() {
     setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const selectedDistributor = distributors.find((d) => d.id === distributor);
-  const distributorReady = !useForceDistributor || selectedDistributor?.templateReady !== false;
+  function isDistributorSelectable(d: DistributorOption): boolean {
+    if (d.inputMode === "EXCEL_ONLY") return d.excelTemplateReady !== false && d.uploadReady !== false;
+    if (hasXlsx && !hasLoosePdf) return d.excelTemplateReady !== false;
+    return d.templateReady !== false;
+  }
+
+  function distributorDisabledReason(d: DistributorOption): string {
+    if (d.inputMode === "EXCEL_ONLY") {
+      return d.excelTemplateReady === false || d.uploadReady === false
+        ? " — Excel map required"
+        : "";
+    }
+    if (hasXlsx && !hasLoosePdf) {
+      return d.excelTemplateReady === false ? " — Excel map required" : "";
+    }
+    return d.templateReady === false ? " — Template required" : "";
+  }
+
+  const distributorReady =
+    !useForceDistributor ||
+    !selectedDistributor ||
+    isDistributorSelectable(selectedDistributor);
 
   const handleUpload = async () => {
     if (useForceDistributor && !distributor) {
-      toast.error(isBulkUpload ? "Select a distributor to apply to all files" : "Select a distributor override");
+      toast.error(
+        isBulkUpload
+          ? "Select a distributor to apply to all files"
+          : "Select a distributor override"
+      );
       return;
     }
 
     if (useForceDistributor && !distributorReady) {
-      toast.error("Selected distributor needs a PDF template — configure it first");
+      toast.error(
+        excelOnlySelected || (hasXlsx && !hasLoosePdf)
+          ? "Selected distributor needs an Excel column map — configure it first"
+          : "Selected distributor needs a PDF template — configure it first"
+      );
+      return;
+    }
+
+    if (excelOnlySelected && hasLoosePdf) {
+      toast.error("This distributor requires Excel upload");
       return;
     }
 
     if (files.length === 0) {
-      toast.error("Add at least one PDF or ZIP file");
+      toast.error(
+        excelOnlySelected
+          ? "Add at least one Excel (.xlsx) or ZIP file"
+          : "Add at least one PDF, ZIP, or Excel file"
+      );
       return;
     }
 
@@ -138,7 +221,7 @@ export default function UploadPage() {
     setUploadResults([]);
     setShowStepper(true);
     setSteps([
-      { id: "1", label: "Upload", status: "active", description: "Saving PDF..." },
+      { id: "1", label: "Upload", status: "active", description: "Saving file..." },
       { id: "2", label: "Extract", status: "pending" },
       { id: "3", label: "Match Products", status: "pending" },
       { id: "4", label: "Review Exceptions", status: "pending" },
@@ -157,7 +240,11 @@ export default function UploadPage() {
           i === 0
             ? { ...step, status: "complete" }
             : i === 1
-              ? { ...step, status: "active", description: "Calling PDF worker..." }
+              ? {
+                  ...step,
+                  status: "active",
+                  description: hasXlsx && !hasLoosePdf ? "Parsing Excel..." : "Calling PDF worker...",
+                }
               : step
         )
       );
@@ -197,7 +284,9 @@ export default function UploadPage() {
             ? "line parser"
             : m === "alternate_settings"
               ? "alternate pdfplumber"
-              : "table"
+              : m === "excel"
+                ? "excel"
+                : "table"
         );
         toast.success(`Extraction method: ${labels.join(", ")}`);
       }
@@ -205,10 +294,15 @@ export default function UploadPage() {
         (d: { status: string }) => d.status === "TEMPLATE_MISMATCH"
       );
       if (templateMismatch) {
-        toast.error("One or more documents have a template layout mismatch — re-map the distributor template.");
+        toast.error(
+          "One or more documents have a template layout mismatch — re-map the distributor template."
+        );
       }
       if (data.warnings?.length) {
-        data.warnings.forEach((w: string) => toast.error(w));
+        data.warnings.forEach((w: string) => {
+          if (w.startsWith("Replaced ")) toast.message(w);
+          else toast.error(w);
+        });
       }
       setSuccess(true);
 
@@ -226,11 +320,19 @@ export default function UploadPage() {
       const msg = err instanceof Error ? err.message : "Upload failed";
       setError(msg);
       toast.error(msg);
-      setSteps((s) => s.map((step) => (step.status === "active" ? { ...step, status: "error" } : step)));
+      setSteps((s) =>
+        s.map((step) => (step.status === "active" ? { ...step, status: "error" } : step))
+      );
     } finally {
       setUploading(false);
     }
   };
+
+  const templateLink =
+    selectedDistributor &&
+    (excelOnlySelected || (hasXlsx && !hasLoosePdf)
+      ? `/distributors/${selectedDistributor.id}/excel-template?setup=1&returnTo=/upload`
+      : `/distributors/${selectedDistributor.id}/template?setup=1&returnTo=/upload`);
 
   return (
     <>
@@ -239,7 +341,7 @@ export default function UploadPage() {
       <div className="space-y-4 sm:space-y-6">
         <PageHeader
           title="Upload Documents"
-          description="Upload distributor sales report PDFs for extraction and SSR generation"
+          description="Upload distributor sales reports (PDF or Excel) for extraction and SSR generation"
         />
 
         {error && (
@@ -262,18 +364,30 @@ export default function UploadPage() {
                   onDrop={handleDrop}
                   className={cn(
                     "flex min-h-[160px] flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-10 sm:min-h-[200px] sm:px-6 sm:py-12 transition-colors touch-manipulation",
-                    dragging ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-primary/50"
+                    dragging
+                      ? "border-primary bg-primary/5"
+                      : "border-muted-foreground/25 hover:border-primary/50"
                   )}
                 >
                   <Upload className="h-10 w-10 text-muted-foreground" />
-                  <p className="mt-4 text-center text-sm font-medium">Drag & drop PDF or ZIP files here</p>
-                  <p className="mt-1 text-center text-xs text-muted-foreground">
-                    PDFs individually, or a ZIP containing multiple PDFs
+                  <p className="mt-4 text-center text-sm font-medium">
+                    Drag & drop {excelOnlySelected ? "Excel or ZIP" : "PDF, ZIP, or Excel"} files here
                   </p>
+                  <p className="mt-1 text-center text-xs text-muted-foreground">{dropHint}</p>
+                  <p className="mt-2 max-w-md text-center text-xs text-muted-foreground">
+                    Name Excel files with distributor code or name (e.g. AYAN-TAUNSA.xlsx). ZIP may
+                    include PDFs and Excel.
+                  </p>
+                  {excelOnlySelected && (
+                    <p className="mt-2 text-center text-xs text-amber-700">
+                      Selected distributor is Excel-only — loose PDF uploads are blocked; PDFs inside
+                      a ZIP will fail per file.
+                    </p>
+                  )}
                   <label className="mt-4 inline-flex min-h-[44px] cursor-pointer items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium hover:bg-muted touch-manipulation">
                     <input
                       type="file"
-                      accept=".pdf,application/pdf,.zip,application/zip,application/x-zip-compressed"
+                      accept={acceptAttr}
                       multiple
                       className="hidden"
                       onChange={handleFileInput}
@@ -315,7 +429,7 @@ export default function UploadPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <Label>Business date this PDF represents</Label>
+                  <Label>Business date this file represents</Label>
                   <Input
                     type="date"
                     value={reportDate}
@@ -332,11 +446,12 @@ export default function UploadPage() {
                 <CardTitle className="text-base">Distributor</CardTitle>
               </CardHeader>
               <CardContent>
-                {isBulkUpload ? (
+                {isBulkUpload || hasXlsx ? (
                   <div className="space-y-3">
                     <p className="text-sm text-muted-foreground">
-                      Each PDF is matched to a distributor from its header. No manual selection needed unless you
-                      want the same distributor for every file.
+                      {hasXlsx
+                        ? "Excel files are matched by filename (code or name). PDFs use the report header, with filename as fallback. No selection needed unless you want one distributor for every file."
+                        : "Each PDF is matched to a distributor from its header. No manual selection needed unless you want the same distributor for every file."}
                     </p>
                     <label className="flex min-h-[44px] cursor-pointer items-center gap-2 text-sm">
                       <input
@@ -362,10 +477,15 @@ export default function UploadPage() {
                               <SelectItem
                                 key={d.id}
                                 value={d.id}
-                                disabled={d.templateReady === false}
+                                disabled={
+                                  !isDistributorSelectable(d) ||
+                                  (hasLoosePdf && d.inputMode === "EXCEL_ONLY")
+                                }
                               >
                                 {d.name} ({d.code})
-                                {d.templateReady === false ? " — Template required" : ""}
+                                {d.inputMode === "EXCEL_ONLY"
+                                  ? " [Excel only]"
+                                  : distributorDisabledReason(d)}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -389,24 +509,29 @@ export default function UploadPage() {
                           <SelectItem
                             key={d.id}
                             value={d.id}
-                            disabled={d.templateReady === false}
+                            disabled={!isDistributorSelectable(d) || d.inputMode === "EXCEL_ONLY"}
                           >
                             {d.name} ({d.code})
-                            {d.templateReady === false ? " — Template required" : ""}
+                            {d.inputMode === "EXCEL_ONLY"
+                              ? " — Excel only"
+                              : distributorDisabledReason(d)}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                 )}
-                {useForceDistributor && selectedDistributor && !distributorReady && (
+                {useForceDistributor && selectedDistributor && !distributorReady && templateLink && (
                   <div className="mt-2 flex flex-wrap items-center gap-2 pt-1">
-                    <Badge variant="danger">Template required</Badge>
-                    <Link
-                      href={`/distributors/${selectedDistributor.id}/template?setup=1&returnTo=/upload`}
-                      className="text-sm text-primary underline"
-                    >
-                      Configure PDF template
+                    <Badge variant="danger">
+                      {excelOnlySelected || (hasXlsx && !hasLoosePdf)
+                        ? "Excel map required"
+                        : "Template required"}
+                    </Badge>
+                    <Link href={templateLink} className="text-sm text-primary underline">
+                      {excelOnlySelected || (hasXlsx && !hasLoosePdf)
+                        ? "Configure Excel column map"
+                        : "Configure PDF template"}
                     </Link>
                   </div>
                 )}
@@ -441,11 +566,13 @@ export default function UploadPage() {
                       <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
                         {result.distributorName ? (
                           <p>
-                            Distributor: <span className="text-foreground">{result.distributorName}</span>
+                            Distributor:{" "}
+                            <span className="text-foreground">{result.distributorName}</span>
                           </p>
                         ) : result.suggestedDistributorName ? (
                           <p>
-                            Suggested: <span className="text-foreground">{result.suggestedDistributorName}</span>
+                            Suggested:{" "}
+                            <span className="text-foreground">{result.suggestedDistributorName}</span>
                           </p>
                         ) : null}
                         {result.error && <p className="text-destructive">{result.error}</p>}
@@ -468,7 +595,9 @@ export default function UploadPage() {
               disabled={files.length === 0 || !distributorReady || uploading || success}
               onClick={handleUpload}
             >
-              {uploading ? "Processing..." : `Upload ${files.length || ""} Document${files.length !== 1 ? "s" : ""}`}
+              {uploading
+                ? "Processing..."
+                : `Upload ${files.length || ""} Document${files.length !== 1 ? "s" : ""}`}
             </Button>
           </div>
 
@@ -481,7 +610,7 @@ export default function UploadPage() {
                 <ProcessingStepper steps={steps} />
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  Upload a PDF to run extraction and product matching via the PDF worker service.
+                  Upload a PDF or Excel file to run extraction and product matching.
                 </p>
               )}
             </CardContent>

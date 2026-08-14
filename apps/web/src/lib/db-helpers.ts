@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { DocumentStatus } from "@prisma/client";
 import type { SsrGridMasters } from "@/lib/ssr-data";
+import { validateExcelTemplateConfig } from "@/lib/excel-template-validation";
+import { normalizeDistributorKey } from "@/lib/distributor-normalize";
+
+export { normalizeDistributorKey } from "@/lib/distributor-normalize";
 
 export async function fetchSsrGridMasters(): Promise<SsrGridMasters> {
   const [distributors, products] = await Promise.all([
@@ -75,15 +79,24 @@ export type DistributorUploadContext = {
     code: string;
     name: string;
     pdfFormatId: string;
+    inputMode: "BOTH" | "EXCEL_ONLY";
     pdfFormat: { id: string; code: string; name: string; family: string };
   };
-  template: { id: string; lastSuccessfulRowCount: number | null };
+  template: {
+    id: string;
+    lastSuccessfulRowCount: number | null;
+    excelConfig: import("@/lib/excel-template-types").ExcelTemplateConfig | null;
+    excelConfiguredAt: Date | null;
+  };
   templateConfig: import("@/lib/pdf-template-types").TemplateConfig;
 };
 
 export async function loadDistributorUploadContext(
-  distributorId: string
+  distributorId: string,
+  options?: { forExcel?: boolean }
 ): Promise<{ ok: true; context: DistributorUploadContext } | { ok: false; error: string }> {
+  const forExcel = options?.forExcel === true;
+
   const distributor = await prisma.distributor.findUnique({
     where: { id: distributorId },
     include: { pdfFormat: true },
@@ -93,18 +106,69 @@ export async function loadDistributorUploadContext(
     return { ok: false, error: "Distributor not found" };
   }
 
-  if (!distributor.pdfFormatId || !distributor.pdfFormat) {
-    return {
-      ok: false,
-      error: `Distributor "${distributor.name}" has no PDF format assigned. Assign a format before uploading.`,
-    };
-  }
-
   const tmpl = await getActiveDistributorTemplate(distributorId);
   if (!tmpl) {
     return {
       ok: false,
-      error: `No active PDF template for "${distributor.name}". Create and activate a column mapping template first.`,
+      error: forExcel
+        ? `No active template for "${distributor.name}". Configure the Excel column map first.`
+        : `No active PDF template for "${distributor.name}". Create and activate a column mapping template first.`,
+    };
+  }
+
+  if (forExcel) {
+    if (!tmpl.excelConfiguredAt) {
+      return {
+        ok: false,
+        error: `Excel column map for "${distributor.name}" is not configured. Complete the Excel mapping wizard first.`,
+      };
+    }
+    const excelValidation = validateExcelTemplateConfig(tmpl.excelConfig);
+    if (!excelValidation.ok) {
+      return {
+        ok: false,
+        error: `Excel column map for "${distributor.name}" is invalid: ${excelValidation.error}`,
+      };
+    }
+
+    // PDF format optional for EXCEL_ONLY but still useful for template linkage
+    const pdfFormat = distributor.pdfFormat;
+    return {
+      ok: true,
+      context: {
+        distributor: {
+          id: distributor.id,
+          code: distributor.code,
+          name: distributor.name,
+          pdfFormatId: distributor.pdfFormatId ?? "",
+          inputMode: distributor.inputMode,
+          pdfFormat: pdfFormat
+            ? {
+                id: pdfFormat.id,
+                code: pdfFormat.code,
+                name: pdfFormat.name,
+                family: pdfFormat.family,
+              }
+            : { id: "", code: "", name: "", family: "" },
+        },
+        template: {
+          id: tmpl.id,
+          lastSuccessfulRowCount: tmpl.lastSuccessfulRowCount,
+          excelConfig: excelValidation.config,
+          excelConfiguredAt: tmpl.excelConfiguredAt,
+        },
+        templateConfig: (tmpl.config ?? {
+          headerStructure: "single_row",
+          fields: {},
+        }) as unknown as import("@/lib/pdf-template-types").TemplateConfig,
+      },
+    };
+  }
+
+  if (!distributor.pdfFormatId || !distributor.pdfFormat) {
+    return {
+      ok: false,
+      error: `Distributor "${distributor.name}" has no PDF format assigned. Assign a format before uploading.`,
     };
   }
 
@@ -122,6 +186,8 @@ export async function loadDistributorUploadContext(
     };
   }
 
+  const excelValidation = validateExcelTemplateConfig(tmpl.excelConfig);
+
   return {
     ok: true,
     context: {
@@ -130,6 +196,7 @@ export async function loadDistributorUploadContext(
         code: distributor.code,
         name: distributor.name,
         pdfFormatId: distributor.pdfFormatId,
+        inputMode: distributor.inputMode,
         pdfFormat: {
           id: distributor.pdfFormat.id,
           code: distributor.pdfFormat.code,
@@ -140,6 +207,8 @@ export async function loadDistributorUploadContext(
       template: {
         id: tmpl.id,
         lastSuccessfulRowCount: tmpl.lastSuccessfulRowCount,
+        excelConfig: excelValidation.ok ? excelValidation.config : null,
+        excelConfiguredAt: tmpl.excelConfiguredAt,
       },
       templateConfig: tmpl.config as unknown as import("@/lib/pdf-template-types").TemplateConfig,
     },
@@ -159,10 +228,6 @@ export function batchCodeFor(distributorCode: string): string {
   const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const suffix = distributorCode.replace("DIST-", "");
   return `SSR-${ym}-${suffix}-${Date.now().toString(36).toUpperCase()}`;
-}
-
-function normalizeDistributorKey(value: string): string {
-  return value.toUpperCase().replace(/[^A-Z0-9]/g, "");
 }
 
 /** Resolve distributor from PDF worker hints (name from report header). */

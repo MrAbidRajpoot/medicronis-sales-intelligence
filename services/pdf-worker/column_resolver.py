@@ -10,6 +10,34 @@ REQUIRED_FIELDS = ("product_name", "sales_qty", "sales_amount")
 PRODUCT_KEYWORDS = ("product", "description", "item", "name")
 QTY_KEYWORDS = ("qty", "quantity", "net sales", "net sale")
 VALUE_KEYWORDS = ("value", "amount")
+# Spanning labels that only ever appear on a group row, never on a leaf row.
+GROUP_KEYWORDS = (
+    "opening",
+    "purchase",
+    "return",
+    "net sale",
+    "net sales",
+    "closing",
+    "stock",
+    "sale",
+    "s-ret",
+    "s.ret",
+    "g-sal",
+    "e & c",
+    "transfer",
+)
+# Leading cells that identify a leaf/product header row rather than a group row.
+LEAF_ID_KEYWORDS = (
+    "pr.id",
+    "pr id",
+    "prid",
+    "product",
+    "description",
+    "item",
+    "code",
+    "sr#",
+    "sr #",
+)
 
 
 def forward_fill_groups(row0: list[str | None]) -> list[str]:
@@ -136,6 +164,23 @@ def _row_has_qty_value_pattern(row: list[str | None]) -> bool:
     return has_qty and has_value
 
 
+def _row_is_leaf_id_row(row: list[str | None]) -> bool:
+    """True when the leading cells name the product/id column (a leaf header row)."""
+    primary = " ".join(normalize_header(c) for c in row[:2] if c)
+    return any(kw in primary for kw in LEAF_ID_KEYWORDS)
+
+
+def _is_group_header_row(row: list[str | None]) -> bool:
+    """True when a row carries spanning group labels sitting above a leaf header row."""
+    labels = {norm for norm in (normalize_header(c) for c in row) if norm}
+    if len(labels) < 2:
+        return False
+    if _row_is_leaf_id_row(row):
+        return False
+    text = " ".join(labels)
+    return any(kw in text for kw in GROUP_KEYWORDS)
+
+
 def _is_grouped_ssr_header(row0: list[str | None], row1: list[str | None]) -> bool:
     g0 = _forward_fill_groups(row0)
     if not g0 or normalize_header(row0[0] if row0 else None) != "item":
@@ -181,19 +226,15 @@ def find_header_span(
         start = skip_before
         for i in range(start, min(len(table), start + 12)):
             row = table[i]
-            if _row_has_product_header(row) and _row_has_qty_value_pattern(row):
+            if not _row_has_product_header(row):
+                continue
+            # Prefer group row + leaf row when a group row sits directly above.
+            if i > 0 and _is_group_header_row(table[i - 1]):
+                return i - 1, i + 1
+            if _row_has_qty_value_pattern(row):
                 return i, i + 1
-            if i + 1 < len(table):
-                next_row = table[i + 1]
-                if _row_has_product_header(row) and _row_has_qty_value_pattern(next_row):
-                    return i, i + 2
-            if i > 0:
-                prev_row = table[i - 1]
-                if _row_has_product_header(row) and (
-                    "net sale" in " ".join(normalize_header(c) for c in prev_row if c)
-                    or _row_has_qty_value_pattern(row)
-                ):
-                    return i - 1, i + 1
+            if i + 1 < len(table) and _row_has_qty_value_pattern(table[i + 1]):
+                return i, i + 2
         return None
 
     return None

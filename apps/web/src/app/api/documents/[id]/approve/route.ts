@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getLatestExtractionRun } from "@/lib/db-helpers";
+import { replacePriorDocumentsForDistributorDate } from "@/lib/document-replace";
 
 export const dynamic = "force-dynamic";
 
@@ -46,9 +47,20 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
     const saleDate = doc.reportDate;
     let totalValue = 0;
 
+    // Drop any older same-distributor/date docs and their SSR facts before promoting.
+    await replacePriorDocumentsForDistributorDate({
+      distributorId: doc.distributorId,
+      reportDate: saleDate,
+      excludeDocumentId: doc.id,
+    });
+
     await prisma.$transaction(async (tx) => {
+      // Full replace for this distributor/date so removed products don't linger.
       await tx.dailySalesFact.deleteMany({
-        where: { sourceDocumentId: doc.id },
+        where: {
+          distributorId: doc.distributorId!,
+          saleDate,
+        },
       });
 
       for (const row of promotable) {

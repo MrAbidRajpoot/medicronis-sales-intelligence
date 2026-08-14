@@ -2,14 +2,20 @@
 
 from __future__ import annotations
 
+import io
 import os
 from pathlib import Path
 
+import pdfplumber
 import pytest
 
-from column_resolver import build_detected_groups, resolve_label_columns
+from column_resolver import (
+    build_detected_groups,
+    find_header_span,
+    resolve_label_columns,
+)
 from header_analyzer import analyze_headers
-from presets import FAMILY_A_DEFAULT
+from presets import FAMILY_A_DEFAULT, FAMILY_B_DEFAULT
 
 ROOT = Path(__file__).resolve().parents[2]
 PDF_SEARCH_DIRS = [
@@ -73,6 +79,73 @@ def _aim_header_17() -> list[list[str | None]]:
     ]
 
 
+def _al_shifa_header_15() -> list[list[str | None]]:
+    """Family B title block + group row + leaf row, as pdfplumber returns it."""
+    return [
+        ["Sales and Stock Statement"] + [None] * 14,
+        ["From Date:01/07/2026 To Date:30/07/2026"] + [None] * 14,
+        [
+            "",
+            None,
+            "OPENING",
+            "PURCHASE",
+            None,
+            "P-RETURN",
+            None,
+            "E & C",
+            "G-SAL",
+            "S-RET",
+            "NET SALE",
+            None,
+            None,
+            "CLOSING STOCK",
+            None,
+        ],
+        [
+            "PR.ID",
+            "PRODUCT",
+            "QTY+BN",
+            "QTY",
+            "BNS",
+            "QTY",
+            "BNS",
+            "QTY",
+            "QTY",
+            "QTY+BN",
+            "QTY",
+            "BNS",
+            "VALUE",
+            "QTY",
+            "VALUE",
+        ],
+    ]
+
+
+def test_synthetic_al_shifa_header_span_prefers_group_row():
+    """Family B leaf row carries qty/value, but the group row above must win."""
+    table = _al_shifa_header_15() + [
+        ["40035", "Aminal120ml Syp(1)", "147", "-", "-", "-", "-", "-", "1", "-", "1", "-", "90", "146", "13,140"]
+    ]
+
+    assert find_header_span(table, FAMILY_B_DEFAULT) == (2, 4)
+
+    cols = resolve_label_columns(table, FAMILY_B_DEFAULT)
+    assert cols["sales_qty"] == 10
+    assert cols["sales_amount"] == 12
+
+
+def test_synthetic_al_shifa_single_row_header_still_matches():
+    """Without a group row above the leaf row, fall back to a single-row header."""
+    table = [
+        ["Sales and Stock Statement"] + [None] * 4,
+        ["From Date:01/07/2026"] + [None] * 4,
+        ["PR.ID", "PRODUCT", "QTY", "BNS", "VALUE"],
+        ["40035", "Aminal120ml Syp(1)", "1", "-", "90"],
+    ]
+
+    assert find_header_span(table, FAMILY_B_DEFAULT) == (2, 3)
+
+
 def test_synthetic_aim_header_grid_and_mappings():
     """AIM-style 17-col grouped header resolves NET SALE QTY/AMOUNT via preset."""
     table = _aim_header_17() + [
@@ -113,3 +186,44 @@ def test_aim_pdf_header_analysis(pdf_name: str):
     assert mappings["sales_amount"]["leaf"].upper() == "AMOUNT"
 
     assert result["unresolvedFields"] == []
+
+
+def _al_shifa_product_table(pdf_bytes: bytes) -> list[list[str | None]]:
+    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+        tables = pdf.pages[0].extract_tables() or []
+    assert tables, "Expected a product table on page 1"
+    return tables[0]
+
+
+def test_header_span_al_shifa_two_row():
+    pdf_path = _find_pdf("AL Shifa Enterprises Jampur.pdf")
+    if pdf_path is None:
+        pytest.skip("Sample PDF not found: AL Shifa Enterprises Jampur.pdf")
+
+    table = _al_shifa_product_table(pdf_path.read_bytes())
+    assert find_header_span(table, FAMILY_B_DEFAULT) == (2, 4)
+
+
+def test_analyze_headers_al_shifa_grid():
+    pdf_path = _find_pdf("AL Shifa Enterprises Jampur.pdf")
+    if pdf_path is None:
+        pytest.skip("Sample PDF not found: AL Shifa Enterprises Jampur.pdf")
+
+    result = analyze_headers(pdf_path.read_bytes(), FAMILY_B_DEFAULT)
+
+    assert result["headerStructure"] == "title_block_then_table"
+    assert len(result["headerGrid"]) == 2
+
+    group_row = [c.upper() for c in result["headerGrid"][0]]
+    leaf_row = [c.upper() for c in result["headerGrid"][1]]
+    assert "NET SALE" in group_row
+    assert "OPENING" in group_row
+    assert "PRODUCT" in leaf_row
+
+    groups_upper = [g.upper() for g in result["detectedGroups"]]
+    assert "NET SALE" in groups_upper
+
+    net_sale_qty = [
+        c for c in result["leafColumns"] if c["group"] == "net sale" and c["leaf"] == "qty"
+    ]
+    assert [c["col"] for c in net_sale_qty] == [10]

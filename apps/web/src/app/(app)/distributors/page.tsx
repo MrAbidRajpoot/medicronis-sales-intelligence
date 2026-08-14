@@ -41,6 +41,9 @@ interface Distributor {
   documentCount: number;
   mappingCount: number;
   templateReady: boolean;
+  excelTemplateReady?: boolean;
+  uploadReady?: boolean;
+  inputMode?: "BOTH" | "EXCEL_ONLY";
 }
 
 const emptyForm = {
@@ -52,6 +55,7 @@ const emptyForm = {
   managerId: "",
   managerName: "",
   useNewManager: false,
+  inputMode: "BOTH" as "BOTH" | "EXCEL_ONLY",
 };
 
 export default function DistributorsPage() {
@@ -138,6 +142,7 @@ export default function DistributorsPage() {
       managerId: item.managerId ?? "",
       managerName: "",
       useNewManager: false,
+      inputMode: item.inputMode ?? "BOTH",
     });
     setDialogOpen(true);
   }
@@ -154,6 +159,7 @@ export default function DistributorsPage() {
         city: form.city || null,
         managerId: form.useNewManager ? null : form.managerId || null,
         managerName: form.useNewManager ? form.managerName : null,
+        inputMode: form.inputMode,
       };
 
       const url = editing ? `/api/distributors/${editing.id}` : "/api/distributors";
@@ -171,9 +177,17 @@ export default function DistributorsPage() {
         load();
         loadManagers();
       } else {
-        toast.success("Distributor created — configure PDF template next");
+        const nextPath =
+          form.inputMode === "EXCEL_ONLY"
+            ? `/distributors/${data.id}/excel-template?setup=1`
+            : `/distributors/${data.id}/template?setup=1`;
+        toast.success(
+          form.inputMode === "EXCEL_ONLY"
+            ? "Distributor created — configure Excel column map next"
+            : "Distributor created — configure PDF template next"
+        );
         setDialogOpen(false);
-        router.push(`/distributors/${data.id}/template?setup=1`);
+        router.push(nextPath);
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Save failed");
@@ -315,6 +329,7 @@ export default function DistributorsPage() {
                     <TableHead className="text-right">Documents</TableHead>
                     <TableHead className="text-right">Mappings</TableHead>
                     <TableHead>Template</TableHead>
+                    <TableHead>Input</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -331,11 +346,22 @@ export default function DistributorsPage() {
                       <TableCell className="text-right">{item.documentCount}</TableCell>
                       <TableCell className="text-right">{item.mappingCount}</TableCell>
                       <TableCell>
-                        {item.templateReady ? (
+                        {item.inputMode === "EXCEL_ONLY" ? (
+                          item.excelTemplateReady || item.uploadReady ? (
+                            <Badge variant="success">Excel ready</Badge>
+                          ) : (
+                            <Badge variant="danger">Excel map required</Badge>
+                          )
+                        ) : item.templateReady ? (
                           <Badge variant="success">Ready</Badge>
                         ) : (
                           <Badge variant="danger">Template required</Badge>
                         )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={item.inputMode === "EXCEL_ONLY" ? "warning" : "secondary"}>
+                          {item.inputMode === "EXCEL_ONLY" ? "Excel only" : "Both"}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <Badge variant={item.isActive ? "success" : "secondary"}>
@@ -344,11 +370,26 @@ export default function DistributorsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="sm" asChild title="Configure PDF template">
-                            <Link href={`/distributors/${item.id}/template`}>
-                              <FileStack className="h-4 w-4" />
-                            </Link>
-                          </Button>
+                          {item.inputMode === "EXCEL_ONLY" ? (
+                            <Button variant="ghost" size="sm" asChild title="Configure Excel column map">
+                              <Link href={`/distributors/${item.id}/excel-template`}>
+                                <FileStack className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                          ) : (
+                            <>
+                              <Button variant="ghost" size="sm" asChild title="Configure PDF template">
+                                <Link href={`/distributors/${item.id}/template`}>
+                                  <FileStack className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                              <Button variant="ghost" size="sm" asChild title="Configure Excel column map">
+                                <Link href={`/distributors/${item.id}/excel-template`}>
+                                  <Upload className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                            </>
+                          )}
                           <Button variant="ghost" size="sm" onClick={() => openEdit(item)}>
                             <Pencil className="h-4 w-4" />
                           </Button>
@@ -382,11 +423,25 @@ export default function DistributorsPage() {
         <form onSubmit={handleSave} className="space-y-4">
           {!editing && (
             <div className="rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-muted-foreground">
-              After creating the distributor you will configure the PDF column mapping template
+              After creating the distributor you will configure the{" "}
+              {form.inputMode === "EXCEL_ONLY" ? "Excel column map" : "PDF column mapping template"}{" "}
               before uploads are enabled.
             </div>
           )}
-          {editing && !editing.templateReady && (
+          {editing && editing.inputMode === "EXCEL_ONLY" && !editing.excelTemplateReady && (
+            <div className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm">
+              <span className="font-medium text-destructive">Excel map required</span>
+              {" — "}
+              <Link
+                href={`/distributors/${editing.id}/excel-template?setup=1`}
+                className="text-primary underline"
+                onClick={() => setDialogOpen(false)}
+              >
+                Configure Excel column map
+              </Link>
+            </div>
+          )}
+          {editing && editing.inputMode !== "EXCEL_ONLY" && !editing.templateReady && (
             <div className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm">
               <span className="font-medium text-destructive">Template required</span>
               {" — "}
@@ -478,6 +533,27 @@ export default function DistributorsPage() {
           </div>
 
           <div className="space-y-2">
+            <Label>Input mode</Label>
+            <Select
+              value={form.inputMode}
+              onValueChange={(value) =>
+                setForm((f) => ({ ...f, inputMode: value as "BOTH" | "EXCEL_ONLY" }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select input mode" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="BOTH">Both (PDF + Excel)</SelectItem>
+                <SelectItem value="EXCEL_ONLY">Excel only</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Excel only blocks PDF uploads — use for fragile Family-J layouts.
+            </p>
+          </div>
+
+          <div className="space-y-2">
             <Label>Manager</Label>
             {!form.useNewManager ? (
               <Select
@@ -534,11 +610,26 @@ export default function DistributorsPage() {
               Cancel
             </Button>
             {editing && (
-              <Button type="button" variant="outline" asChild>
-                <Link href={`/distributors/${editing.id}/template`} onClick={() => setDialogOpen(false)}>
-                  Update PDF Template
-                </Link>
-              </Button>
+              <>
+                {editing.inputMode !== "EXCEL_ONLY" && (
+                  <Button type="button" variant="outline" asChild>
+                    <Link
+                      href={`/distributors/${editing.id}/template`}
+                      onClick={() => setDialogOpen(false)}
+                    >
+                      Update PDF Template
+                    </Link>
+                  </Button>
+                )}
+                <Button type="button" variant="outline" asChild>
+                  <Link
+                    href={`/distributors/${editing.id}/excel-template`}
+                    onClick={() => setDialogOpen(false)}
+                  >
+                    Excel Column Map
+                  </Link>
+                </Button>
+              </>
             )}
             <Button type="submit" variant="accent" disabled={saving}>
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editing ? "Update" : "Create"}

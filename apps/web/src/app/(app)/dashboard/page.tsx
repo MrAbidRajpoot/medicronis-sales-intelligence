@@ -1,5 +1,12 @@
 import Link from "next/link";
-import { TrendingUp, FileWarning, Target, Building2 } from "lucide-react";
+import {
+  CalendarCheck,
+  CalendarDays,
+  CalendarRange,
+  FileWarning,
+  Target,
+  Building2,
+} from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { KpiCard } from "@/components/kpi-card";
 import { DataTable } from "@/components/data-table";
@@ -8,23 +15,28 @@ import { TemplateCoverageSection } from "@/components/template-coverage-section"
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
-import { getSalesByDistributor, getTotalSales, ssrActivityDetail } from "@/lib/dashboard-sales";
-import { formatCurrency, formatDateTime } from "@/lib/utils";
+import {
+  getDashboardSalesRanges,
+  getSalesByDistributor,
+  ssrActivityDetail,
+} from "@/lib/dashboard-sales";
+import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
+  const salesRanges = getDashboardSalesRanges();
   const [
-    totalSales,
     pendingDocs,
     activeDistributors,
     extractionStats,
     statusCounts,
-    salesByDistRaw,
+    dailySalesRaw,
+    weeklySalesRaw,
+    monthlySalesRaw,
     recentDocs,
     recentReports,
   ] = await Promise.all([
-    getTotalSales(prisma),
     prisma.document.count({
       where: { status: { in: ["REVIEW_REQUIRED", "PROCESSING", "UPLOADED", "EXTRACTED"] } },
     }),
@@ -34,7 +46,9 @@ export default async function DashboardPage() {
       where: { status: "COMPLETED" },
     }),
     prisma.document.groupBy({ by: ["status"], _count: { id: true } }),
-    getSalesByDistributor(prisma),
+    getSalesByDistributor(prisma, salesRanges.day),
+    getSalesByDistributor(prisma, salesRanges.week),
+    getSalesByDistributor(prisma, salesRanges.month),
     prisma.document.findMany({
       take: 6,
       orderBy: { updatedAt: "desc" },
@@ -54,10 +68,32 @@ export default async function DashboardPage() {
 
   const statusMap = Object.fromEntries(statusCounts.map((s) => [s.status, s._count.id]));
 
-  const chartData = salesByDistRaw.map(({ name, value }) => ({
-    name: name.length > 18 ? `${name.slice(0, 16)}…` : name,
-    value,
-  }));
+  const salesCharts = [
+    { title: "Sales by Distributor — Today", data: toChartData(dailySalesRaw) },
+    { title: "Sales by Distributor — This Week", data: toChartData(weeklySalesRaw) },
+    { title: "Sales by Distributor — This Month", data: toChartData(monthlySalesRaw) },
+  ];
+
+  const salesKpis = [
+    {
+      title: "Daily Sales",
+      total: sumSales(dailySalesRaw),
+      subtitle: formatDate(salesRanges.day.start),
+      icon: CalendarDays,
+    },
+    {
+      title: "Weekly Sales",
+      total: sumSales(weeklySalesRaw),
+      subtitle: `${formatDate(salesRanges.week.start)} — today`,
+      icon: CalendarRange,
+    },
+    {
+      title: "Monthly Sales",
+      total: sumSales(monthlySalesRaw),
+      subtitle: `${formatDate(salesRanges.month.start)} — today`,
+      icon: CalendarCheck,
+    },
+  ];
 
   const activity = [
     ...recentDocs.map((d) => ({
@@ -96,12 +132,16 @@ export default async function DashboardPage() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard
-          title="Total Sales"
-          value={formatCurrency(totalSales)}
-          icon={TrendingUp}
-        />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {salesKpis.map((kpi) => (
+          <KpiCard
+            key={kpi.title}
+            title={kpi.title}
+            value={formatCurrency(kpi.total)}
+            subtitle={kpi.subtitle}
+            icon={kpi.icon}
+          />
+        ))}
         <KpiCard
           title="Pending Documents"
           value={String(pendingDocs)}
@@ -121,17 +161,19 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-5">
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle className="text-base">Sales by Distributor</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <SalesByDistributorChart data={chartData} />
-          </CardContent>
-        </Card>
+      <div className="grid gap-6 lg:grid-cols-2">
+        {salesCharts.map((chart) => (
+          <Card key={chart.title}>
+            <CardHeader>
+              <CardTitle className="text-base">{chart.title}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <SalesByDistributorChart data={chart.data} />
+            </CardContent>
+          </Card>
+        ))}
 
-        <Card className="lg:col-span-2">
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">Processing Summary</CardTitle>
           </CardHeader>
@@ -192,4 +234,15 @@ function statusLabel(status: string): string {
     FAILED: "Upload Failed",
   };
   return map[status] ?? status;
+}
+
+function sumSales(data: { value: number }[]): number {
+  return data.reduce((total, row) => total + row.value, 0);
+}
+
+function toChartData(data: { name: string; value: number }[]) {
+  return data.map(({ name, value }) => ({
+    name: name.length > 18 ? `${name.slice(0, 16)}…` : name,
+    value,
+  }));
 }

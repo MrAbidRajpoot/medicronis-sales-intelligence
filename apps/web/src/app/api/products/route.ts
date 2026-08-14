@@ -98,6 +98,7 @@ export async function POST(request: NextRequest) {
       netPriceWith1Pct,
       bonus,
       alias,
+      aliases,
       reviewRowId,
     } = body as Record<string, unknown>;
 
@@ -172,6 +173,11 @@ export async function POST(request: NextRequest) {
       const aliasTexts = new Set<string>();
       if (alias && String(alias).trim()) aliasTexts.add(String(alias).trim());
       if (String(name).trim()) aliasTexts.add(String(name).trim());
+      if (Array.isArray(aliases)) {
+        for (const a of aliases) {
+          if (a != null && String(a).trim()) aliasTexts.add(String(a).trim());
+        }
+      }
 
       if (reviewRowId) {
         const row = await tx.extractedRow.findUnique({

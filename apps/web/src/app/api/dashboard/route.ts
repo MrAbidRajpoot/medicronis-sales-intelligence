@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getTotalSales, ssrActivityDetail } from "@/lib/dashboard-sales";
+import { getDashboardSalesRanges, getTotalSales, ssrActivityDetail } from "@/lib/dashboard-sales";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const salesRanges = getDashboardSalesRanges();
   const [
-    totalSales,
+    dailySales,
+    weeklySales,
+    monthlySales,
     pendingDocs,
     activeDistributors,
     extractionStats,
@@ -14,7 +17,9 @@ export async function GET() {
     recentDocs,
     recentReports,
   ] = await Promise.all([
-    getTotalSales(prisma),
+    getTotalSales(prisma, salesRanges.day),
+    getTotalSales(prisma, salesRanges.week),
+    getTotalSales(prisma, salesRanges.month),
     prisma.document.count({
       where: { status: { in: ["REVIEW_REQUIRED", "PROCESSING", "UPLOADED", "EXTRACTED"] } },
     }),
@@ -63,7 +68,7 @@ export async function GET() {
 
   return NextResponse.json({
     kpis: {
-      totalSales,
+      totalSales: { day: dailySales, week: weeklySales, month: monthlySales },
       pendingDocs,
       matchRate,
       activeDistributors,

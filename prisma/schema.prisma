@@ -73,6 +73,12 @@ enum PdfHeaderStructure {
   line_fallback
 }
 
+/// BOTH = PDF + Excel allowed; EXCEL_ONLY = Excel compulsory (PDF blocked).
+enum DistributorInputMode {
+  BOTH
+  EXCEL_ONLY
+}
+
 // ??? Master Data ?????????????????????????????????????????????????????????????
 
 /// Layout family preset (A–J). Distributors assign pdfFormatId + active DistributorTemplate.config.
@@ -138,17 +144,19 @@ model ProductGroup {
 }
 
 model Distributor {
-  id          String              @id @default(cuid())
-  code        String              @unique
+  id          String               @id @default(cuid())
+  code        String               @unique
   name        String
   region      DistributorRegion?
   country     DistributorCountry?
   city        String?
   managerId   String?
   pdfFormatId String?
-  isActive    Boolean             @default(true)
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
+  /// BOTH = PDF+Excel; EXCEL_ONLY = Excel compulsory (fragile PDF layouts).
+  inputMode   DistributorInputMode @default(BOTH)
+  isActive    Boolean              @default(true)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
 
   manager         Manager?                  @relation(fields: [managerId], references: [id])
   pdfFormat       PdfFormat?                @relation(fields: [pdfFormatId], references: [id])
@@ -160,9 +168,11 @@ model Distributor {
 
   @@index([managerId])
   @@index([pdfFormatId])
+  @@index([inputMode])
 }
 
 /// Active template per distributor holds TemplateConfig overrides (see pdf-template-types.ts).
+/// Excel column map lives in excelConfig (see excel-template-types.ts).
 model DistributorTemplate {
   id                      String   @id @default(cuid())
   distributorId           String
@@ -171,8 +181,12 @@ model DistributorTemplate {
   version                 Int      @default(1)
   isActive                Boolean  @default(true)
   config                  Json?
-  /// Set when the mapping wizard is saved; upload blocked until configured.
+  /// Set when the PDF mapping wizard is saved; PDF upload blocked until configured.
   configuredAt            DateTime?
+  /// Excel sales column map (ExcelTemplateConfig).
+  excelConfig             Json?
+  /// Set when the Excel mapping wizard is saved; EXCEL_ONLY upload blocked until set.
+  excelConfiguredAt       DateTime?
   /// Row count from last successful extraction (for layout drift detection).
   lastSuccessfulRowCount  Int?
   createdAt               DateTime @default(now())
@@ -285,7 +299,7 @@ model ExtractionRun {
   completedAt  DateTime?
   rowCount     Int                 @default(0)
   matchedCount Int                 @default(0)
-  // table | line_fallback | alternate_settings
+  // table | line_fallback | alternate_settings | excel
   extractMethod String?
   errorMessage String?
   createdAt    DateTime            @default(now())

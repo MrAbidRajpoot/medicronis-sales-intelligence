@@ -313,7 +313,10 @@ function aggregateFactsInRange(
   return groups;
 }
 
-function resolveSellingPrice(product: Product, asOfFact: FactWithRelations | undefined): number {
+export function resolveSellingPrice(
+  product: Pick<Product, "newSp">,
+  asOfFact: Pick<DailySalesFact, "unitPrice"> | undefined
+): number {
   if (product.newSp != null) return Number(product.newSp);
   if (asOfFact?.unitPrice != null) return Number(asOfFact.unitPrice);
   return 0;

@@ -1,7 +1,8 @@
-import { PrismaClient, PdfHeaderStructure } from "@prisma/client";
+import { PrismaClient, PdfHeaderStructure, DistributorInputMode } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { PDF_FORMAT_PRESETS } from "./pdf-format-presets";
 import { JULY_CLOSING_DISTRIBUTORS } from "./july-closing-distributors";
+import { EXCEL_ONLY_CODE_SET } from "./excel-only-distributors";
 import type { TemplateConfig } from "../apps/web/src/lib/pdf-template-types";
 
 const prisma = new PrismaClient();
@@ -136,6 +137,9 @@ async function main() {
     const pdfFormatId = formatMap.get(d.formatCode)!;
     const preset = PDF_FORMAT_PRESETS.find((p) => p.code === d.formatCode)!;
     const templateConfig = (d.templateConfig ?? preset.defaultConfig) as TemplateConfig;
+    const inputMode: DistributorInputMode = EXCEL_ONLY_CODE_SET.has(d.code)
+      ? "EXCEL_ONLY"
+      : "BOTH";
 
     const dist = await prisma.distributor.upsert({
       where: { code: d.code },
@@ -145,6 +149,7 @@ async function main() {
         country: d.country,
         city: d.city,
         pdfFormatId,
+        inputMode,
         managerId: managerMap.get(MANAGERS[i % MANAGERS.length]),
       },
       create: {
@@ -154,6 +159,7 @@ async function main() {
         country: d.country,
         city: d.city,
         pdfFormatId,
+        inputMode,
         managerId: managerMap.get(MANAGERS[i % MANAGERS.length]),
       },
     });
@@ -190,6 +196,7 @@ async function main() {
     }
   }
   console.log(`  Distributors: ${DISTRIBUTORS.length} (July Closing set, all with pdfFormat + template)`);
+  console.log(`  Excel-only (inputMode): ${[...EXCEL_ONLY_CODE_SET].length}`);
 
   const manufacturerMap = new Map<string, string>();
   for (const name of MANUFACTURERS) {

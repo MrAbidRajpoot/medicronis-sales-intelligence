@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
-import { isDistributorUploadReady } from "@/lib/template-readiness";
+import { isDistributorInputReady } from "@/lib/template-readiness";
 
 export type TemplateCoverageStatus = "ok" | "missing" | "mismatch";
 
@@ -84,9 +84,10 @@ export async function getTemplateCoverageReport(
 
   const rows: TemplateCoverageRow[] = distributors.map((d) => {
     const activeTemplate = d.templates[0] ?? null;
-    const uploadReady = isDistributorUploadReady({
+    const uploadReady = isDistributorInputReady({
       pdfFormatId: d.pdfFormatId,
       activeTemplate,
+      inputMode: d.inputMode,
     });
     const mismatchDocumentId = mismatchByDistributor.get(d.id) ?? null;
 

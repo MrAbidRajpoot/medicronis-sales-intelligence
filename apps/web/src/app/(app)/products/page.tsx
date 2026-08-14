@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, Package, Pencil, Plus, Search, Trash2, Download, Upload } from "lucide-react";
+import { Eye, Loader2, Package, Pencil, Plus, Search, Trash2, Download, Upload } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
@@ -73,6 +73,19 @@ function numToStr(value: number | null | undefined): string {
   return value != null ? String(value) : "";
 }
 
+function formatMoney(value: number | null): string | null {
+  return value != null ? formatCurrency(value) : null;
+}
+
+function DetailRow({ label, value }: { label: string; value: string | number | null }) {
+  return (
+    <div className="space-y-1">
+      <dt className="text-xs uppercase tracking-wide text-muted-foreground">{label}</dt>
+      <dd className="text-sm font-medium text-foreground">{value ?? "—"}</dd>
+    </div>
+  );
+}
+
 function buildPayload(form: typeof emptyForm, aliases: string[]) {
   return {
     sku: form.sku,
@@ -104,6 +117,7 @@ export default function ProductsPage() {
   const [saving, setSaving] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
+  const [viewing, setViewing] = useState<Product | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkFile, setBulkFile] = useState<File | null>(null);
@@ -365,7 +379,8 @@ export default function ProductsPage() {
                     <TableHead>Name</TableHead>
                     <TableHead>Group</TableHead>
                     <TableHead>Manufacturer</TableHead>
-                    <TableHead>MRP</TableHead>
+                    <TableHead>Old SP</TableHead>
+                    <TableHead>New SP</TableHead>
                     <TableHead>Bonus</TableHead>
                     <TableHead>Aliases</TableHead>
                     <TableHead>Status</TableHead>
@@ -379,7 +394,8 @@ export default function ProductsPage() {
                       <TableCell className="font-medium">{item.name}</TableCell>
                       <TableCell className="text-muted-foreground">{item.productGroupName ?? "—"}</TableCell>
                       <TableCell className="text-muted-foreground">{item.manufacturerName ?? "—"}</TableCell>
-                      <TableCell>{item.mrp != null ? formatCurrency(item.mrp) : "—"}</TableCell>
+                      <TableCell>{item.oldSp != null ? formatCurrency(item.oldSp) : "—"}</TableCell>
+                      <TableCell>{item.newSp != null ? formatCurrency(item.newSp) : "—"}</TableCell>
                       <TableCell>{item.bonus ?? "—"}</TableCell>
                       <TableCell className="max-w-[200px] truncate text-xs text-muted-foreground">
                         {item.aliases.length > 0 ? item.aliases.join(", ") : "—"}
@@ -391,6 +407,14 @@ export default function ProductsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setViewing(item)}
+                            aria-label={`View ${item.name}`}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
                           <Button variant="ghost" size="sm" onClick={() => openEdit(item)}>
                             <Pencil className="h-4 w-4" />
                           </Button>
@@ -609,6 +633,85 @@ export default function ProductsPage() {
             </Button>
           </div>
         </form>
+      </Dialog>
+
+      <Dialog
+        open={viewing != null}
+        onClose={() => setViewing(null)}
+        title={viewing?.name ?? "Product Details"}
+        description={viewing ? `SKU ${viewing.sku}` : undefined}
+        className="max-w-2xl max-h-[90vh] overflow-y-auto"
+      >
+        {viewing && (
+          <div className="space-y-5">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={viewing.isActive ? "success" : "secondary"}>
+                {viewing.isActive ? "Active" : "Inactive"}
+              </Badge>
+              <span className="text-sm text-muted-foreground">
+                {viewing.salesLineCount} sales line{viewing.salesLineCount === 1 ? "" : "s"}
+              </span>
+            </div>
+
+            <div>
+              <p className="mb-3 text-sm font-medium text-foreground">General</p>
+              <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+                <DetailRow label="Group" value={viewing.productGroupName} />
+                <DetailRow label="Manufacturer" value={viewing.manufacturerName} />
+                <DetailRow label="Category" value={viewing.category} />
+                <DetailRow label="Composition" value={viewing.composition} />
+                <DetailRow label="Shipper Size" value={viewing.shipperSize} />
+                <DetailRow label="Bonus" value={viewing.bonus} />
+              </dl>
+            </div>
+
+            <div>
+              <p className="mb-3 text-sm font-medium text-foreground">Pricing</p>
+              <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-3">
+                <DetailRow label="Old SP" value={formatMoney(viewing.oldSp)} />
+                <DetailRow label="New SP" value={formatMoney(viewing.newSp)} />
+                <DetailRow label="MRP" value={formatMoney(viewing.mrp)} />
+                <DetailRow label="TP" value={formatMoney(viewing.tp)} />
+                <DetailRow label="Net Price" value={formatMoney(viewing.netPrice)} />
+                <DetailRow label="Tax" value={formatMoney(viewing.tax)} />
+                <DetailRow label="Net Price with 1%" value={formatMoney(viewing.netPriceWith1Pct)} />
+              </dl>
+            </div>
+
+            <div>
+              <p className="mb-3 text-sm font-medium text-foreground">Aliases</p>
+              {viewing.aliases.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {viewing.aliases.map((alias) => (
+                    <Badge key={alias} variant="secondary">
+                      {alias}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No aliases</p>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => setViewing(null)}>
+                Close
+              </Button>
+              <Button
+                type="button"
+                variant="accent"
+                onClick={() => {
+                  const item = viewing;
+                  setViewing(null);
+                  openEdit(item);
+                }}
+              >
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit
+              </Button>
+            </div>
+          </div>
+        )}
       </Dialog>
 
       <Dialog

@@ -23,14 +23,21 @@ def _cell_str(value: str | None) -> str:
     return str(value or "").strip()
 
 
+def _is_two_row_header(structure: str, header_row_count: int) -> bool:
+    if structure == "grouped_two_row":
+        return True
+    return structure == "title_block_then_table" and header_row_count >= 2
+
+
 def _header_grid_from_table(
     table: list[list[str | None]],
     header_start: int,
     structure: str,
+    header_row_count: int = 1,
 ) -> list[list[str]]:
-    if structure == "grouped_two_row":
+    if _is_two_row_header(structure, header_row_count) and header_start + 1 < len(table):
         row0 = table[header_start]
-        row1 = table[header_start + 1] if header_start + 1 < len(table) else []
+        row1 = table[header_start + 1]
         width = max(len(row0), len(row1))
         return [
             [_cell_str(row0[i] if i < len(row0) else None) for i in range(width)],
@@ -127,14 +134,12 @@ def analyze_headers(
     leaf_columns: list[dict[str, Any]] = []
 
     if header_structure != "line_fallback" and table and header_span is not None:
-        header_start, _ = header_span
-        header_grid = _header_grid_from_table(table, header_start, header_structure)
-        row0 = table[header_start]
-        row1 = (
-            table[header_start + 1]
-            if header_structure == "grouped_two_row" and header_start + 1 < len(table)
-            else None
+        header_start, data_start = header_span
+        header_grid = _header_grid_from_table(
+            table, header_start, header_structure, max(1, data_start - header_start)
         )
+        row0 = table[header_start]
+        row1 = table[header_start + 1] if len(header_grid) >= 2 else None
         detected_groups = build_detected_groups(row0)
         leaf_columns = build_leaf_columns(row0, row1)
 

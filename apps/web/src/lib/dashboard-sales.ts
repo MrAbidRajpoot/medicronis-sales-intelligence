@@ -1,9 +1,19 @@
 import type { PrismaClient } from "@prisma/client";
+import { parseIsoDate, startOfMonth, startOfWeek, todayIsoDate } from "@/lib/date-utils";
+import { resolveSellingPrice } from "@/lib/ssr-data";
 
 export type SalesDateRange = {
   start: Date;
   end: Date;
 };
+
+export function getDashboardSalesRanges(asOf = parseIsoDate(todayIsoDate())!) {
+  return {
+    day: { start: asOf, end: asOf },
+    week: { start: startOfWeek(asOf), end: asOf },
+    month: { start: startOfMonth(asOf), end: asOf },
+  } satisfies Record<"day" | "week" | "month", SalesDateRange>;
+}
 
 export async function getSalesByDistributor(
   prisma: PrismaClient,
@@ -13,26 +23,29 @@ export async function getSalesByDistributor(
     ? { saleDate: { gte: range.start, lte: range.end } }
     : undefined;
 
-  const grouped = await prisma.dailySalesFact.groupBy({
-    by: ["distributorId"],
-    _sum: { salesValue: true },
+  const facts = await prisma.dailySalesFact.findMany({
     where,
+    select: {
+      distributorId: true,
+      quantity: true,
+      unitPrice: true,
+      product: { select: { id: true, newSp: true } },
+      distributor: { select: { name: true } },
+    },
   });
 
-  if (grouped.length === 0) return [];
+  const totals = new Map<string, { name: string; value: number }>();
+  for (const fact of facts) {
+    const value = Number(fact.quantity) * resolveSellingPrice(fact.product, fact);
+    const existing = totals.get(fact.distributorId);
+    if (existing) {
+      existing.value += value;
+    } else {
+      totals.set(fact.distributorId, { name: fact.distributor.name, value });
+    }
+  }
 
-  const distributors = await prisma.distributor.findMany({
-    where: { id: { in: grouped.map((g) => g.distributorId) } },
-    select: { id: true, name: true },
-  });
-  const nameById = new Map(distributors.map((d) => [d.id, d.name]));
-
-  return grouped
-    .map((g) => ({
-      name: nameById.get(g.distributorId) ?? "Unknown",
-      value: Number(g._sum.salesValue ?? 0),
-    }))
-    .sort((a, b) => b.value - a.value);
+  return Array.from(totals.values()).sort((a, b) => b.value - a.value);
 }
 
 export async function getTotalSales(
@@ -43,12 +56,19 @@ export async function getTotalSales(
     ? { saleDate: { gte: range.start, lte: range.end } }
     : undefined;
 
-  const result = await prisma.dailySalesFact.aggregate({
-    _sum: { salesValue: true },
+  const facts = await prisma.dailySalesFact.findMany({
     where,
+    select: {
+      quantity: true,
+      unitPrice: true,
+      product: { select: { id: true, newSp: true } },
+    },
   });
 
-  return Number(result._sum.salesValue ?? 0);
+  return facts.reduce(
+    (total, fact) => total + Number(fact.quantity) * resolveSellingPrice(fact.product, fact),
+    0
+  );
 }
 
 export function ssrActivityDetail(report: {

@@ -6,6 +6,7 @@ import {
   BarChart3,
   Building2,
   Package,
+  Layers,
   type LucideIcon,
 } from "lucide-react";
 
@@ -24,4 +25,5 @@ export const navItems: NavItem[] = [
   { href: "/reports", label: "SSR Reports", icon: BarChart3 },
   { href: "/distributors", label: "Distributors", icon: Building2 },
   { href: "/products", label: "Products", icon: Package },
+  { href: "/product-groups", label: "Product Groups", icon: Layers },
 ];

@@ -14,7 +14,7 @@ from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 
 OUTPUT = Path(__file__).resolve().parent.parent / "docs" / "Medicronis-User-Manual.docx"
-MANUAL_VERSION = "1.2"
+MANUAL_VERSION = "1.3"
 
 
 @dataclass
@@ -175,7 +175,7 @@ def add_title_page(doc: Document):
     desc.alignment = WD_ALIGN_PARAGRAPH.CENTER
     run = desc.add_run(
         "Pharma Distributor Secondary Sales Reporting\n"
-        "PDF Upload → Product Matching → Review → Medicronis SSR Excel (DATA sheet)"
+        "PDF / Excel Upload → Product Matching → Review → Medicronis SSR Excel (DATA sheet)"
     )
     run.font.size = Pt(12)
 
@@ -200,14 +200,14 @@ def write_content(m: ManualBuilder) -> None:
     m.paragraph(
         "Medicronis Sales Intelligence is a sales reporting automation platform designed for "
         "pharmaceutical distributors and sales operations teams. The application converts "
-        "distributor PDF sales reports into structured data and generates Secondary Sales "
-        "Report (SSR) Excel exports."
+        "distributor PDF and Excel sales reports into structured data and generates Secondary "
+        "Sales Report (SSR) Excel exports."
     )
     m.heading("1.1 Purpose", 2)
     m.paragraph(
-        "The system eliminates manual re-keying of distributor PDF reports into spreadsheets. "
-        "It supports automated PDF extraction, intelligent product catalog matching, human "
-        "review of exceptions, and consolidated SSR report generation."
+        "The system eliminates manual re-keying of distributor sales reports into spreadsheets. "
+        "It supports automated PDF and Excel extraction, intelligent product catalog matching, "
+        "human review of exceptions, and consolidated SSR report generation."
     )
     m.heading("1.2 Target Users", 2)
     m.bullets(
@@ -215,22 +215,24 @@ def write_content(m: ManualBuilder) -> None:
             "Medicronis sales operations teams managing distributor networks",
             "Sales managers reviewing distributor performance and sales data",
             "Data entry staff uploading and approving distributor reports",
-            "Administrators configuring distributors, products, and PDF templates",
+            "Administrators configuring distributors, products, PDF templates, and Excel column maps",
         ]
     )
     m.heading("1.3 Key Capabilities", 2)
     m.bullets(
         [
-            "Upload single PDFs, multiple PDFs, or ZIP archives of distributor sales reports",
-            "Auto-detect distributor from PDF header text (with optional manual override)",
-            "Automatic extraction of product rows from 10 PDF layout families (A–J), including Family J line-parser mode",
-            "Multiple extraction strategies: table parsing, line parser fallback, alternate pdfplumber settings",
+            "Upload PDF, Excel (.xlsx), or ZIP archives (mixed PDF + Excel inside ZIP)",
+            "Auto-detect distributor from PDF header or Excel filename (with optional manual override)",
+            "Excel-only distributors for fragile PDF layouts — PDF uploads blocked; Excel map required",
+            "Automatic extraction from 10 PDF layout families (A–J), including Family J line-parser mode",
+            "Per-distributor Excel column maps (product name, sales qty, unit price, closing stock, etc.)",
+            "Multiple PDF extraction strategies: table parsing, line parser fallback, alternate pdfplumber settings",
             "Fuzzy matching against product catalog with distributor-specific mappings",
-            "Product groups (Medicronis | Transformer) required on every catalog product for SSR grouping",
-            "Review queue for unmatched or ambiguous product rows",
+            "Product groups managed in the UI and required on every catalog product for SSR grouping",
+            "Review queue for unmatched or ambiguous product rows (including create new product)",
             "Approve data and promote to daily sales facts",
-            "Generate Medicronis-format SSR Excel (DATA sheet) for day, week, or month views",
-            "Manage distributors, products, and per-distributor PDF templates",
+            "Generate Medicronis-format SSR Excel (DATA sheet) by as-of date for Day, Week, or Month views",
+            "Manage distributors, products, product groups, PDF templates, and Excel maps",
             "Bulk import distributors and products from Excel (.xlsx) templates",
         ]
     )
@@ -238,12 +240,12 @@ def write_content(m: ManualBuilder) -> None:
     m.paragraph("The typical workflow follows these stages:")
     m.steps(
         [
-            "Log in to the application",
-            "Upload a distributor PDF sales report (distributor auto-detected from PDF header)",
+            "Log in to the application (demo password)",
+            "Upload a distributor PDF or Excel sales report (distributor auto-detected)",
             "System extracts product rows and matches them to the catalog",
             "Resolve any unmatched rows in the Review Queue (if required)",
             "Approve the document and promote data to sales facts",
-            "Generate an SSR report and download the Excel file",
+            "Generate an SSR report (Day / Week / Month) and download the Excel file",
         ]
     )
 
@@ -282,24 +284,27 @@ def write_content(m: ManualBuilder) -> None:
     m.steps(
         [
             "Navigate to the application URL in your browser",
-            "You will be redirected to the Login page (/login)",
-            "Enter your password in the password field",
-            'Click the "Sign In" button',
+            "You will be redirected to the Login page (/login) — titled \"Sign in to demo\"",
+            'Enter the shared password in the "Demo Password" field',
+            'Click "Access Demo"',
             "Upon successful login, you will be taken to the Dashboard",
         ]
+    )
+    m.paragraph(
+        'If the password is wrong, the page shows: "Invalid password. Use the demo password provided."'
     )
     m.heading("3.2 Login Credentials", 2)
     m.table(
         ["Field", "Value"],
         [
             ["Username", "Not required (single shared password authentication)"],
-            ["Password", "Provided by administrator (default demo password: demo)"],
-            ["Session duration", "7 days (HTTP-only secure cookie)"],
+            ["Demo Password", "Provided by administrator (default: demo)"],
+            ["Session duration", "7 days (HTTP-only secure cookie: medicronis-auth)"],
         ],
     )
     m.heading("3.3 Logging Out", 2)
     m.paragraph(
-        "To log out, click the Logout option in the application navigation. "
+        'To log out, click "Sign out" at the bottom of the sidebar. '
         "This clears your session cookie and returns you to the login page."
     )
 
@@ -309,41 +314,52 @@ def write_content(m: ManualBuilder) -> None:
         "The Dashboard (/dashboard) is your home screen after login. It provides an "
         "at-a-glance view of sales data and processing activity."
     )
-    m.heading("4.1 Dashboard Sections", 2)
+    m.heading("4.1 Key Performance Indicators", 2)
+    m.table(
+        ["KPI", "Description"],
+        [
+            ["MTD Total Sales", "Month-to-date approved sales value"],
+            ["Pending Documents", "Documents awaiting action (uploaded, processing, extracted, or review required)"],
+            ["Product Match Rate", "Percentage of extracted rows matched to the product catalog"],
+            ["Active Distributors", "Count of active distributors in the network"],
+        ],
+    )
+    m.heading("4.2 Dashboard Sections", 2)
     m.table(
         ["Section", "Description"],
         [
-            ["Key Performance Indicators (KPIs)", "Summary metrics including total sales, document counts, and match rates"],
-            ["Sales Chart", "Visual trend of approved sales data over time"],
-            ["Processing Summary", "Count of documents by status (uploaded, processing, extracted, review required, approved)"],
-            ["Template Coverage", "Percentage of distributors with configured PDF templates"],
-            ["Recent Activity", "Latest document uploads and processing events"],
+            ["Sales by Distributor", "Charts for Today, This Week, and This Month"],
+            ["Processing Summary", "Counts by status: Approved, Review Required, Processing, Template Mismatch, Failed"],
+            ["Template Coverage", "Upload readiness across distributors (PDF template and/or Excel map); links to wizards"],
+            ["Recent Activity", "Latest document status changes and SSR generation events"],
         ],
     )
-    m.heading("4.2 Using the Dashboard", 2)
+    m.heading("4.3 Using the Dashboard", 2)
     m.bullets(
         [
+            'Primary CTA: "Upload PDF" opens the Upload page (PDF, Excel, and ZIP are all supported there)',
             "Review KPIs to monitor overall sales performance",
-            "Check the processing summary for documents awaiting action",
-            "Use recent activity links to jump directly to document details",
-            "If the sales chart appears empty, approve at least one document first",
+            "Check Processing Summary and Pending Documents for items awaiting action",
+            "Use Template Coverage to find distributors still needing PDF or Excel configuration",
+            "If sales charts appear empty, approve at least one document first",
         ]
     )
 
     # --- 5. Uploading Documents ---
     m.heading("5. Uploading Documents", 1)
     m.paragraph(
-        "The Upload page (/upload) is where you submit distributor PDF sales reports "
-        "for extraction and SSR generation."
+        "The Upload page (/upload) is where you submit distributor sales reports "
+        "(PDF, Excel, or ZIP) for extraction and SSR generation."
     )
     m.heading("5.1 Before You Upload", 2)
     m.bullets(
         [
-            "Have the PDF sales report ready (single .pdf, multiple PDFs, or a .zip archive)",
-            "Set the correct report date (the business date the PDF represents)",
-            "Ensure the matched distributor has a configured PDF template",
-            "For auto-detect to work, the distributor name must appear in the PDF header",
-            "Confirm the PDF worker service is running (administrator responsibility)",
+            "Have the sales report ready: .pdf, .xlsx, multiple files, or a .zip archive",
+            "Set the correct report date (Business date this file represents — cannot be in the future)",
+            "For PDF uploads: the matched distributor must have a configured PDF template (unless Excel-only)",
+            "For Excel uploads: the matched distributor must have a configured Excel column map",
+            "For auto-detect: PDF headers should include the distributor name; Excel filenames should include code or name (e.g. AYAN-TAUNSA.xlsx)",
+            "Confirm the PDF worker service is running when uploading PDFs (administrator responsibility)",
         ]
     )
     m.heading("5.2 Supported Upload Formats", 2)
@@ -351,66 +367,86 @@ def write_content(m: ManualBuilder) -> None:
         ["Format", "Description"],
         [
             ["Single PDF", "One distributor sales report; distributor auto-detected from PDF header"],
-            ["Multiple PDFs", "Select or drag several PDF files; each is processed individually"],
-            ["ZIP archive", "One .zip file containing multiple PDFs; all PDFs inside are extracted and processed"],
+            ["Single Excel (.xlsx)", "Matched by filename (distributor code or name); requires Excel column map"],
+            ["Multiple files", "Select or drag several PDF and/or Excel files; each is processed individually"],
+            ["ZIP archive", "One .zip containing PDFs and/or Excel files; each entry is extracted and processed"],
         ],
     )
-    m.heading("5.3 Distributor Selection", 2)
+    m.heading("5.3 Excel-Only Distributors", 2)
     m.paragraph(
-        "By default, the system reads the distributor name from each PDF header and matches it "
-        "to a registered distributor. Manual selection is optional."
+        "Some distributors are configured as Excel only (typically fragile Family J / line-parser PDFs). "
+        "For these distributors:"
     )
-    m.heading("5.3.1 Single PDF Upload", 3)
+    m.bullets(
+        [
+            "Loose PDF uploads are blocked",
+            "PDFs inside a ZIP fail per file with an Excel-only error",
+            "Upload Excel (.xlsx) or a ZIP of Excel files instead",
+            "An Excel column map must be configured before upload (see Section 11)",
+            "The Upload distributor dropdown labels these as \"[Excel only]\" / \"— Excel only\"",
+        ]
+    )
+    m.paragraph(
+        "See docs/excel-only-distributors.md for the seeded list of Excel-only distributor codes."
+    )
+    m.heading("5.4 Distributor Selection", 2)
+    m.paragraph(
+        "By default, the system identifies the distributor automatically. Manual selection is optional."
+    )
+    m.heading("5.4.1 Single PDF Upload", 3)
     m.bullets(
         [
             'Leave the distributor dropdown on "Auto-detect from PDF header" (recommended)',
             "Optionally choose a distributor override if the header match is wrong or missing",
-            "Distributors without a configured template are disabled in the dropdown",
-            'If override is selected and template is missing, click "Configure PDF template" to set one up',
+            "Distributors without a configured template show \"Template required\" and may be disabled",
+            'If override is selected and template is missing, use the configure link to set one up',
         ]
     )
-    m.heading("5.3.2 Bulk Upload (Multiple PDFs or ZIP)", 3)
+    m.heading("5.4.2 Excel or Bulk Upload (Multiple Files / ZIP)", 3)
     m.bullets(
         [
-            "Each PDF is matched to its own distributor from the PDF header automatically",
-            "No manual distributor selection is required for bulk uploads",
-            'Optional: check "Apply same distributor to all files" to force one distributor for every PDF',
-            "Use the override only when all files belong to the same distributor but headers differ",
+            "Excel files are matched by filename (code or name)",
+            "PDFs are matched from the report header, with filename as fallback",
+            "No manual distributor selection is required unless you want one distributor for every file",
+            'Optional: check "Apply same distributor to all files" to force one distributor for every file',
+            "When an Excel-only distributor is selected, the drop zone switches to Excel or ZIP only",
         ]
     )
-    m.heading("5.4 Upload Steps", 2)
+    m.heading("5.5 Upload Steps", 2)
     m.steps(
         [
             "Click Upload in the sidebar navigation",
-            "Drag and drop PDF or ZIP files onto the upload area, or click Browse Files",
+            "Drag and drop PDF, Excel, or ZIP files onto the upload area, or click Browse Files",
             "Remove unwanted files using the X button next to each file name",
-            "Set the report date (Business date this PDF represents) — cannot be in the future",
-            "Optionally set a distributor override (single file) or apply-to-all (bulk upload)",
+            'Set the report date ("Business date this file represents") — cannot be in the future',
+            "Optionally set a distributor override (single PDF) or apply-to-all (bulk / Excel)",
             'Click "Upload Document(s)" to start processing',
             "Watch the Processing Pipeline stepper on the right: Upload → Extract → Match Products → Review Exceptions",
             "For a single successful upload, you are automatically redirected to the document detail page",
             "For bulk uploads, review the Upload Results card and click Open document for each file",
         ]
     )
-    m.heading("5.5 What Happens During Processing", 2)
+    m.heading("5.6 What Happens During Processing", 2)
     m.paragraph(
-        "When you upload, the system performs these steps automatically for each PDF:"
+        "When you upload, the system performs these steps automatically for each file:"
     )
     m.steps(
         [
-            "Detects or applies the distributor and loads its saved PDF template configuration",
+            "Detects or applies the distributor and loads its PDF template or Excel column map",
+            "Enforces input mode (Excel-only distributors reject PDFs)",
             "Saves the uploaded file to secure storage",
-            "Sends the PDF to the extraction service (PDF worker on port 8000)",
-            "Extracts product rows using table parsing or fallback methods",
+            "For PDFs: sends the file to the extraction service (PDF worker on port 8000)",
+            "For Excel: parses the workbook using the distributor's Excel column map",
+            "Extracts product rows (table / line parser / alternate settings for PDF; mapped columns for Excel)",
             "Matches extracted rows against the product catalog using fuzzy matching",
             "Saves extracted rows and match results to the database",
             "Sets document status based on extraction and match results",
         ]
     )
-    m.heading("5.6 Extraction Methods", 2)
+    m.heading("5.7 Extraction Methods", 2)
     m.paragraph(
-        "After processing, a toast notification shows which extraction method was used. "
-        "The system tries methods automatically — no user action is required."
+        "After processing, a toast notification may show which extraction method was used. "
+        "The system tries PDF methods automatically — no user action is required."
     )
     m.table(
         ["Method", "Display Label", "When Used"],
@@ -418,20 +454,21 @@ def write_content(m: ManualBuilder) -> None:
             ["table", "Table extraction", "Default — PDF has a parseable table grid"],
             ["line_fallback", "Line parser", "Fallback when table extraction yields poor results"],
             ["alternate_settings", "Alternate pdfplumber", "Retry with alternate pdfplumber parsing settings"],
+            ["excel", "Excel", "Sales workbook parsed via the distributor Excel column map"],
         ],
     )
-    m.heading("5.7 Document Status After Upload", 2)
+    m.heading("5.8 Document Status After Upload", 2)
     m.table(
         ["Status", "Meaning", "Your Next Action"],
         [
             ["EXTRACTED", "All rows matched successfully", "Approve & Promote to Sales"],
             ["REVIEW_REQUIRED", "Some rows could not be matched", "Resolve in Review Queue"],
             ["TEMPLATE_MISMATCH", "PDF layout differs from saved template", "Re-map PDF Template on document detail"],
-            ["FAILED", "Extraction error or distributor not detected", "Check error message; retry upload or fix template"],
+            ["FAILED", "Extraction error, Excel-only block, or distributor not detected", "Check error message; retry upload or fix template / Excel map"],
             ["PROCESSING", "Upload is still being processed", "Wait for completion"],
         ],
     )
-    m.heading("5.8 Upload Results Panel", 2)
+    m.heading("5.9 Upload Results Panel", 2)
     m.paragraph(
         "When uploading multiple files, an Upload Results card appears listing each file with:"
     )
@@ -443,12 +480,13 @@ def write_content(m: ManualBuilder) -> None:
             "Open document link for successfully processed files",
         ]
     )
-    m.heading("5.9 Warnings and Notifications", 2)
+    m.heading("5.10 Warnings and Notifications", 2)
     m.bullets(
         [
             "Duplicate warning if an approved document already exists for the same distributor and report date",
             "Template mismatch toast when one or more documents need template re-mapping",
-            "Extraction method toast showing table, line parser, or alternate pdfplumber usage",
+            "Extraction method toast showing table, line parser, alternate pdfplumber, or excel usage",
+            "Excel map required / Template required messaging on the distributor selector",
             "Per-file warnings displayed as error toasts for partial batch failures",
         ]
     )
@@ -457,8 +495,8 @@ def write_content(m: ManualBuilder) -> None:
     m.heading("6. Document Management", 1)
     m.heading("6.1 Documents List", 2)
     m.paragraph(
-        "The Documents page (/documents) shows all uploaded PDFs with their current status, "
-        "distributor, report date, row counts, and match rates."
+        "The Documents page (/documents) shows all uploaded reports (PDF and Excel) with their "
+        "current status, distributor, report date, period, match counts, and upload time."
     )
     m.bullets(
         [
@@ -478,8 +516,8 @@ def write_content(m: ManualBuilder) -> None:
         [
             ["Header", "File name, distributor, report date, status badge, and action buttons"],
             ["Processing Timeline", "Stepper showing Uploaded → Extracted → Product Match → Review → Approved"],
-            ["Summary Metrics", "Total rows extracted, match rate, unmatched count"],
-            ["Extracted Rows Table", "All product rows with extracted values and match status"],
+            ["Document Details", "Report date, distributor, file size, uploaded time, match rate, extract method, errors"],
+            ["Extracted Rows Table", "Raw product text, matched product, Sales Units, S.P, Sales Value, optional Returns Qty / Closing Stock"],
         ],
     )
     m.heading("6.2.2 Available Actions", 3)
@@ -531,15 +569,15 @@ def write_content(m: ManualBuilder) -> None:
     m.table(
         ["Option", "When to Use", "Effect"],
         [
-            ["Approve with Suggested Product", "System suggestion is correct", "Maps row to suggested catalog product; saves mapping for future uploads"],
-            ["Select from Dropdown", "Correct product is in catalog but not top suggestion", "Maps row to selected product; saves mapping for future uploads"],
-            ["Create New Product", "Product is genuinely new", "Creates catalog entry (Group required) and maps the row"],
-            ["Reject Row", "Row is invalid, duplicate, or not a real product", "Excludes row from approved sales data"],
+            ["Approve", "System suggestion is correct", "Maps row to suggested catalog product; saves mapping for future uploads"],
+            ["Map", "Correct product selected from dropdown", "Maps row to selected product; saves mapping for future uploads"],
+            ["New Product", "Product is genuinely new", "Creates catalog entry (Group required) and maps the row"],
+            ["Reject", "Row is invalid, duplicate, or not a real product", "Excludes row from approved sales data"],
         ],
     )
     m.paragraph(
         "When creating a new product from Review, you must select a product group "
-        "(Medicronis or Transformer). The form defaults to Medicronis when available. "
+        "(from active groups on Product Groups — typically Medicronis or Transformer). "
         "Quantity on review cards is labeled Sales Units to match SSR terminology."
     )
     m.paragraph(
@@ -573,8 +611,8 @@ def write_content(m: ManualBuilder) -> None:
         [
             "Navigate to SSR Reports (/reports) from the sidebar",
             "Select the report view: Day, Week, or Month",
-            "Set the as-of date for the reporting period",
-            "Review the coverage indicator showing how many distributors have approved data",
+            'Set the "As-of date" for the reporting period (cannot be in the future)',
+            "Review the coverage indicator showing how many distributors have data vs active",
             'Click "Generate SSR" to create the consolidated report',
             "You will be redirected to the report detail page",
         ]
@@ -624,7 +662,7 @@ def write_content(m: ManualBuilder) -> None:
         [
             ["Distributor Name, City, Region, Country", "Distributor master data"],
             ["Category", "Always \"Distributor\" for this grid"],
-            ["Group", "Product group: Medicronis or Transformer"],
+            ["Group", "Product group from catalog (managed on Product Groups)"],
             ["Manager", "Assigned sales manager for the distributor"],
             ["Product Name", "Catalog product name"],
             ["S.P", "Selling price used for value calculations"],
@@ -653,47 +691,63 @@ def write_content(m: ManualBuilder) -> None:
     # --- 9. Distributors ---
     m.heading("9. Managing Distributors", 1)
     m.paragraph(
-        "The Distributors page (/distributors) lets you view and manage your distributor network."
+        "The Distributors page (/distributors) lets you view and manage your distributor network, "
+        "including input mode (PDF + Excel vs Excel only) and template readiness."
     )
     m.heading("9.1 Distributor List", 2)
     m.bullets(
         [
-            "View all registered distributors with code, name, region, country, city, manager, and template status",
+            "View all registered distributors with code, name, region, country, city, manager, documents, mappings, template status, input mode, and status",
             "Search by code, name, city, manager, region, or country",
             "Filter visually by Active / Inactive status badges",
-            "See Template Ready vs Template required badges (template required before upload)",
+            "Template badges: Ready | Template required | Excel ready | Excel map required",
+            "Input mode badge: Both (PDF + Excel) or Excel only",
             "Document and mapping counts per distributor",
+            "Per-row actions: configure PDF template, configure Excel map, edit, deactivate / reactivate",
         ]
     )
-    m.heading("9.2 Adding a Distributor", 2)
+    m.heading("9.2 Input Modes", 2)
+    m.table(
+        ["Input mode", "Allowed uploads", "Required configuration"],
+        [
+            ["Both (PDF + Excel)", "PDF, Excel, ZIP (mixed)", "PDF template required for PDF; Excel map required before Excel upload"],
+            ["Excel only", "Excel or ZIP of Excel only (PDFs blocked)", "Excel column map required"],
+        ],
+    )
+    m.paragraph(
+        "Excel only is recommended for distributors whose PDF layouts are fragile (Family J / line-parser). "
+        "After create, new distributors redirect to the PDF template wizard or Excel map wizard based on input mode."
+    )
+    m.heading("9.3 Adding a Distributor", 2)
     m.steps(
         [
             "Navigate to Distributors",
             'Click "Add Distributor"',
-            "Enter distributor details: code, name, region, country, city, and assigned manager",
+            "Enter distributor details: code, name, region, country, city, input mode, and assigned manager",
             "Save the new distributor record",
-            "Configure the PDF template before uploading documents (see Section 10)",
+            "Complete the PDF template wizard (Both mode) or Excel map wizard (Excel only) when redirected",
+            "Optionally configure the other map later from the distributor row actions",
         ]
     )
-    m.heading("9.3 Bulk Upload", 2)
+    m.heading("9.4 Bulk Upload", 2)
     m.steps(
         [
-            "On the Distributors page, click the bulk upload option",
-            "Download the Excel (.xlsx) template if needed",
+            'On the Distributors page, click "Download Template" if needed',
             "Fill in distributor details following the template columns",
-            "Upload the completed .xlsx file",
-            "Review imported records and configure templates as needed",
+            'Click "Bulk Upload" and submit the completed .xlsx file',
+            "Review imported records and configure PDF templates / Excel maps as needed",
         ]
     )
-    m.heading("9.4 Distributor Fields", 2)
+    m.heading("9.5 Distributor Fields", 2)
     m.table(
         ["Field", "Description", "Required"],
         [
-            ["Code", "Unique distributor identifier", "Yes"],
+            ["Code", "Unique distributor identifier (also used in Excel filenames)", "Yes"],
             ["Name", "Full distributor business name (used for PDF header matching)", "Yes"],
             ["Region", "Geographic region", "Yes"],
             ["Country", "Country of operation", "Yes"],
             ["City", "City location", "Optional"],
+            ["Input mode", "Both (PDF + Excel) or Excel only", "Yes"],
             ["Manager", "Assigned sales manager", "Optional"],
             ["Active", "Whether distributor is active for uploads", "Yes"],
         ],
@@ -709,11 +763,15 @@ def write_content(m: ManualBuilder) -> None:
     m.heading("10.1 When Template Configuration Is Required", 2)
     m.bullets(
         [
-            "Adding a new distributor to the system",
+            "Adding a new distributor in Both (PDF + Excel) mode",
             "Distributor's PDF layout has changed",
             "Upload results in TEMPLATE_MISMATCH status",
-            "Template Required badge appears on the Upload or Distributors page",
+            "Template required badge appears on the Upload, Dashboard Template Coverage, or Distributors page",
         ]
+    )
+    m.paragraph(
+        "Excel-only distributors skip the PDF template wizard and use the Excel column map instead (Section 11). "
+        "Opening /distributors/[id]/template for an Excel-only distributor redirects to the Excel map wizard."
     )
     m.heading("10.2 Template Mismatch Triggers", 2)
     m.paragraph(
@@ -782,69 +840,104 @@ def write_content(m: ManualBuilder) -> None:
         ],
     )
 
-    # --- 11. Products ---
-    m.heading("11. Managing Products", 1)
+    # --- 11. Excel Column Map ---
+    m.heading("11. Excel Column Map Configuration", 1)
+    m.paragraph(
+        "Each distributor that accepts Excel sales workbooks needs an Excel column map. "
+        "The map tells the system which workbook columns hold product name, sales quantity, "
+        "unit price, closing stock, and related fields."
+    )
+    m.heading("11.1 When Excel Map Configuration Is Required", 2)
+    m.bullets(
+        [
+            "Distributor input mode is Excel only (required before any upload)",
+            "Distributor input mode is Both and you plan to upload .xlsx sales files",
+            "Excel map required badge appears on Distributors, Upload, or Template Coverage",
+            "Adding a new Excel-only distributor (wizard opens automatically after create)",
+        ]
+    )
+    m.heading("11.2 Excel Map Wizard Steps", 2)
+    m.paragraph(
+        "Access the wizard from Distributors → row actions → Excel map "
+        "(/distributors/[id]/excel-template), or after creating an Excel-only distributor."
+    )
+    m.steps(
+        [
+            "Open Excel map for the distributor (title: \"Excel map — [name]\")",
+            "Set Header row (0-based) and optional Sheet name (first sheet if blank)",
+            "Upload a sample .xlsx workbook and refresh the live preview if needed",
+            "Map columns: Product name* and Sales qty* are required",
+            "Optionally map Unit price (S.P), Closing stock (recommended), Sales amount, Returns qty",
+            "Review the Live preview table (Product, Qty, Unit price, Closing, Amount)",
+            'Click "Save Excel map"',
+            "Confirm the badge shows Excel map ready / Excel ready on Distributors",
+        ]
+    )
+    m.heading("11.3 Excel Field Mapping Reference", 2)
+    m.table(
+        ["Field", "Required", "Notes"],
+        [
+            ["Product name", "Yes", "Raw product text used for catalog matching"],
+            ["Sales qty", "Yes", "Sales Units promoted to daily sales facts"],
+            ["Unit price (S.P)", "Recommended", "Selling price for value calculations"],
+            ["Closing stock", "Recommended", "Used on SSR Closing Stock / Stock Value"],
+            ["Sales amount", "Optional", "Line amount when provided by the workbook"],
+            ["Returns qty", "Optional", "Returns quantity when present"],
+        ],
+    )
+    m.paragraph(
+        "Distributors in Both mode can keep a PDF template and an Excel map. Use the "
+        "\"PDF template\" link on the Excel map page (or vice versa) to switch between wizards."
+    )
+
+    # --- 12. Products ---
+    m.heading("12. Managing Products", 1)
     m.paragraph(
         "The Products page (/products) manages the product catalog used for matching "
-        "extracted PDF rows and for SSR DATA sheet line items (including Group)."
+        "extracted PDF/Excel rows and for SSR DATA sheet line items (including Group)."
     )
-    m.heading("11.1 Product Catalog", 2)
+    m.heading("12.1 Product Catalog", 2)
     m.bullets(
         [
             "View all products with SKU, name, group, manufacturer, category, and bonus",
             "Search by SKU, name, manufacturer, group, category, or aliases",
-            "Each product must belong to a product group: Medicronis or Transformer",
-            "Aliases improve fuzzy matching from distributor PDF text",
+            "Each product must belong to an active product group (see Section 13)",
+            "Aliases improve fuzzy matching from distributor PDF/Excel text",
+            "Actions: Add, Edit, View, Deactivate; Download Template and Bulk Upload",
         ]
     )
-    m.heading("11.2 Product Groups", 2)
-    m.paragraph(
-        "Product groups are seeded master values used on the SSR DATA sheet Group column. "
-        "Only two groups are supported:"
-    )
-    m.table(
-        ["Group", "Use"],
-        [
-            ["Medicronis", "Standard Medicronis portfolio products"],
-            ["Transformer", "Transformer portfolio products"],
-        ],
-    )
-    m.paragraph(
-        "Group is required when creating or editing a product, when bulk-importing products, "
-        "and when creating a product from the Review Queue."
-    )
-    m.heading("11.3 Adding a Product", 2)
+    m.heading("12.2 Adding a Product", 2)
     m.steps(
         [
             "Navigate to Products",
             'Click "Add Product"',
             "Enter SKU and product name (SKU must be unique)",
-            "Select Group (Medicronis or Transformer) — required",
+            "Select Group from active product groups — required",
             "Optionally set category, composition, manufacturer (existing or new), shipper size",
             "Optionally enter pricing fields: MRP, TP, Old SP, New SP, Net Price, Tax, Net Price with 1%",
             "Optionally enter Bonus in N+N format (for example 4+1)",
-            "Add comma-separated aliases if the product appears under alternate names in PDFs",
+            "Add comma-separated aliases if the product appears under alternate names in reports",
             "Save the product",
         ]
     )
-    m.heading("11.4 Bulk Product Upload", 2)
+    m.heading("12.3 Bulk Product Upload", 2)
     m.steps(
         [
             'Click "Download Template" on the Products page to get the Medicronis product Excel template',
             "Fill rows using the template columns (see table below)",
-            "Set Group to exactly Medicronis or Transformer on every row",
-            "Upload the completed .xlsx file via bulk upload",
+            "Set Group to an existing product group name on every row (e.g. Medicronis or Transformer)",
+            "Upload the completed .xlsx file via Bulk Upload",
             "Review any row-level import errors, then verify products in the catalog",
         ]
     )
-    m.heading("11.5 Product Import Template Columns", 2)
+    m.heading("12.4 Product Import Template Columns", 2)
     m.table(
         ["Column", "Required", "Notes"],
         [
             ["SKU", "Yes", "Unique product code"],
             ["Product Name", "Yes", "Catalog display name"],
             ["Category", "No", "Optional classification"],
-            ["Group", "Yes", "Must be Medicronis or Transformer"],
+            ["Group", "Yes", "Must match an existing product group name"],
             ["Composition", "No", "Formula / strength text"],
             ["Manufacturer", "No", "Created automatically if new"],
             ["Shipper Size", "No", "Integer pack size"],
@@ -854,106 +947,156 @@ def write_content(m: ManualBuilder) -> None:
             ["Aliases", "No", "Alternate names for matching"],
         ],
     )
-    m.heading("11.6 Product Aliases", 2)
+    m.heading("12.5 Product Aliases", 2)
     m.paragraph(
         "Aliases are alternate names for a product used during fuzzy matching. "
-        "For example, a product might appear in distributor PDFs as an abbreviated name "
+        "For example, a product might appear in distributor reports as an abbreviated name "
         "or regional spelling variant. Adding aliases improves automatic match rates."
     )
 
-    # --- 12. Complete Workflows ---
-    m.heading("12. Complete Workflows", 1)
-    m.heading("12.1 Quick Demo Path (No Review Required)", 2)
+    # --- 13. Product Groups ---
+    m.heading("13. Managing Product Groups", 1)
+    m.paragraph(
+        "The Product Groups page (/product-groups) manages the groups used on products, "
+        "bulk imports, Review Queue new-product creation, and the SSR DATA sheet Group column."
+    )
+    m.heading("13.1 Product Groups List", 2)
+    m.bullets(
+        [
+            "View all groups with name, active status, and product count",
+            "Search by group name",
+            "Seeded defaults typically include Medicronis and Transformer",
+            "You can add additional groups as your portfolio grows",
+        ]
+    )
+    m.heading("13.2 Adding or Editing a Group", 2)
+    m.steps(
+        [
+            "Navigate to Product Groups from the sidebar",
+            'Click "Add Product Group" (or Edit on an existing row)',
+            "Enter a unique group name",
+            "Save — the group becomes available in product forms and imports",
+        ]
+    )
+    m.heading("13.3 Deactivate / Reactivate", 2)
+    m.bullets(
+        [
+            "Deactivate a group that should no longer be assigned to new products",
+            "Reactivate when the group is needed again",
+            "Products already assigned to a deactivated group keep their assignment until edited",
+        ]
+    )
+    m.paragraph(
+        "Group is required when creating or editing a product, when bulk-importing products, "
+        "and when creating a product from the Review Queue."
+    )
+
+    # --- 14. Complete Workflows ---
+    m.heading("14. Complete Workflows", 1)
+    m.heading("14.1 Quick Demo Path — PDF (No Review Required)", 2)
     m.paragraph(
         "Use sample file medsupply_jul2026.pdf for the fastest end-to-end demonstration."
     )
     m.steps(
         [
-            "Log in with password: demo",
+            "Log in with demo password: demo → Access Demo",
             "Go to Upload",
             "Set report date and upload medsupply_jul2026.pdf (auto-detect distributor from header)",
-            "You are redirected to document detail — verify 6 extracted rows with high match rate",
+            "You are redirected to document detail — verify extracted rows with high match rate",
             'Click "Approve & Promote to Sales"',
-            "Go to Reports or click Generate SSR on the document",
+            "Go to SSR Reports or click Generate SSR on the document",
+            "On Reports: set As-of date and View (Day/Week/Month), then Generate SSR",
             'Click "Download Excel" and open the .xlsx file',
         ]
     )
-    m.heading("12.2 Full Workflow with Review", 2)
+    m.heading("14.2 Quick Demo Path — Excel Upload", 2)
+    m.steps(
+        [
+            "Confirm the target distributor has Excel map ready (configure if needed — Section 11)",
+            "Name the workbook with distributor code or name (e.g. AYAN-TAUNSA.xlsx)",
+            "Go to Upload, set report date, drop the .xlsx file",
+            "Leave auto-match by filename (or apply-to-all override)",
+            "Review document detail → Approve & Promote to Sales",
+            "Generate SSR (Day view from document, or Day/Week/Month from Reports)",
+        ]
+    )
+    m.heading("14.3 Full Workflow with Review", 2)
     m.steps(
         [
             "Log in to the application",
             "Upload pharmalink_jul2026.pdf with auto-detect enabled",
             "Document status becomes REVIEW_REQUIRED",
             "Open Review Queue from sidebar (check badge count)",
-            "Resolve each unmatched row (approve, select, create, or reject)",
+            "Resolve each unmatched row (Approve, Map, New Product, or Reject)",
             "Return to document detail — status becomes EXTRACTED",
             'Click "Approve & Promote to Sales"',
-            "Generate SSR report",
+            "Generate SSR report from Reports (As-of date + View) or from the document",
             "Download and verify Excel output",
         ]
     )
-    m.heading("12.3 Bulk Upload Workflow", 2)
+    m.heading("14.4 Bulk Upload Workflow", 2)
     m.steps(
         [
-            "Collect PDF sales reports from multiple distributors",
-            "Go to Upload and drag all PDF files (or a ZIP) into the upload area",
+            "Collect PDF and/or Excel sales reports from multiple distributors",
+            "Go to Upload and drag all files (or a ZIP) into the upload area",
             "Set the shared report date for all files",
-            "Leave distributor on auto-detect (each PDF matched from its header)",
+            "Leave distributor on auto-detect (PDF header / Excel filename)",
             'Click "Upload Documents"',
             "Review the Upload Results card for each file's status",
             "Resolve review items, approve each document, then generate consolidated SSR",
         ]
     )
-    m.heading("12.4 Setting Up a New Distributor", 2)
+    m.heading("14.5 Setting Up a New Distributor", 2)
     m.steps(
         [
-            "Add the distributor on the Distributors page (or bulk Excel upload)",
-            "Open the distributor and launch the Template Wizard",
-            "Upload a sample PDF and configure column mapping (or Family J line-parser indices)",
-            "Save the template and verify Template Ready shows true",
-            "Ensure catalog products have the correct Group (Medicronis or Transformer)",
-            "Upload the first real sales report PDF with auto-detect or override",
+            "Add the distributor on the Distributors page (choose Input mode: Both or Excel only)",
+            "Complete the PDF template wizard (Both) or Excel map wizard (Excel only)",
+            "Optionally configure the other map if Both mode will use both file types",
+            "Ensure catalog products have the correct product group",
+            "Upload the first real sales report (PDF or Excel as allowed by input mode)",
             "Complete review if needed, then approve and generate SSR",
         ]
     )
-    m.heading("12.5 Monthly Reporting Cycle", 2)
+    m.heading("14.6 Monthly Reporting Cycle", 2)
     m.steps(
         [
-            "Collect PDF sales reports from all active distributors for the month",
-            "Upload PDFs individually or in bulk with the correct report date",
+            "Collect PDF/Excel sales reports from all active distributors for the month",
+            "Upload files individually or in bulk with the correct report date",
             "Resolve all review queue items across all documents",
             "Approve all extracted documents",
-            "Go to Reports, select Month view, set the month-end date",
+            "Go to SSR Reports, select Month view, set the month-end as-of date",
             "Generate consolidated SSR and download Excel",
             "Distribute the SSR report to stakeholders",
         ]
     )
 
-    # --- 13. Troubleshooting ---
-    m.heading("13. Troubleshooting", 1)
-    m.heading("13.1 Common Issues and Solutions", 2)
+    # --- 15. Troubleshooting ---
+    m.heading("15. Troubleshooting", 1)
+    m.heading("15.1 Common Issues and Solutions", 2)
     m.table(
         ["Issue", "Possible Cause", "Solution"],
         [
             ["Upload fails or 'Extraction failed'", "PDF worker service not running", "Ask administrator to start PDF worker; verify health at port 8000"],
             ["Could not detect distributor from PDF header", "Distributor name not in PDF or not registered", "Register distributor or use manual override on Upload page"],
-            ["Could not match distributor from PDF header", "Name in PDF differs from registered name", "Fix distributor name or use manual override"],
+            ["Could not match distributor from Excel filename", "Filename missing code/name", "Rename file (e.g. CODE.xlsx) or use Apply same distributor"],
+            ["Excel-only / PDF blocked", "Distributor input mode is Excel only", "Upload .xlsx instead; configure Excel map if missing"],
+            ["Excel map required", "No Excel column map saved", "Open Excel map wizard (Section 11) and save mapping"],
             ["Database errors on any page", "Database not initialized", "Administrator: run migrations and seed data"],
-            ["Empty dashboard sales chart", "No approved documents yet", "Approve at least one document to populate chart"],
-            ["Template required on upload", "Distributor has no configured template", "Configure template via Template Wizard (Section 10)"],
+            ["Empty dashboard sales charts", "No approved documents yet", "Approve at least one document to populate charts"],
+            ["Template required on upload", "Distributor has no configured PDF template", "Configure template via Template Wizard (Section 10)"],
             ["TEMPLATE_MISMATCH status", "PDF layout changed or wrong mapping", "Click Re-map PDF Template; check row count drop >30%"],
             ["Review queue won't clear", "Unresolved UNMATCHED/PENDING rows remain", "Resolve all rows in Review Queue before approval"],
             ["Approval blocked", "Unresolved review rows exist", "Complete all review items first"],
             ["Duplicate upload warning", "Approved doc exists for same distributor + date", "Expected; only re-upload to replace existing data"],
             ["Scanned PDF fails", "No extractable text in PDF", "Administrator: install Tesseract OCR on worker"],
-            ["Downloaded Excel is empty", "No approved data for selected period", "Approve documents for the report date first"],
-            ["Group column blank in SSR", "Product missing product group", "Edit product and set Group to Medicronis or Transformer"],
-            ["Product save / import fails on Group", "Missing or invalid group name", "Use exactly Medicronis or Transformer"],
+            ["Downloaded Excel is empty", "No approved data for selected as-of period", "Approve documents for that date first; check Day/Week/Month view"],
+            ["Group column blank in SSR", "Product missing product group", "Edit product and assign an active group (Section 13)"],
+            ["Product save / import fails on Group", "Missing or unknown group name", "Create the group on Product Groups, then use that exact name"],
             ["Family J extraction wrong quantities", "Line-parser column indices incorrect", "Re-open Template Wizard; adjust Sales Units / Sales Value indices"],
-            ["Session expired", "7-day cookie expired", "Log in again with your password"],
+            ["Session expired", "7-day cookie expired", "Log in again with Access Demo"],
         ],
     )
-    m.heading("13.2 Document Status Reference", 2)
+    m.heading("15.2 Document Status Reference", 2)
     m.table(
         ["Status", "Description"],
         [
@@ -962,49 +1105,55 @@ def write_content(m: ManualBuilder) -> None:
             ["EXTRACTED", "All rows extracted and matched — ready for approval"],
             ["REVIEW_REQUIRED", "Some rows need manual resolution in Review Queue"],
             ["TEMPLATE_MISMATCH", "PDF layout does not match configured template"],
-            ["FAILED", "Processing error — check PDF quality and retry"],
+            ["FAILED", "Processing error — check file type, Excel-only rules, PDF quality, and retry"],
             ["APPROVED", "Data promoted to sales facts — ready for SSR generation"],
         ],
     )
-    m.heading("13.3 Getting Help", 2)
+    m.heading("15.3 Getting Help", 2)
     m.bullets(
         [
             "Contact your system administrator for login issues, service outages, or template configuration",
             "Refer to docs/pdf-families.md for detailed PDF format family documentation",
+            "Refer to docs/excel-only-distributors.md for Excel-only distributor codes",
             "Run the smoke test checklist (SMOKE_TEST.md) to validate system health",
         ]
     )
 
-    # --- 14. Appendix ---
-    m.heading("14. Appendix", 1)
-    m.heading("14.1 Navigation Reference", 2)
+    # --- 16. Appendix ---
+    m.heading("16. Appendix", 1)
+    m.heading("16.1 Navigation Reference", 2)
     m.table(
         ["Page", "Route", "Purpose"],
         [
-            ["Dashboard", "/dashboard", "KPIs, charts, activity summary"],
-            ["Upload", "/upload", "Submit PDF sales reports"],
+            ["Dashboard", "/dashboard", "KPIs, sales charts, template coverage, activity"],
+            ["Upload", "/upload", "Submit PDF, Excel, or ZIP sales reports"],
             ["Documents", "/documents", "View all uploaded documents"],
             ["Document Detail", "/documents/[id]", "View rows, approve, generate SSR"],
             ["Review Queue", "/review", "Resolve unmatched product rows"],
-            ["SSR Reports", "/reports", "Generate and list SSR reports"],
-            ["Report Detail", "/reports/[id]", "Preview and download Excel"],
-            ["Distributors", "/distributors", "Manage distributor network"],
-            ["Template Wizard", "/distributors/[id]/template", "Configure PDF column mapping"],
+            ["SSR Reports", "/reports", "Generate by as-of date + Day/Week/Month"],
+            ["Report Detail", "/reports/[id]", "Preview DATA sheet and download Excel"],
+            ["Distributors", "/distributors", "Manage network, input mode, templates"],
+            ["PDF Template Wizard", "/distributors/[id]/template", "Configure PDF column mapping"],
+            ["Excel Map Wizard", "/distributors/[id]/excel-template", "Configure Excel column map"],
             ["Products", "/products", "Manage product catalog"],
-            ["Login", "/login", "Application authentication"],
+            ["Product Groups", "/product-groups", "Manage groups for products and SSR"],
+            ["Login", "/login", "Demo password authentication"],
         ],
     )
-    m.heading("14.2 Glossary", 2)
+    m.heading("16.2 Glossary", 2)
     m.table(
         ["Term", "Definition"],
         [
             ["SSR", "Secondary Sales Report — consolidated Medicronis Excel export of distributor sales data"],
             ["DATA sheet", "Primary SSR workbook sheet with distributor × product metrics, LMTD, and inventory columns"],
-            ["Auto-detect", "Automatic distributor identification from PDF header text"],
+            ["As-of date", "Business date used when generating Day/Week/Month SSR aggregations"],
+            ["Auto-detect", "Automatic distributor identification from PDF header text or Excel filename"],
+            ["Input mode", "Distributor setting: Both (PDF + Excel) or Excel only"],
+            ["Excel map", "Per-distributor column mapping for .xlsx sales workbooks"],
             ["PDF Format Family", "Preset layout template (A–J) for a class of distributor PDF reports"],
             ["Family J / Line parser", "Text-line extraction mode when the PDF has no usable table grid"],
-            ["Template Config", "Per-distributor column mapping stored in the database"],
-            ["Product Group", "Required catalog attribute: Medicronis or Transformer — appears as Group on SSR"],
+            ["Template Config", "Per-distributor PDF column mapping stored in the database"],
+            ["Product Group", "Catalog attribute managed at /product-groups — appears as Group on SSR"],
             ["Daily Sales Fact", "Approved sales record promoted from an extracted document row"],
             ["Match Rate", "Percentage of extracted rows successfully matched to catalog products"],
             ["Review Queue", "List of unmatched rows requiring manual resolution"],
@@ -1012,27 +1161,29 @@ def write_content(m: ManualBuilder) -> None:
             ["LMTD", "Last Month To Date — same calendar day in the prior month for comparison metrics"],
             ["Inventory (SSR)", "Computed target stock = Sales Units × 1.5"],
             ["Processing Pipeline", "Upload → Extract → Match Products → Review Exceptions stepper on Upload page"],
+            ["S.P", "Selling price used for Sales Value and related SSR calculations"],
         ],
     )
-    m.heading("14.3 Known Limitations (Demo Version)", 2)
+    m.heading("16.3 Known Limitations (Demo Version)", 2)
     m.bullets(
         [
             "Single shared password — no multi-user role-based access control",
             "Synchronous processing — no background job queue",
-            "10 PDF format families — custom parsers require Phase 4 development",
-            "Product groups are fixed to Medicronis and Transformer (seeded; not user-editable in UI)",
+            "10 PDF format families — custom parsers require further development",
             "OCR is optional — scanned PDFs may fail without Tesseract installed",
             "No email notifications, audit trail, or ERP integration",
             "Cloud deployments may use ephemeral file storage (files lost on cold start)",
+            "Trial banner and \"Trial — Medicronis\" badge indicate the shared demo environment",
         ]
     )
-    m.heading("14.4 Sample Files", 2)
+    m.heading("16.4 Sample Files", 2)
     m.paragraph("Sample PDF files for testing can be generated with:")
     m.code_line("python scripts/generate_sample_pdfs.py")
     m.bullets(
         [
-            "medsupply_jul2026.pdf — quick demo path, no review required (6 rows)",
+            "medsupply_jul2026.pdf — quick demo path, no review required",
             "pharmalink_jul2026.pdf — demo with review queue exceptions",
+            "Excel demos: use a real distributor workbook named with code/name after saving an Excel map",
         ]
     )
 

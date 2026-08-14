@@ -116,7 +116,7 @@ export interface PdfPlumberSettings {
   join_tolerance?: number;
 }
 
-export type ExtractMethod = "table" | "line_fallback" | "alternate_settings";
+export type ExtractMethod = "table" | "line_fallback" | "alternate_settings" | "excel";
 
 /**
  * Per-distributor (or format preset) extraction config stored in

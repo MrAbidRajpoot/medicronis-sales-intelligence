@@ -7,6 +7,7 @@ import {
   FIELD_LABELS,
   forwardFillGroups,
   isFieldRequired,
+  isGroupedHeaderGrid,
   type ColumnAssignment,
 } from "@/lib/template-wizard-state";
 import {
@@ -71,7 +72,7 @@ export function HeaderMappingGrid({
     Array.from({ length: colCount }, (_, i) => row0[i] ?? "")
   );
   const groupSpans = buildGroupHeaderSpans(row0, colCount);
-  const isGrouped = headerStructure === "grouped_two_row" && headerGrid.length >= 2;
+  const isGrouped = isGroupedHeaderGrid(headerStructure, headerGrid);
 
   return (
     <div className="space-y-3">

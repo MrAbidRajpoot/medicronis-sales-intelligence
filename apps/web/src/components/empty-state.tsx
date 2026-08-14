@@ -19,7 +19,12 @@ export function EmptyState({ icon: Icon, title, description, action, className }
       <h3 className="mt-4 text-lg font-semibold">{title}</h3>
       <p className="mt-2 max-w-sm text-sm text-muted-foreground">{description}</p>
       {action && (
-        <Button className="mt-6" variant="default" asChild={!!action.href}>
+        <Button
+          className="mt-6"
+          variant="default"
+          asChild={!!action.href}
+          onClick={action.href ? undefined : action.onClick}
+        >
           {action.href ? <a href={action.href}>{action.label}</a> : action.label}
         </Button>
       )}
