@@ -413,6 +413,6 @@ model SsrReport {
   generatedBy User        @relation(fields: [generatedById], references: [id])
 
   @@index([salesBatchId])
-  @@index([asOfDate, viewType])
+  @@unique([asOfDate, viewType])
   @@index([status])
 }

@@ -118,6 +118,12 @@ class LeafColumnOut(BaseModel):
     leaf: str
 
 
+class LineParserPreviewOut(BaseModel):
+    sampleLines: list[str] = Field(default_factory=list)
+    tokenizedSamples: list[list[str]] = Field(default_factory=list)
+    suggestedMappings: dict[str, Any] = Field(default_factory=dict)
+
+
 class AnalyzeHeadersResponse(BaseModel):
     suggestedFormatCode: str
     confidence: float
@@ -130,3 +136,4 @@ class AnalyzeHeadersResponse(BaseModel):
     unresolvedFields: list[str] = Field(default_factory=list)
     colCount: int | None = None
     usesLineParser: bool = False
+    lineParserPreview: LineParserPreviewOut | None = None

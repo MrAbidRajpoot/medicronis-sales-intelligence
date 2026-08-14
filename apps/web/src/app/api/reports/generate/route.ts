@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
 
     const masters = await fetchSsrGridMasters();
     const generatedAt = new Date();
-    const reportCode = `${reportCodeFor(resolvedAsOfDate, resolvedViewLabel)}-${Date.now().toString(36).toUpperCase()}`;
+    const reportCode = reportCodeFor(resolvedAsOfDate, resolvedViewLabel);
     const lines = buildDataSheetRows(facts, range, {
       asOfDate: resolvedAsOfDate,
       viewType: resolvedViewLabel,
@@ -118,10 +118,22 @@ export async function POST(request: NextRequest) {
 
     const totalValue = lines.reduce((s, l) => s + l.salesValue, 0);
 
-    const report = await prisma.ssrReport.create({
-      data: {
+    const report = await prisma.ssrReport.upsert({
+      where: {
+        asOfDate_viewType: {
+          asOfDate: resolvedAsOfDate,
+          viewType: resolvedViewType,
+        },
+      },
+      create: {
         viewType: resolvedViewType,
         asOfDate: resolvedAsOfDate,
+        filePath,
+        status: "READY",
+        generatedById: userId,
+        generatedAt,
+      },
+      update: {
         filePath,
         status: "READY",
         generatedById: userId,

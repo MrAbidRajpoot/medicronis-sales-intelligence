@@ -141,6 +141,7 @@ export async function POST(
       extractMethod: extract.extract_method ?? "table",
       templateResolutionOk: extract.template_resolution_ok ?? true,
       usesLineParser: analysis.usesLineParser ?? lineFallback,
+      lineParserPreview: analysis.lineParserPreview ?? null,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Preview failed";

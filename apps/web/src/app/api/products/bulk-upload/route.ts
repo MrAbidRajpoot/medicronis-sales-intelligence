@@ -24,7 +24,17 @@ export async function POST(request: NextRequest) {
     }
 
     const buffer = await file.arrayBuffer();
-    const { rows, errors: parseErrors } = await parseProductImportFile(buffer);
+    const productGroupNames = (
+      await prisma.productGroup.findMany({
+        where: { isActive: true },
+        select: { name: true },
+        orderBy: { name: "asc" },
+      })
+    ).map((group) => group.name);
+    const { rows, errors: parseErrors } = await parseProductImportFile(
+      buffer,
+      productGroupNames
+    );
 
     if (rows.length === 0 && parseErrors.length > 0) {
       return NextResponse.json(

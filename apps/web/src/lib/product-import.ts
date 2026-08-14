@@ -1,5 +1,5 @@
 import ExcelJS from "exceljs";
-import { isValidBonus, isValidProductGroupName, PRODUCT_GROUP_NAMES } from "./product-helpers";
+import { isValidBonus } from "./product-helpers";
 
 export const PRODUCT_IMPORT_HEADERS = [
   "SKU",
@@ -97,7 +97,7 @@ function parseIntValue(value: string): number | null {
   return Number.isInteger(n) ? n : null;
 }
 
-export async function generateProductImportTemplate(): Promise<Buffer> {
+export async function generateProductImportTemplate(productGroupNames: readonly string[]): Promise<Buffer> {
   const wb = new ExcelJS.Workbook();
   wb.creator = "Medicronis";
 
@@ -132,16 +132,17 @@ export async function generateProductImportTemplate(): Promise<Buffer> {
   headerRow.alignment = { vertical: "middle" };
   headerRow.height = 22;
 
-  SAMPLE_ROWS.forEach((row) => {
+  SAMPLE_ROWS.forEach((row, index) => {
     ws.addRow({
       ...row,
+      groupName: productGroupNames[index] ?? "",
       aliases: row.aliases.join(", "),
     });
   });
 
   ws.getCell("A1").note = "Required. Must be unique.";
   ws.getCell("B1").note = "Required.";
-  ws.getCell("D1").note = `Optional. Must be exactly: ${PRODUCT_GROUP_NAMES.join(" | ")}`;
+  ws.getCell("D1").note = `Optional. Must match an active product group: ${productGroupNames.join(" | ")}`;
   ws.getCell("O1").note = "Optional. Format: purchase+bonus e.g. 4+1";
 
   const instructions = wb.addWorksheet("Instructions");
@@ -151,7 +152,7 @@ export async function generateProductImportTemplate(): Promise<Buffer> {
   instructions.addRow(["1. Fill in the Products sheet starting from row 2."]);
   instructions.addRow(["2. SKU and Product Name are required for each row."]);
   instructions.addRow([
-    `3. Group (optional) must be exactly one of: ${PRODUCT_GROUP_NAMES.join(" | ")}.`,
+    `3. Group (optional) must match an active product group: ${productGroupNames.join(" | ")}.`,
   ]);
   instructions.addRow(["4. Manufacturer names are added to the manufacturer bank automatically."]);
   instructions.addRow(["5. Bonus format: purchase units + free units, e.g. 4+1 means buy 4 get 1 free."]);
@@ -199,7 +200,10 @@ function findHeaderMap(headerRow: ExcelJS.Row): Map<string, number> | null {
   return map;
 }
 
-export async function parseProductImportFile(data: ArrayBuffer): Promise<{
+export async function parseProductImportFile(
+  data: ArrayBuffer,
+  productGroupNames: readonly string[]
+): Promise<{
   rows: ProductImportRow[];
   errors: ProductImportError[];
 }> {
@@ -230,6 +234,7 @@ export async function parseProductImportFile(data: ArrayBuffer): Promise<{
   const rows: ProductImportRow[] = [];
   const errors: ProductImportError[] = [];
   const seenSkus = new Set<string>();
+  const validProductGroupNames = new Set(productGroupNames);
 
   for (let i = 2; i <= ws.rowCount; i++) {
     const row = ws.getRow(i);
@@ -270,11 +275,14 @@ export async function parseProductImportFile(data: ArrayBuffer): Promise<{
       continue;
     }
 
-    if (groupName && !isValidProductGroupName(groupName)) {
+    if (groupName && !validProductGroupNames.has(groupName)) {
       errors.push({
         rowNumber: i,
         sku,
-        message: `Group must be one of: ${PRODUCT_GROUP_NAMES.join(" | ")}`,
+        message:
+          productGroupNames.length > 0
+            ? `Group must be one of: ${productGroupNames.join(" | ")}`
+            : "No active product groups are configured",
       });
       continue;
     }

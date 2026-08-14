@@ -623,7 +623,8 @@ export default function ProductsPage() {
             Download the template first, fill in your products, then upload the .xlsx file here.
             Required columns: <span className="font-medium text-foreground">SKU</span>,{" "}
             <span className="font-medium text-foreground">Product Name</span>. Optional{" "}
-            <span className="font-medium text-foreground">Group</span> must be Medicronis or Transformer.
+            <span className="font-medium text-foreground">Group</span> must match an active product
+            group{productGroups.length > 0 ? `: ${productGroups.map((group) => group.name).join(" | ")}` : ""}.
           </div>
 
           <div className="space-y-2">

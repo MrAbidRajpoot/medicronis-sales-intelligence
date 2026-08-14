@@ -1,4 +1,10 @@
-import type { TemplateConfig, ExtractMethod, CanonicalField, HeaderStructure } from "@/lib/pdf-template-types";
+import type {
+  TemplateConfig,
+  ExtractMethod,
+  CanonicalField,
+  HeaderStructure,
+  LineParserPreview,
+} from "@/lib/pdf-template-types";
 
 const PDF_WORKER_URL = process.env.PDF_WORKER_URL ?? "http://localhost:8000";
 
@@ -186,6 +192,7 @@ export interface AnalyzeHeadersResult {
   unresolvedFields: CanonicalField[];
   colCount?: number | null;
   usesLineParser?: boolean;
+  lineParserPreview?: LineParserPreview | null;
 }
 
 export async function analyzeHeaders(

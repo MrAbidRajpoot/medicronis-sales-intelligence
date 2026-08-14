@@ -14,6 +14,7 @@ from column_resolver import (
     find_header_span,
     resolve_label_columns,
 )
+from line_analyzer import build_line_parser_preview
 from presets import preset_config_for_code, suggest_pdf_format
 from table_extractor import is_likely_data_table
 
@@ -140,6 +141,10 @@ def analyze_headers(
     suggested_mappings = dict(config.get("fields") or {})
     unresolved = _unresolved_fields(table, config)
 
+    line_parser_preview = None
+    if header_structure == "line_fallback" or (config.get("lineParser") or {}).get("enabled"):
+        line_parser_preview = build_line_parser_preview(pdf_bytes, config)
+
     return {
         "suggestedFormatCode": suggested_code,
         "confidence": confidence,
@@ -152,4 +157,5 @@ def analyze_headers(
         "unresolvedFields": unresolved,
         "colCount": col_count or None,
         "usesLineParser": header_structure == "line_fallback",
+        "lineParserPreview": line_parser_preview,
     }

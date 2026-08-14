@@ -9,7 +9,12 @@ from pathlib import Path
 import pytest
 
 from extractor import extract_pdf
-from line_parser import parse_lines_from_text
+from line_parser import (
+    parse_lines_from_text,
+    resolve_field,
+    resolve_field_mappings,
+    tokenize_line,
+)
 from presets import (
     FAMILY_J_AMT,
     FAMILY_J_AYAN,
@@ -27,6 +32,8 @@ PDF_SEARCH_DIRS = [
     Path(r"D:\Downloads"),
 ]
 ZIP_PATH = Path(r"D:\Downloads\July Closing.zip")
+
+AYAN_SAMPLE_LINE = "AMINAL SYP 120ML 90.00 55 0 4 360 0 0 51 4590"
 
 
 def _find_pdf(name: str) -> Path | None:
@@ -85,6 +92,139 @@ class TestLineParser:
         assert rows[0]["gross_value"] == 12510.0
         assert rows[0]["unit_price"] == 90.0
 
+    def test_ayan_tokenize_and_field_mappings_equivalence(self):
+        """Legacy after_rate indices and absolute fieldMappings must match on Ayan line."""
+        legacy_cfg = {
+            **FAMILY_J_AYAN,
+            "lineParser": {
+                "enabled": True,
+                "mode": "rate_and_columns",
+                "salesQtyColumn": 2,
+                "salesAmountColumn": 3,
+                "minNumericColumns": 4,
+            },
+        }
+        legacy_rows = parse_lines_from_text(AYAN_SAMPLE_LINE, legacy_cfg)
+        assert len(legacy_rows) == 1
+        assert legacy_rows[0]["raw_product_text"] == "AMINAL SYP 120ML"
+        assert legacy_rows[0]["unit_price"] == 90.0
+        assert legacy_rows[0]["quantity"] == 4
+        assert legacy_rows[0]["gross_value"] == 360
+
+        tokens = tokenize_line(AYAN_SAMPLE_LINE, legacy_cfg.get("lineParser"))
+        assert tokens == [
+            "AMINAL",
+            "SYP",
+            "120ML",
+            "90.00",
+            "55",
+            "0",
+            "4",
+            "360",
+            "0",
+            "0",
+            "51",
+            "4590",
+        ]
+
+        mapped_config = {
+            **FAMILY_J_AYAN,
+            "lineParser": {
+                "enabled": True,
+                "mode": "rate_and_columns",
+                "minNumericColumns": 4,
+                "fieldMappings": {
+                    "product_name": {"kind": "token_range", "start": 0, "end": 2},
+                    "unit_price": {"kind": "token_index", "index": 3},
+                    "sales_qty": {"kind": "token_index", "index": 6},
+                    "sales_amount": {"kind": "token_index", "index": 7},
+                    "closing_stock": {"kind": "token_index", "index": 10},
+                },
+            },
+        }
+        mapped_rows = parse_lines_from_text(AYAN_SAMPLE_LINE, mapped_config)
+        assert len(mapped_rows) == 1
+        assert mapped_rows[0]["raw_product_text"] == legacy_rows[0]["raw_product_text"]
+        assert mapped_rows[0]["quantity"] == legacy_rows[0]["quantity"]
+        assert mapped_rows[0]["gross_value"] == legacy_rows[0]["gross_value"]
+        assert mapped_rows[0]["unit_price"] == legacy_rows[0]["unit_price"]
+        assert mapped_rows[0]["closing_stock"] == 51
+        assert mapped_rows[0]["returns_qty"] is None
+
+    def test_non_adjacent_layout_with_field_mappings(self):
+        """Product tokens, rate, and sales columns need not be contiguous after rate."""
+        line = "FOO BAR BAZ 12.50 X 1 2 99 4500"
+        config = {
+            "headerStructure": "line_fallback",
+            "lineParser": {
+                "enabled": True,
+                "mode": "rate_and_columns",
+                "fieldMappings": {
+                    "product_name": {"kind": "token_range", "start": 0, "end": 2},
+                    "unit_price": {"kind": "token_index", "index": 3},
+                    "sales_qty": {"kind": "token_index", "index": 7},
+                    "sales_amount": {"kind": "token_index", "index": 8},
+                },
+            },
+        }
+        rows = parse_lines_from_text(line, config)
+        assert len(rows) == 1
+        assert rows[0]["raw_product_text"] == "FOO BAR BAZ"
+        assert rows[0]["unit_price"] == 12.5
+        assert rows[0]["quantity"] == 99
+        assert rows[0]["gross_value"] == 4500
+
+    def test_tokenize_resolve_field_mappings_derives_after_rate(self):
+        mappings = resolve_field_mappings(
+            {
+                "enabled": True,
+                "mode": "rate_and_columns",
+                "salesQtyColumn": 2,
+                "salesAmountColumn": 3,
+                "minNumericColumns": 4,
+            }
+        )
+        assert mappings["product_name"]["kind"] == "before_rate"
+        assert mappings["unit_price"]["kind"] == "rate_pattern"
+        assert mappings["sales_qty"] == {"kind": "after_rate_index", "index": 2}
+        assert mappings["sales_amount"] == {"kind": "after_rate_index", "index": 3}
+
+    def test_resolve_field_token_index(self):
+        tokens = tokenize_line(AYAN_SAMPLE_LINE)
+        val = resolve_field(tokens, {"kind": "token_index", "index": 6}, as_number=True)
+        assert val == 4.0
+        product = resolve_field(tokens, {"kind": "token_range", "start": 0, "end": 2})
+        assert product == "AMINAL SYP 120ML"
+
+    def test_unmapped_optional_fields_are_null(self):
+        legacy_cfg = {
+            "lineParser": {
+                "enabled": True,
+                "mode": "rate_and_columns",
+                "salesQtyColumn": 2,
+                "salesAmountColumn": 3,
+                "minNumericColumns": 4,
+            }
+        }
+        rows = parse_lines_from_text(AYAN_SAMPLE_LINE, legacy_cfg)
+        assert rows[0]["returns_qty"] is None
+        assert rows[0].get("closing_stock") is None
+
+    def test_missing_required_field_skips_line(self):
+        config = {
+            "lineParser": {
+                "enabled": True,
+                "mode": "rate_and_columns",
+                "fieldMappings": {
+                    "product_name": {"kind": "token_range", "start": 0, "end": 2},
+                    "unit_price": {"kind": "token_index", "index": 3},
+                    "sales_qty": {"kind": "token_index", "index": 99},
+                    "sales_amount": {"kind": "token_index", "index": 7},
+                },
+            }
+        }
+        assert parse_lines_from_text(AYAN_SAMPLE_LINE, config) == []
+
 
 @pytest.mark.parametrize(
     "pdf_name,preset,min_rows,expected_method",
@@ -104,6 +244,21 @@ def test_family_j_line_fallback_pdfs(pdf_name, preset, min_rows, expected_method
     assert len(result["rows"]) >= min_rows, f"Expected >={min_rows}, got {len(result['rows'])}"
     with_sales = [r for r in result["rows"] if r["quantity"] > 0 or (r["gross_value"] or 0) > 0]
     assert len(with_sales) >= 5
+
+
+def test_ayan_pdf_with_closing_stock_field_mappings():
+    data = _read_pdf("Ayan Pharma Taunsa.pdf")
+    if data is None:
+        pytest.skip("Ayan Pharma Taunsa.pdf not found")
+
+    result = extract_pdf(data, template_config=FAMILY_J_AYAN)
+    assert len(result["rows"]) >= 41
+    with_closing = [r for r in result["rows"] if r.get("closing_stock") is not None]
+    assert len(with_closing) >= 10
+    # Spot-check first Aminal-like row keeps legacy qty/amount
+    aminal = next((r for r in result["rows"] if "AMINAL" in (r["raw_product_text"] or "")), None)
+    assert aminal is not None
+    assert aminal["closing_stock"] is not None
 
 
 def test_amt_fsd_alternate_or_line_fallback():

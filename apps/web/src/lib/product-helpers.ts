@@ -79,15 +79,7 @@ export async function resolveManufacturerId(
   return undefined;
 }
 
-export const PRODUCT_GROUP_NAMES = ["Medicronis", "Transformer"] as const;
-
-export type ProductGroupName = (typeof PRODUCT_GROUP_NAMES)[number];
-
-export function isValidProductGroupName(name: string): name is ProductGroupName {
-  return (PRODUCT_GROUP_NAMES as readonly string[]).includes(name);
-}
-
-/** Resolve product group by id or exact name (Medicronis | Transformer). */
+/** Resolve an active product group by id or exact name. */
 export async function resolveProductGroupId(
   prisma: {
     productGroup: {
@@ -100,12 +92,11 @@ export async function resolveProductGroupId(
 ): Promise<string | null | undefined> {
   if (groupName != null && String(groupName).trim()) {
     const trimmed = String(groupName).trim();
-    if (!isValidProductGroupName(trimmed)) {
-      throw new Error(`Group must be one of: ${PRODUCT_GROUP_NAMES.join(" | ")}`);
-    }
-    const existing = await prisma.productGroup.findUnique({ where: { name: trimmed } });
+    const existing = await prisma.productGroup.findFirst({
+      where: { name: trimmed, isActive: true },
+    });
     if (!existing) {
-      throw new Error(`Product group "${trimmed}" not found — run prisma db seed`);
+      throw new Error(`Product group "${trimmed}" was not found or is inactive`);
     }
     return existing.id;
   }

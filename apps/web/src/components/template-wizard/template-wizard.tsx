@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/components/toast-provider";
 import type { ExtractedRowPayload } from "@/lib/pdf-worker";
-import type { HeaderStructure, LineParserConfig, PdfPlumberSettings, TemplateConfig } from "@/lib/pdf-template-types";
+import type { HeaderStructure, LineParserConfig, LineParserPreview, PdfPlumberSettings, TemplateConfig } from "@/lib/pdf-template-types";
 import { getUnresolvedRequiredFields } from "@/lib/template-validation";
 import { getDistributorLinePreset } from "@/lib/distributor-line-presets";
 import {
@@ -46,6 +46,7 @@ interface PreviewResponse {
   extractMethod?: string;
   templateResolutionOk?: boolean;
   usesLineParser?: boolean;
+  lineParserPreview?: LineParserPreview | null;
 }
 
 interface TemplateWizardProps {
@@ -80,6 +81,7 @@ export function TemplateWizard({
   const [pdfPlumberSettings, setPdfPlumberSettings] = useState<PdfPlumberSettings>({});
   const [tableExtractionDisabled, setTableExtractionDisabled] = useState(false);
   const [lineParser, setLineParser] = useState<LineParserConfig>(DEFAULT_LINE_PARSER);
+  const [lineParserPreview, setLineParserPreview] = useState<LineParserPreview | null>(null);
 
   const [analyzing, setAnalyzing] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -205,6 +207,9 @@ export function TemplateWizard({
 
         const preview = data as PreviewResponse;
         setPreviewRows(preview.previewRows ?? []);
+        if (preview.lineParserPreview) {
+          setLineParserPreview(preview.lineParserPreview);
+        }
         return preview;
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Preview failed";
@@ -237,6 +242,9 @@ export function TemplateWizard({
         setSuggestedCode(preview.suggestedFormatCode);
         setConfidence(preview.confidence);
         setPreviewRows(preview.previewRows ?? []);
+        if (preview.lineParserPreview) {
+          setLineParserPreview(preview.lineParserPreview);
+        }
 
         const formatForSuggest = formats.find((f) => f.code === preview.suggestedFormatCode);
         if (formatForSuggest && !formatId) {
@@ -409,7 +417,7 @@ export function TemplateWizard({
           <AlertTitle>Template required before upload</AlertTitle>
           <AlertDescription>
             {isLineFallback
-              ? "This PDF uses text-line parsing (Family J). Adjust Sales Units / Sales Value column indices until the live preview looks correct, then save."
+              ? "This PDF uses text-line parsing (Family J). Click tokens on a sample line to assign fields until the live preview looks correct, then save."
               : "Complete this wizard to enable PDF uploads. Map RETURN/QTY, NET SALE/QTY, NET SALE/AMOUNT, and CLOSING/QTY for AIM-style reports."}
           </AlertDescription>
         </Alert>
@@ -482,6 +490,7 @@ export function TemplateWizard({
                   value={lineParser}
                   onChange={setLineParser}
                   disabled={!sampleFile || analyzing}
+                  lineParserPreview={lineParserPreview}
                 />
               ) : (
                 <HeaderMappingGrid

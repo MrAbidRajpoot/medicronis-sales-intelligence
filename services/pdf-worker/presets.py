@@ -238,6 +238,13 @@ FAMILY_J_BUKHARI: dict[str, Any] = {
         "salesQtyColumn": 4,
         "salesAmountColumn": 5,
         "minNumericColumns": 6,
+        "fieldMappings": {
+            "product_name": {"kind": "before_rate"},
+            "unit_price": {"kind": "rate_pattern"},
+            "sales_qty": {"kind": "after_rate_index", "index": 4},
+            "sales_amount": {"kind": "after_rate_index", "index": 5},
+            "closing_stock": {"kind": "after_rate_index", "index": 8},
+        },
     },
 }
 
@@ -249,6 +256,15 @@ FAMILY_J_AYAN: dict[str, Any] = {
         "salesQtyColumn": 2,
         "salesAmountColumn": 3,
         "minNumericColumns": 4,
+        # Product name length varies across rows — prefer after_rate_index over fixed tokens.
+        # Sample: AMINAL SYP 120ML 90.00 55 0 4 360 0 0 51 4590
+        "fieldMappings": {
+            "product_name": {"kind": "before_rate"},
+            "unit_price": {"kind": "rate_pattern"},
+            "sales_qty": {"kind": "after_rate_index", "index": 2},
+            "sales_amount": {"kind": "after_rate_index", "index": 3},
+            "closing_stock": {"kind": "after_rate_index", "index": 6},
+        },
     },
 }
 
@@ -319,6 +335,12 @@ FAMILY_J_GLOBAL: dict[str, Any] = {
         "salesQtyColumn": 1,
         "salesAmountColumn": 5,
         "minNumericColumns": 3,
+        "fieldMappings": {
+            "product_name": {"kind": "before_rate"},
+            "unit_price": {"kind": "rate_pattern"},
+            "sales_qty": {"kind": "after_rate_index", "index": 1},
+            "sales_amount": {"kind": "after_rate_index", "index": 5},
+        },
     },
 }
 

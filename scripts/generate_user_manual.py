@@ -175,7 +175,7 @@ def add_title_page(doc: Document):
     desc.alignment = WD_ALIGN_PARAGRAPH.CENTER
     run = desc.add_run(
         "Pharma Distributor Secondary Sales Reporting\n"
-        "PDF Upload → Product Matching → Review → SSR Excel Export"
+        "PDF Upload → Product Matching → Review → Medicronis SSR Excel (DATA sheet)"
     )
     run.font.size = Pt(12)
 
@@ -736,9 +736,10 @@ def write_content(m: ManualBuilder) -> None:
         [
             "Upload a sample PDF from the distributor",
             "Review the auto-suggested PDF format family (A through J)",
-            "Map header columns to system fields (product name, quantity, net sale, closing stock, etc.)",
+            "Map header columns to system fields (product name, sales units / quantity, net sale, closing stock, etc.)",
             "Preview extraction results to verify row data is correct",
             "Adjust advanced settings if needed (skip rows, extraction mode, line-fallback)",
+            "For Family J (line parser), set Sales Units and Sales Value column indices until the live preview looks correct",
             "Save the template configuration",
             "Return to Upload and process PDFs for this distributor",
         ]
@@ -757,15 +758,24 @@ def write_content(m: ManualBuilder) -> None:
             ["D", "Product Name T.P. Tax — 19-column", "Al Makkah Trading Buner, Umar Medicine Swabi"],
             ["E", "TRAD RATE / NET SALE", "Hamed Pharma Bannu, Mehran Traders Mardan"],
             ["F", "Simple Description / Sales Qty / Sale Value", "Simple single-row header layouts"],
-            ["G–J", "Additional layout variants", "See docs/pdf-families.md for full list"],
+            ["G", "Code / Product / Net Sale (label-path + column fallbacks)", "Chishti Pharma Multan, Zavion Pharma Jhang"],
+            ["H", "NAME / PRICE / OPEN STOCK / SALES — 21-col grouped", "Mashal Enterprises Bajaur"],
+            ["I", "Vertical NET SALES QTY.BON AMOUNT", "Hashmani Health Care Karachi"],
+            ["J", "No table — line parser only (table extraction disabled)", "Ayan Pharma Taunsa, Globar Enterprises SKP, others"],
         ],
+    )
+    m.paragraph(
+        "Family J PDFs have no reliable table grid. The Template Wizard enables line-parser "
+        "settings so you can map which numeric token positions are Sales Units and Sales Value. "
+        "Scanned PDFs without extractable text still require OCR (Tesseract) on the worker. "
+        "See docs/pdf-families.md for the full distributor list."
     )
     m.heading("10.5 Field Mapping Reference", 2)
     m.table(
         ["System Field", "Typical PDF Column Names", "Required"],
         [
             ["Product Name", "ITEM, DESCRIPTION, Product Name, Item Description", "Yes"],
-            ["Quantity", "QTY, SALE, Sales Qty, Quantity Sold", "Yes"],
+            ["Quantity / Sales Units", "QTY, SALE, Sales Qty, Quantity Sold", "Yes"],
             ["Net Sale", "NET SALE, Net Sales, Sale Value, AMOUNT", "Yes"],
             ["Closing Stock", "CLOSING, Closing Balance, Stock", "Optional"],
             ["Rate / TP", "RATE, TP, TRAD RATE, T.P.", "Optional"],
@@ -776,36 +786,75 @@ def write_content(m: ManualBuilder) -> None:
     m.heading("11. Managing Products", 1)
     m.paragraph(
         "The Products page (/products) manages the product catalog used for matching "
-        "extracted PDF rows."
+        "extracted PDF rows and for SSR DATA sheet line items (including Group)."
     )
     m.heading("11.1 Product Catalog", 2)
     m.bullets(
         [
-            "View all products with SKU, name, manufacturer, and pricing fields",
-            "Search and filter products by name or SKU",
-            "See product aliases used for fuzzy matching",
+            "View all products with SKU, name, group, manufacturer, category, and bonus",
+            "Search by SKU, name, manufacturer, group, category, or aliases",
+            "Each product must belong to a product group: Medicronis or Transformer",
+            "Aliases improve fuzzy matching from distributor PDF text",
         ]
     )
-    m.heading("11.2 Adding a Product", 2)
+    m.heading("11.2 Product Groups", 2)
+    m.paragraph(
+        "Product groups are seeded master values used on the SSR DATA sheet Group column. "
+        "Only two groups are supported:"
+    )
+    m.table(
+        ["Group", "Use"],
+        [
+            ["Medicronis", "Standard Medicronis portfolio products"],
+            ["Transformer", "Transformer portfolio products"],
+        ],
+    )
+    m.paragraph(
+        "Group is required when creating or editing a product, when bulk-importing products, "
+        "and when creating a product from the Review Queue."
+    )
+    m.heading("11.3 Adding a Product", 2)
     m.steps(
         [
             "Navigate to Products",
             'Click "Add Product"',
-            "Enter SKU, product name, manufacturer, and pricing fields",
-            "Add aliases if the product is known by alternate names",
+            "Enter SKU and product name (SKU must be unique)",
+            "Select Group (Medicronis or Transformer) — required",
+            "Optionally set category, composition, manufacturer (existing or new), shipper size",
+            "Optionally enter pricing fields: MRP, TP, Old SP, New SP, Net Price, Tax, Net Price with 1%",
+            "Optionally enter Bonus in N+N format (for example 4+1)",
+            "Add comma-separated aliases if the product appears under alternate names in PDFs",
             "Save the product",
         ]
     )
-    m.heading("11.3 Bulk Product Upload", 2)
+    m.heading("11.4 Bulk Product Upload", 2)
     m.steps(
         [
-            "Download the CSV template from the Products page",
-            "Fill in product details following the template format",
-            "Upload the completed CSV file",
-            "Verify imported products appear in the catalog",
+            'Click "Download Template" on the Products page to get the Medicronis product Excel template',
+            "Fill rows using the template columns (see table below)",
+            "Set Group to exactly Medicronis or Transformer on every row",
+            "Upload the completed .xlsx file via bulk upload",
+            "Review any row-level import errors, then verify products in the catalog",
         ]
     )
-    m.heading("11.4 Product Aliases", 2)
+    m.heading("11.5 Product Import Template Columns", 2)
+    m.table(
+        ["Column", "Required", "Notes"],
+        [
+            ["SKU", "Yes", "Unique product code"],
+            ["Product Name", "Yes", "Catalog display name"],
+            ["Category", "No", "Optional classification"],
+            ["Group", "Yes", "Must be Medicronis or Transformer"],
+            ["Composition", "No", "Formula / strength text"],
+            ["Manufacturer", "No", "Created automatically if new"],
+            ["Shipper Size", "No", "Integer pack size"],
+            ["MRP, TP, Old SP, New SP", "No", "Pricing decimals"],
+            ["Net Price, Tax, Net Price with 1%", "No", "Pricing decimals"],
+            ["Bonus", "No", "Format N+N (e.g. 10+2)"],
+            ["Aliases", "No", "Alternate names for matching"],
+        ],
+    )
+    m.heading("11.6 Product Aliases", 2)
     m.paragraph(
         "Aliases are alternate names for a product used during fuzzy matching. "
         "For example, a product might appear in distributor PDFs as an abbreviated name "
@@ -858,10 +907,11 @@ def write_content(m: ManualBuilder) -> None:
     m.heading("12.4 Setting Up a New Distributor", 2)
     m.steps(
         [
-            "Add the distributor on the Distributors page (or bulk CSV upload)",
+            "Add the distributor on the Distributors page (or bulk Excel upload)",
             "Open the distributor and launch the Template Wizard",
-            "Upload a sample PDF and configure column mapping",
+            "Upload a sample PDF and configure column mapping (or Family J line-parser indices)",
             "Save the template and verify Template Ready shows true",
+            "Ensure catalog products have the correct Group (Medicronis or Transformer)",
             "Upload the first real sales report PDF with auto-detect or override",
             "Complete review if needed, then approve and generate SSR",
         ]
@@ -897,6 +947,9 @@ def write_content(m: ManualBuilder) -> None:
             ["Duplicate upload warning", "Approved doc exists for same distributor + date", "Expected; only re-upload to replace existing data"],
             ["Scanned PDF fails", "No extractable text in PDF", "Administrator: install Tesseract OCR on worker"],
             ["Downloaded Excel is empty", "No approved data for selected period", "Approve documents for the report date first"],
+            ["Group column blank in SSR", "Product missing product group", "Edit product and set Group to Medicronis or Transformer"],
+            ["Product save / import fails on Group", "Missing or invalid group name", "Use exactly Medicronis or Transformer"],
+            ["Family J extraction wrong quantities", "Line-parser column indices incorrect", "Re-open Template Wizard; adjust Sales Units / Sales Value indices"],
             ["Session expired", "7-day cookie expired", "Log in again with your password"],
         ],
     )
@@ -945,14 +998,19 @@ def write_content(m: ManualBuilder) -> None:
     m.table(
         ["Term", "Definition"],
         [
-            ["SSR", "Secondary Sales Report — consolidated Excel export of distributor sales data"],
+            ["SSR", "Secondary Sales Report — consolidated Medicronis Excel export of distributor sales data"],
+            ["DATA sheet", "Primary SSR workbook sheet with distributor × product metrics, LMTD, and inventory columns"],
             ["Auto-detect", "Automatic distributor identification from PDF header text"],
             ["PDF Format Family", "Preset layout template (A–J) for a class of distributor PDF reports"],
+            ["Family J / Line parser", "Text-line extraction mode when the PDF has no usable table grid"],
             ["Template Config", "Per-distributor column mapping stored in the database"],
+            ["Product Group", "Required catalog attribute: Medicronis or Transformer — appears as Group on SSR"],
             ["Daily Sales Fact", "Approved sales record promoted from an extracted document row"],
             ["Match Rate", "Percentage of extracted rows successfully matched to catalog products"],
             ["Review Queue", "List of unmatched rows requiring manual resolution"],
             ["Distributor Product Mapping", "Saved alias linking a distributor's product name to a catalog SKU"],
+            ["LMTD", "Last Month To Date — same calendar day in the prior month for comparison metrics"],
+            ["Inventory (SSR)", "Computed target stock = Sales Units × 1.5"],
             ["Processing Pipeline", "Upload → Extract → Match Products → Review Exceptions stepper on Upload page"],
         ],
     )
@@ -962,6 +1020,7 @@ def write_content(m: ManualBuilder) -> None:
             "Single shared password — no multi-user role-based access control",
             "Synchronous processing — no background job queue",
             "10 PDF format families — custom parsers require Phase 4 development",
+            "Product groups are fixed to Medicronis and Transformer (seeded; not user-editable in UI)",
             "OCR is optional — scanned PDFs may fail without Tesseract installed",
             "No email notifications, audit trail, or ERP integration",
             "Cloud deployments may use ephemeral file storage (files lost on cold start)",

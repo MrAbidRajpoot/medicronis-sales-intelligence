@@ -255,10 +255,20 @@ export const FAMILY_J_BUKHARI: TemplateConfig = {
     salesQtyColumn: 4,
     salesAmountColumn: 5,
     minNumericColumns: 6,
+    fieldMappings: {
+      product_name: { kind: "before_rate" },
+      unit_price: { kind: "rate_pattern" },
+      sales_qty: { kind: "after_rate_index", index: 4 },
+      sales_amount: { kind: "after_rate_index", index: 5 },
+      closing_stock: { kind: "after_rate_index", index: 8 },
+    },
   },
 };
 
-/** Ayan Pharma Taunsa — SALES & STOCK REPORT text layout. */
+/** Ayan Pharma Taunsa — SALES & STOCK REPORT text layout.
+ * Product name length varies; use before_rate / after_rate_index (not fixed token indices).
+ * Sample: AMINAL SYP 120ML 90.00 55 0 4 360 0 0 51 4590
+ */
 export const FAMILY_J_AYAN: TemplateConfig = {
   ...FAMILY_J_DEFAULT,
   lineParser: {
@@ -267,6 +277,13 @@ export const FAMILY_J_AYAN: TemplateConfig = {
     salesQtyColumn: 2,
     salesAmountColumn: 3,
     minNumericColumns: 4,
+    fieldMappings: {
+      product_name: { kind: "before_rate" },
+      unit_price: { kind: "rate_pattern" },
+      sales_qty: { kind: "after_rate_index", index: 2 },
+      sales_amount: { kind: "after_rate_index", index: 3 },
+      closing_stock: { kind: "after_rate_index", index: 6 },
+    },
   },
 };
 
@@ -342,6 +359,12 @@ export const FAMILY_J_GLOBAL: TemplateConfig = {
     salesQtyColumn: 1,
     salesAmountColumn: 5,
     minNumericColumns: 3,
+    fieldMappings: {
+      product_name: { kind: "before_rate" },
+      unit_price: { kind: "rate_pattern" },
+      sales_qty: { kind: "after_rate_index", index: 1 },
+      sales_amount: { kind: "after_rate_index", index: 5 },
+    },
   },
 };
 

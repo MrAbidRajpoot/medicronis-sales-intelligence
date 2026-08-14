@@ -52,10 +52,35 @@ export interface TemplateDetectionConfig {
   noTableIndicator?: boolean;
 }
 
+/** How a field is located on a parsed line (Family J line parser). */
+export type LineFieldSource =
+  /** Single token (number or word) at absolute index. */
+  | { kind: "token_index"; index: number }
+  /** Inclusive token range — typically multi-word product names. */
+  | { kind: "token_range"; start: number; end: number }
+  /** First regex match (default `\d+\.\d{2}`); legacy unit-price source. */
+  | { kind: "rate_pattern"; pattern?: string }
+  /** Index into numeric tokens AFTER the rate match (legacy sales columns). */
+  | { kind: "after_rate_index"; index: number }
+  /** All text before the first rate-pattern match (legacy product source). */
+  | { kind: "before_rate" };
+
+export type LineParserFieldMappings = Partial<
+  Record<CanonicalField, LineFieldSource>
+>;
+
+export interface LineParserPreview {
+  sampleLines: string[];
+  tokenizedSamples: string[][];
+  suggestedMappings?: LineParserFieldMappings;
+}
+
 export interface LineParserConfig {
   enabled: boolean;
   /** regex | rate_and_columns | trailing_integers | pipe_table */
   mode?: "regex" | "rate_and_columns" | "trailing_integers" | "pipe_table";
+  /** Preferred mapping API — absolute tokens or legacy relative sources. */
+  fieldMappings?: LineParserFieldMappings;
   /** Optional regex with groups: product, qty, price, amount */
   pattern?: string;
   /** Named capture group indices when using regex mode */
@@ -65,10 +90,20 @@ export interface LineParserConfig {
   productColumn?: number;
   /** 0-based column index for unit rate in pipe-delimited rows (pipe_table mode) */
   rateColumn?: number;
-  /** 0-based index into numeric tokens after rate (or trailing block) */
+  /**
+   * @deprecated Prefer fieldMappings.sales_qty — 0-based index into numeric
+   * tokens after rate (or trailing block). Kept for backward compatibility.
+   */
   salesQtyColumn?: number;
+  /**
+   * @deprecated Prefer fieldMappings.sales_amount — kept for backward compatibility.
+   */
   salesAmountColumn?: number;
   trailingNumericCount?: number;
+  /**
+   * Minimum numeric tokens after rate (legacy) or minimum tokens on the line.
+   * Optional override; when unset, derived from configured field indices.
+   */
   minNumericColumns?: number;
   codePrefix?: boolean;
   treatDashAsZero?: boolean;
