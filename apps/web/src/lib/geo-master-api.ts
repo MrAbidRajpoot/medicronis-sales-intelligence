@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { resolveManagerIdOrVacant } from "@/lib/manager-helpers";
+import { ensureVacantManagerId } from "@/lib/manager-helpers";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +11,11 @@ type GeoModel = "territory" | "area" | "region" | "zone";
 function delegate(model: GeoModel): any {
   return prisma[model];
 }
+
+const geoInclude = {
+  manager: { select: { id: true, name: true } },
+  _count: { select: { distributors: true } },
+} as const;
 
 function mapGeoRow(r: {
   id: string;
@@ -39,10 +44,7 @@ export function createGeoCollectionHandlers(model: GeoModel, label: string) {
     const rows = await db.findMany({
       where: includeInactive ? undefined : { isActive: true },
       orderBy: { name: "asc" },
-      include: {
-        manager: { select: { id: true, name: true } },
-        _count: { select: { distributors: true } },
-      },
+      include: geoInclude,
     });
 
     return NextResponse.json(rows.map(mapGeoRow));
@@ -51,7 +53,7 @@ export function createGeoCollectionHandlers(model: GeoModel, label: string) {
   async function POST(request: NextRequest) {
     try {
       const body = await request.json();
-      const { name, managerId } = body as { name?: string; managerId?: string | null };
+      const { name } = body as { name?: string };
 
       if (!name?.trim()) {
         return NextResponse.json({ error: `${label} name is required` }, { status: 400 });
@@ -63,14 +65,12 @@ export function createGeoCollectionHandlers(model: GeoModel, label: string) {
         return NextResponse.json({ error: `${label} name already exists` }, { status: 409 });
       }
 
-      const resolvedManagerId = await resolveManagerIdOrVacant(managerId);
+      // Managers are assigned from the Managers page; new rows start out Vacant.
+      const vacantId = await ensureVacantManagerId();
 
       const row = await db.create({
-        data: { name: trimmed, managerId: resolvedManagerId },
-        include: {
-          manager: { select: { id: true, name: true } },
-          _count: { select: { distributors: true } },
-        },
+        data: { name: trimmed, managerId: vacantId },
+        include: geoInclude,
       });
 
       return NextResponse.json(mapGeoRow(row), { status: 201 });
@@ -89,10 +89,7 @@ export function createGeoItemHandlers(model: GeoModel, label: string) {
   async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
     const row = await db.findUnique({
       where: { id: params.id },
-      include: {
-        manager: { select: { id: true, name: true } },
-        _count: { select: { distributors: true } },
-      },
+      include: geoInclude,
     });
 
     if (!row) {
@@ -105,11 +102,7 @@ export function createGeoItemHandlers(model: GeoModel, label: string) {
   async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
     try {
       const body = await request.json();
-      const { name, isActive, managerId } = body as {
-        name?: string;
-        isActive?: boolean;
-        managerId?: string | null;
-      };
+      const { name, isActive } = body as { name?: string; isActive?: boolean };
 
       if (name !== undefined) {
         const trimmed = name.trim();
@@ -125,20 +118,13 @@ export function createGeoItemHandlers(model: GeoModel, label: string) {
         }
       }
 
-      const resolvedManagerId =
-        managerId !== undefined ? await resolveManagerIdOrVacant(managerId) : undefined;
-
       const row = await db.update({
         where: { id: params.id },
         data: {
           ...(name !== undefined && { name: name.trim() }),
           ...(isActive !== undefined && { isActive }),
-          ...(resolvedManagerId !== undefined && { managerId: resolvedManagerId }),
         },
-        include: {
-          manager: { select: { id: true, name: true } },
-          _count: { select: { distributors: true } },
-        },
+        include: geoInclude,
       });
 
       return NextResponse.json(mapGeoRow(row));
@@ -152,10 +138,7 @@ export function createGeoItemHandlers(model: GeoModel, label: string) {
       const row = await db.update({
         where: { id: params.id },
         data: { isActive: false },
-        include: {
-          manager: { select: { id: true, name: true } },
-          _count: { select: { distributors: true } },
-        },
+        include: geoInclude,
       });
 
       return NextResponse.json(mapGeoRow(row));

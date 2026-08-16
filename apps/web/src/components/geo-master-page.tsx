@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { Loader2, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
@@ -10,14 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/components/toast-provider";
-
-interface ManagerOption {
-  id: string;
-  name: string;
-}
 
 interface GeoItem {
   id: string;
@@ -42,23 +37,12 @@ export function GeoMasterPage({
   singular: string;
 }) {
   const [items, setItems] = useState<GeoItem[]>([]);
-  const [managers, setManagers] = useState<ManagerOption[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<GeoItem | null>(null);
   const [name, setName] = useState("");
-  const [managerId, setManagerId] = useState("");
-
-  const loadManagers = useCallback(async () => {
-    try {
-      const res = await fetch("/api/managers");
-      setManagers(await res.json());
-    } catch {
-      toast.error("Failed to load managers");
-    }
-  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -74,8 +58,7 @@ export function GeoMasterPage({
 
   useEffect(() => {
     load();
-    loadManagers();
-  }, [load, loadManagers]);
+  }, [load]);
 
   const filteredItems = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -89,14 +72,12 @@ export function GeoMasterPage({
   function openCreate() {
     setEditing(null);
     setName("");
-    setManagerId("");
     setDialogOpen(true);
   }
 
   function openEdit(item: GeoItem) {
     setEditing(item);
     setName(item.name);
-    setManagerId(item.managerId ?? "");
     setDialogOpen(true);
   }
 
@@ -114,17 +95,13 @@ export function GeoMasterPage({
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: name.trim(),
-          managerId: managerId || null,
-        }),
+        body: JSON.stringify({ name: name.trim() }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Save failed");
       toast.success(editing ? `${singular} updated` : `${singular} created`);
       setDialogOpen(false);
       load();
-      loadManagers();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Save failed");
     } finally {
@@ -254,7 +231,7 @@ export function GeoMasterPage({
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         title={editing ? `Edit ${singular}` : `Add ${singular}`}
-        description={`${singular} names must be unique. Leave manager empty to assign Vacant.`}
+        description={`${singular} names must be unique. Managers are assigned from the Managers page.`}
         className="max-w-md"
       >
         <form onSubmit={handleSave} className="space-y-4">
@@ -269,24 +246,24 @@ export function GeoMasterPage({
               autoFocus
             />
           </div>
-          <div className="space-y-2">
-            <Label>Manager</Label>
-            <Select value={managerId} onValueChange={setManagerId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Vacant (default)" />
-              </SelectTrigger>
-              <SelectContent>
-                {managers.map((m) => (
-                  <SelectItem key={m.id} value={m.id}>
-                    {m.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {editing ? (
             <p className="text-xs text-muted-foreground">
-              If no manager is selected, Vacant is assigned automatically.
+              Manager: <span className="font-medium text-foreground">{editing.managerName ?? "Vacant"}</span>{" "}
+              — change it from the{" "}
+              <Link href="/managers" className="text-primary underline">
+                Managers
+              </Link>{" "}
+              page.
             </p>
-          </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              New {singular.toLowerCase()} starts as Vacant. Assign a manager from the{" "}
+              <Link href="/managers" className="text-primary underline">
+                Managers
+              </Link>{" "}
+              page.
+            </p>
+          )}
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
               Cancel

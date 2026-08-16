@@ -1,44 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { VACANT_MANAGER_NAME } from "@/lib/manager-helpers";
+import { applyManagerAssignments, VACANT_MANAGER_NAME } from "@/lib/manager-helpers";
+import { managerInclude, mapManager, parseIdList } from "@/lib/manager-dto";
 
 export const dynamic = "force-dynamic";
-
-const managerCountSelect = {
-  territories: true,
-  areas: true,
-  regions: true,
-  zones: true,
-} as const;
-
-function mapManager(m: {
-  id: string;
-  name: string;
-  isActive: boolean;
-  _count: {
-    territories: number;
-    areas: number;
-    regions: number;
-    zones: number;
-  };
-}) {
-  return {
-    id: m.id,
-    name: m.name,
-    isActive: m.isActive,
-    territoryCount: m._count.territories,
-    areaCount: m._count.areas,
-    regionCount: m._count.regions,
-    zoneCount: m._count.zones,
-    assignmentCount:
-      m._count.territories + m._count.areas + m._count.regions + m._count.zones,
-  };
-}
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const manager = await prisma.manager.findUnique({
     where: { id: params.id },
-    include: { _count: { select: managerCountSelect } },
+    include: managerInclude,
   });
 
   if (!manager) {
@@ -58,7 +28,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: "Manager not found" }, { status: 404 });
     }
 
-    if (current.name === VACANT_MANAGER_NAME) {
+    const isVacant = current.name === VACANT_MANAGER_NAME;
+    if (isVacant) {
       if (name !== undefined && name.trim() !== VACANT_MANAGER_NAME) {
         return NextResponse.json({ error: "Vacant manager cannot be renamed" }, { status: 400 });
       }
@@ -81,13 +52,26 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       }
     }
 
-    const manager = await prisma.manager.update({
+    await prisma.manager.update({
       where: { id: params.id },
       data: {
         ...(name !== undefined && { name: name.trim() }),
         ...(isActive !== undefined && { isActive }),
       },
-      include: { _count: { select: managerCountSelect } },
+    });
+
+    if (!isVacant) {
+      await applyManagerAssignments(params.id, {
+        territory: parseIdList(body.territoryIds),
+        area: parseIdList(body.areaIds),
+        region: parseIdList(body.regionIds),
+        zone: parseIdList(body.zoneIds),
+      });
+    }
+
+    const manager = await prisma.manager.findUniqueOrThrow({
+      where: { id: params.id },
+      include: managerInclude,
     });
 
     return NextResponse.json(mapManager(manager));
@@ -106,10 +90,22 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: "Vacant manager cannot be deactivated" }, { status: 400 });
     }
 
-    const manager = await prisma.manager.update({
+    // Released geography falls back to Vacant so nothing is left unmanaged.
+    await applyManagerAssignments(params.id, {
+      territory: [],
+      area: [],
+      region: [],
+      zone: [],
+    });
+
+    await prisma.manager.update({
       where: { id: params.id },
       data: { isActive: false },
-      include: { _count: { select: managerCountSelect } },
+    });
+
+    const manager = await prisma.manager.findUniqueOrThrow({
+      where: { id: params.id },
+      include: managerInclude,
     });
 
     return NextResponse.json(mapManager(manager));

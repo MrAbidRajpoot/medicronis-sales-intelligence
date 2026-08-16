@@ -2,6 +2,10 @@ import { prisma } from "@/lib/prisma";
 
 export const VACANT_MANAGER_NAME = "Vacant";
 
+export type GeoModel = "territory" | "area" | "region" | "zone";
+
+export const GEO_MODELS: GeoModel[] = ["territory", "area", "region", "zone"];
+
 /** Ensure the Vacant manager exists (and is active); return its id. */
 export async function ensureVacantManagerId(): Promise<string> {
   const existing = await prisma.manager.findUnique({ where: { name: VACANT_MANAGER_NAME } });
@@ -18,17 +22,44 @@ export async function ensureVacantManagerId(): Promise<string> {
   return created.id;
 }
 
-/** Resolve a manager id, falling back to Vacant when missing/invalid. */
-export async function resolveManagerIdOrVacant(
-  managerId?: string | null
-): Promise<string> {
-  if (managerId?.trim()) {
-    const row = await prisma.manager.findFirst({
-      where: { id: managerId.trim(), isActive: true },
+export interface ManagerAssignments {
+  territory?: string[];
+  area?: string[];
+  region?: string[];
+  zone?: string[];
+}
+
+/**
+ * Make `managerId` own exactly the listed rows per geo model. Rows it previously
+ * owned that are no longer listed fall back to Vacant. Omitted models are untouched.
+ */
+export async function applyManagerAssignments(
+  managerId: string,
+  assignments: ManagerAssignments
+): Promise<void> {
+  const vacantId = await ensureVacantManagerId();
+  if (managerId === vacantId) return;
+
+  for (const model of GEO_MODELS) {
+    const ids = assignments[model];
+    if (ids === undefined) continue;
+
+    // Prisma delegates share this shape but TypeScript can't union their signatures.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = prisma[model] as any;
+
+    await db.updateMany({
+      where: { managerId, NOT: { id: { in: ids } } },
+      data: { managerId: vacantId },
     });
-    if (row) return row.id;
+
+    if (ids.length > 0) {
+      await db.updateMany({
+        where: { id: { in: ids } },
+        data: { managerId },
+      });
+    }
   }
-  return ensureVacantManagerId();
 }
 
 /** Prefer territory → area → region → zone manager for SSR / display. */
