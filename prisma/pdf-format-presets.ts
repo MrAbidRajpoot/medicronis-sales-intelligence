@@ -227,6 +227,7 @@ export const FAMILY_I_DEFAULT: TemplateConfig = {
 export const FAMILY_J_DEFAULT: TemplateConfig = {
   headerStructure: "line_fallback",
   tableExtractionDisabled: true,
+  preferGeometry: true,
   skipRowsContaining: ["total", "page", "grand total"],
   detection: {
     titlePatterns: [
@@ -266,11 +267,20 @@ export const FAMILY_J_BUKHARI: TemplateConfig = {
 };
 
 /** Ayan Pharma Taunsa — SALES & STOCK REPORT text layout.
- * Product name length varies; use before_rate / after_rate_index (not fixed token indices).
- * Sample: AMINAL SYP 120ML 90.00 55 0 4 360 0 0 51 4590
+ * Prefer geometry cell grid (multi-word products); line parser remains fallback.
+ * Geometry columns: Description/Pack | T.P. | Opening | Purchase | SalesQty | SaleValue | …
+ * Sample line: AMINAL SYP 120ML 90.00 55 0 4 360 0 0 51 4590
  */
 export const FAMILY_J_AYAN: TemplateConfig = {
   ...FAMILY_J_DEFAULT,
+  preferGeometry: true,
+  fields: {
+    product_name: { col: 0, group: "Description" },
+    unit_price: { col: 1, group: "T.P." },
+    sales_qty: { col: 4 },
+    sales_amount: { col: 5 },
+    closing_stock: { col: 8 },
+  },
   lineParser: {
     enabled: true,
     mode: "rate_and_columns",
@@ -339,6 +349,7 @@ export const FAMILY_Z_EVERGREEN: TemplateConfig = {
   ...FAMILY_E_DEFAULT,
   tableExtractionDisabled: true,
   headerStructure: "line_fallback",
+  preferGeometry: true,
   skipRowsContaining: [...SSR_SKIP, "sale & stock statment", "email:", "land line"],
   lineParser: {
     enabled: true,
@@ -402,6 +413,7 @@ export const FAMILY_I_HASHMANI: TemplateConfig = {
   ...FAMILY_I_DEFAULT,
   tableExtractionDisabled: true,
   headerStructure: "line_fallback",
+  preferGeometry: true,
   lineParser: {
     enabled: true,
     mode: "rate_and_columns",
@@ -416,6 +428,7 @@ export const FAMILY_G_ZAVION: TemplateConfig = {
   ...FAMILY_G_DEFAULT,
   tableExtractionDisabled: true,
   headerStructure: "line_fallback",
+  preferGeometry: true,
   lineParser: {
     enabled: true,
     mode: "rate_and_columns",
@@ -432,6 +445,7 @@ export const FAMILY_D_AL_MAKKAH: TemplateConfig = {
   ...FAMILY_D_DEFAULT,
   tableExtractionDisabled: true,
   headerStructure: "line_fallback",
+  preferGeometry: true,
   skipRowsContaining: [...SSR_SKIP, "medicronis", "product name"],
   lineParser: {
     enabled: true,

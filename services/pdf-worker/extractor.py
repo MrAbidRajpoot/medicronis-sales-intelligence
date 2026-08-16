@@ -15,6 +15,7 @@ from presets import (
     suggest_pdf_format,
 )
 from column_resolver import label_resolution_ok
+from geometry_table import extract_geometry_table
 from line_parser import line_parser_confidence, parse_lines_from_text
 from table_extractor import extract_rows_from_table, is_likely_data_table
 
@@ -108,18 +109,43 @@ def _table_stats(
     return table_count, max_cols, usable
 
 
+def _table_extract_config(config: dict[str, Any]) -> dict[str, Any]:
+    """Config for pdfplumber table pass (allow tables even when Family J disables them)."""
+    cfg = dict(config)
+    cfg["tableExtractionDisabled"] = False
+    if cfg.get("headerStructure") == "line_fallback":
+        cfg["headerStructure"] = "single_row"
+    return cfg
+
+
+def _geometry_extract_config(config: dict[str, Any]) -> dict[str, Any]:
+    """Config for geometry grids — treat like a single-row header table when Family J."""
+    cfg = _table_extract_config(config)
+    cfg["_source"] = "geometry"
+    return cfg
+
+
+def _fields_have_col_map(config: dict[str, Any]) -> bool:
+    fields = config.get("fields") or {}
+    return any(isinstance(m, dict) and m.get("col") is not None for m in fields.values())
+
+
 def extract_with_config(
     pdf_bytes: bytes,
     config: dict[str, Any],
     table_settings: dict[str, Any] | None = None,
+    *,
+    allow_disabled_tables: bool = False,
 ) -> tuple[list[dict[str, Any]], bool]:
     """Extract all product rows using a TemplateConfig dict. Returns (rows, label_resolution_ok)."""
-    if config.get("tableExtractionDisabled") or config.get("headerStructure") == "line_fallback":
+    if not allow_disabled_tables and (
+        config.get("tableExtractionDisabled") or config.get("headerStructure") == "line_fallback"
+    ):
         return [], False
 
     all_rows: list[dict[str, Any]] = []
     label_ok = False
-    active_config = dict(config)
+    active_config = _table_extract_config(config) if allow_disabled_tables else dict(config)
     active_config.setdefault("_source", "config_driven")
 
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
@@ -155,24 +181,81 @@ def _extract_line_fallback(
     return rows, confidence
 
 
+def _extract_geometry(
+    pdf_bytes: bytes, config: dict[str, Any]
+) -> tuple[list[dict[str, Any]], bool]:
+    """
+    Build geometry tables across pages; use when ≥2 rows and ≥3 cols.
+    Returns (product rows, label_resolution_ok).
+    """
+    geo_config = _geometry_extract_config(config)
+    all_rows: list[dict[str, Any]] = []
+    label_ok = False
+
+    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+        for page in pdf.pages:
+            table = extract_geometry_table(page)
+            if not table or len(table) < 2:
+                continue
+            max_cols = max(len(r) for r in table)
+            if max_cols < 3:
+                continue
+            if label_resolution_ok(table, geo_config):
+                label_ok = True
+            if not is_likely_data_table(table, geo_config) and not _fields_have_col_map(geo_config):
+                continue
+            parsed = extract_rows_from_table(table, geo_config)
+            all_rows.extend(parsed)
+
+    return all_rows, label_ok
+
+
 def extract_with_config_pipeline(
     pdf_bytes: bytes, config: dict[str, Any], page_count: int
 ) -> tuple[list[dict[str, Any]], bool, str, float]:
     """
-    Tiered extraction: table → alternate pdfplumber → line parser.
-    Returns (rows, template_resolution_ok, extract_method, confidence).
+    Tiered extraction: table → alternate pdfplumber → geometry → line parser.
+    When tableExtractionDisabled / line_fallback / weak tables, geometry runs
+    before line_fallback. Returns (rows, template_resolution_ok, extract_method, confidence).
     """
     force_line = config.get("tableExtractionDisabled") or config.get("headerStructure") == "line_fallback"
+    alt_settings = _pdfplumber_table_settings(config)
+    line_cfg = config.get("lineParser") or {}
+
     if force_line:
-        rows, confidence = _extract_line_fallback(pdf_bytes, config, page_count)
-        return rows, bool(rows), "line_fallback", confidence
+        # 1) pdfplumber tables (even when Family J disables them by default)
+        rows, label_ok = extract_with_config(pdf_bytes, config, allow_disabled_tables=True)
+        table_count, max_cols, usable = _table_stats(pdf_bytes, _table_extract_config(config))
+        collapsed = max_cols <= 1 and table_count > 0
+        if rows and not collapsed and _rows_have_sales(rows):
+            confidence = 0.95 if label_ok else 0.85
+            return rows, label_ok, "table", confidence
+
+        # 2) alternate pdfplumber settings
+        if alt_settings:
+            alt_rows, alt_label_ok = extract_with_config(
+                pdf_bytes, config, table_settings=alt_settings, allow_disabled_tables=True
+            )
+            _, alt_max_cols, _ = _table_stats(pdf_bytes, _table_extract_config(config), alt_settings)
+            if alt_rows and alt_max_cols > 1 and _rows_have_sales(alt_rows):
+                confidence = 0.9 if alt_label_ok else 0.75
+                return alt_rows, alt_label_ok, "alternate_settings", confidence
+
+        # 3) geometry cell grid
+        geo_rows, geo_label_ok = _extract_geometry(pdf_bytes, config)
+        if geo_rows:
+            confidence = 0.9 if geo_label_ok else 0.8
+            return geo_rows, geo_label_ok or True, "geometry", confidence
+
+        # 4) line parser last resort
+        line_rows, confidence = _extract_line_fallback(pdf_bytes, config, page_count)
+        return line_rows, bool(line_rows), "line_fallback", confidence
 
     table_count, max_cols, usable = _table_stats(pdf_bytes, config)
     collapsed = max_cols <= 1 and table_count > 0
 
     rows, label_ok = extract_with_config(pdf_bytes, config)
     if rows and not collapsed:
-        alt_settings = _pdfplumber_table_settings(config)
         if alt_settings:
             alt_rows, alt_label_ok = extract_with_config(pdf_bytes, config, table_settings=alt_settings)
             _, alt_max_cols, _ = _table_stats(pdf_bytes, config, alt_settings)
@@ -182,11 +265,15 @@ def extract_with_config_pipeline(
             if alt_rows and not _rows_have_sales(rows) and _rows_have_sales(alt_rows) and alt_max_cols > 1:
                 confidence = 0.9 if alt_label_ok else 0.75
                 return alt_rows, alt_label_ok, "alternate_settings", confidence
-        line_cfg = config.get("lineParser") or {}
-        if not _rows_have_sales(rows) and line_cfg.get("enabled"):
-            line_rows, confidence = _extract_line_fallback(pdf_bytes, config, page_count)
-            if _rows_have_sales(line_rows):
-                return line_rows, False, "line_fallback", confidence
+        if not _rows_have_sales(rows):
+            geo_rows, geo_label_ok = _extract_geometry(pdf_bytes, config)
+            if geo_rows and _rows_have_sales(geo_rows):
+                confidence = 0.9 if geo_label_ok else 0.8
+                return geo_rows, geo_label_ok or True, "geometry", confidence
+            if line_cfg.get("enabled"):
+                line_rows, confidence = _extract_line_fallback(pdf_bytes, config, page_count)
+                if _rows_have_sales(line_rows):
+                    return line_rows, False, "line_fallback", confidence
         confidence = 0.95 if label_ok else 0.85
         return rows, label_ok, "table", confidence
 
@@ -194,7 +281,6 @@ def extract_with_config_pipeline(
         rows = []
         label_ok = False
 
-    alt_settings = _pdfplumber_table_settings(config)
     if alt_settings and (collapsed or usable == 0 or not rows):
         alt_rows, alt_label_ok = extract_with_config(pdf_bytes, config, table_settings=alt_settings)
         _, alt_max_cols, _ = _table_stats(pdf_bytes, config, alt_settings)
@@ -205,7 +291,13 @@ def extract_with_config_pipeline(
             confidence = 0.7 if alt_label_ok else 0.6
             return alt_rows, alt_label_ok, "alternate_settings", confidence
 
-    line_cfg = config.get("lineParser") or {}
+    # Geometry before line fallback when tables are weak / missing
+    if collapsed or usable == 0 or not rows or config.get("preferGeometry"):
+        geo_rows, geo_label_ok = _extract_geometry(pdf_bytes, config)
+        if geo_rows:
+            confidence = 0.9 if geo_label_ok else 0.8
+            return geo_rows, geo_label_ok or True, "geometry", confidence
+
     if collapsed or usable == 0 or not rows or line_cfg.get("enabled"):
         rows, confidence = _extract_line_fallback(pdf_bytes, config, page_count)
         if rows:
@@ -301,7 +393,7 @@ def extract_pdf(
         confidence = line_parser_confidence(rows, config)
         template_resolution_ok = bool(rows)
 
-    if rows and extract_method in ("line_fallback", "alternate_settings"):
+    if rows and extract_method in ("line_fallback", "alternate_settings", "geometry"):
         template_resolution_ok = True
         needs_template_remap = False
     else:

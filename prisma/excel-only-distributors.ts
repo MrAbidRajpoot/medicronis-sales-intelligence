@@ -1,11 +1,12 @@
 /**
- * Distributors forced to Excel-only upload (fragile / Family-J PDF layouts).
- * Codes must match prisma/july-closing-distributors.ts exactly.
+ * Historical July Closing problem-PDF codes that were once seeded as EXCEL_ONLY.
+ * Seed no longer forces these — default is BOTH (PDF + Excel; Excel optional).
+ * Operators may still set Distributor.inputMode = EXCEL_ONLY manually.
  *
- * See docs/excel-only-distributors.md for the human-readable list and PDF labels.
+ * See docs/excel-only-distributors.md
  */
-export const EXCEL_ONLY_DISTRIBUTOR_CODES: readonly string[] = [
-  // Family J / problem PDFs
+export const HISTORICAL_EXCEL_ONLY_DISTRIBUTOR_CODES: readonly string[] = [
+  // Family J / problem PDFs (formerly forced Excel-only)
   "AYAN-TAUNSA",
   "BUKHARI-MBD",
   "CH-MED-MWL", // label: CH-MEDICINE-MWL
@@ -26,6 +27,9 @@ export const EXCEL_ONLY_DISTRIBUTOR_CODES: readonly string[] = [
   "HASHMANI-KHI",
   "ZAVION-JHANG",
 ] as const;
+
+/** Active seed force-list — empty. Keep enum BOTH | EXCEL_ONLY for manual use. */
+export const EXCEL_ONLY_DISTRIBUTOR_CODES: readonly string[] = [] as const;
 
 export const EXCEL_ONLY_CODE_SET = new Set(EXCEL_ONLY_DISTRIBUTOR_CODES);
 

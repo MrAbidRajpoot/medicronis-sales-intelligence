@@ -223,7 +223,9 @@ export default async function DocumentDetailPage({ params }: { params: { id: str
                       ? "Line parser fallback"
                       : run.extractMethod === "alternate_settings"
                         ? "Alternate pdfplumber settings"
-                        : "Table extraction"}
+                        : run.extractMethod === "geometry"
+                          ? "Geometry table builder"
+                          : "Table extraction"}
                   </dd>
                 </div>
               )}

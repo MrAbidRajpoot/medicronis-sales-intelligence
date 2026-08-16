@@ -157,6 +157,9 @@ export function buildTemplateConfigFromAssignments(options: {
       : preset?.tableExtractionDisabled !== undefined
         ? { tableExtractionDisabled: preset.tableExtractionDisabled }
         : {}),
+    ...(preset?.preferGeometry !== undefined
+      ? { preferGeometry: preset.preferGeometry }
+      : {}),
     ...(lineParser ?? preset?.lineParser ? { lineParser: lineParser ?? preset?.lineParser } : {}),
   };
 }

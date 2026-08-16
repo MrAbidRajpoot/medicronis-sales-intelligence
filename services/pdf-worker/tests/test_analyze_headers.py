@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import os
+import zipfile
 from pathlib import Path
 
 import pdfplumber
@@ -15,7 +16,7 @@ from column_resolver import (
     resolve_label_columns,
 )
 from header_analyzer import analyze_headers
-from presets import FAMILY_A_DEFAULT, FAMILY_B_DEFAULT
+from presets import FAMILY_A_DEFAULT, FAMILY_B_DEFAULT, FAMILY_J_AYAN
 
 ROOT = Path(__file__).resolve().parents[2]
 PDF_SEARCH_DIRS = [
@@ -24,6 +25,7 @@ PDF_SEARCH_DIRS = [
     Path(r"D:\Downloads\July Closing"),
     Path(r"D:\Downloads"),
 ]
+ZIP_PATH = Path(r"D:\Downloads\July Closing.zip")
 
 
 def _find_pdf(name: str) -> Path | None:
@@ -33,6 +35,18 @@ def _find_pdf(name: str) -> Path | None:
         candidate = directory / name
         if candidate.is_file():
             return candidate
+    return None
+
+
+def _read_pdf(name: str) -> bytes | None:
+    path = _find_pdf(name)
+    if path is not None:
+        return path.read_bytes()
+    if ZIP_PATH.is_file():
+        with zipfile.ZipFile(ZIP_PATH) as zf:
+            for entry in zf.namelist():
+                if entry.replace("\\", "/").endswith(name):
+                    return zf.read(entry)
     return None
 
 
@@ -227,3 +241,21 @@ def test_analyze_headers_al_shifa_grid():
         c for c in result["leafColumns"] if c["group"] == "net sale" and c["leaf"] == "qty"
     ]
     assert [c["col"] for c in net_sale_qty] == [10]
+
+
+def test_analyze_headers_ayan_uses_geometry_grid():
+    data = _read_pdf("Ayan Pharma Taunsa.pdf")
+    if data is None:
+        pytest.skip("Sample PDF not found: Ayan Pharma Taunsa.pdf")
+
+    result = analyze_headers(data, FAMILY_J_AYAN)
+
+    assert result["headerStructure"] == "grouped_two_row"
+    assert result["usesLineParser"] is False
+    assert result["colCount"] == 10
+    assert len(result["headerGrid"]) == 2
+    assert "DESCRIPTION" in result["headerGrid"][0][0].upper()
+    assert any("SALES" in cell.upper() for cell in result["headerGrid"][1])
+    assert result["suggestedMappings"]["product_name"]["col"] == 0
+    assert result["suggestedMappings"]["sales_qty"]["col"] == 4
+    assert result["unresolvedFields"] == []

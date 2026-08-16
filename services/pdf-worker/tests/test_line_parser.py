@@ -230,7 +230,7 @@ class TestLineParser:
     "pdf_name,preset,min_rows,expected_method",
     [
         ("Bukhari Traders MBD.pdf", FAMILY_J_BUKHARI, 20, "line_fallback"),
-        ("Ayan Pharma Taunsa.pdf", FAMILY_J_AYAN, 20, "line_fallback"),
+        ("Ayan Pharma Taunsa.pdf", FAMILY_J_AYAN, 20, "geometry"),
         ("Ch Medicine MWL.pdf", FAMILY_J_CH_MEDICINE, 20, "line_fallback"),
     ],
 )
@@ -252,6 +252,7 @@ def test_ayan_pdf_with_closing_stock_field_mappings():
         pytest.skip("Ayan Pharma Taunsa.pdf not found")
 
     result = extract_pdf(data, template_config=FAMILY_J_AYAN)
+    assert result["extract_method"] == "geometry"
     assert len(result["rows"]) >= 41
     with_closing = [r for r in result["rows"] if r.get("closing_stock") is not None]
     assert len(with_closing) >= 10

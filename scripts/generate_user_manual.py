@@ -374,8 +374,8 @@ def write_content(m: ManualBuilder) -> None:
     )
     m.heading("5.3 Excel-Only Distributors", 2)
     m.paragraph(
-        "Some distributors are configured as Excel only (typically fragile Family J / line-parser PDFs). "
-        "For these distributors:"
+        "By default distributors are Both (PDF + Excel; Excel optional). Excel only is set "
+        "manually when an operator intentionally wants to block PDF. For Excel-only distributors:"
     )
     m.bullets(
         [
@@ -387,7 +387,7 @@ def write_content(m: ManualBuilder) -> None:
         ]
     )
     m.paragraph(
-        "See docs/excel-only-distributors.md for the seeded list of Excel-only distributor codes."
+        "See docs/excel-only-distributors.md for historical notes; seed does not force Excel-only."
     )
     m.heading("5.4 Distributor Selection", 2)
     m.paragraph(
@@ -715,7 +715,7 @@ def write_content(m: ManualBuilder) -> None:
         ],
     )
     m.paragraph(
-        "Excel only is recommended for distributors whose PDF layouts are fragile (Family J / line-parser). "
+        "Default is Both. Set Excel only only when you intentionally want to disallow PDF. "
         "After create, new distributors redirect to the PDF template wizard or Excel map wizard based on input mode."
     )
     m.heading("9.3 Adding a Distributor", 2)
@@ -1114,7 +1114,7 @@ def write_content(m: ManualBuilder) -> None:
         [
             "Contact your system administrator for login issues, service outages, or template configuration",
             "Refer to docs/pdf-families.md for detailed PDF format family documentation",
-            "Refer to docs/excel-only-distributors.md for Excel-only distributor codes",
+            "Refer to docs/excel-only-distributors.md for historical Excel-only notes (default is Both)",
             "Run the smoke test checklist (SMOKE_TEST.md) to validate system health",
         ]
     )

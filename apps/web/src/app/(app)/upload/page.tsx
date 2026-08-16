@@ -284,9 +284,11 @@ export default function UploadPage() {
             ? "line parser"
             : m === "alternate_settings"
               ? "alternate pdfplumber"
-              : m === "excel"
-                ? "excel"
-                : "table"
+              : m === "geometry"
+                ? "geometry table"
+                : m === "excel"
+                  ? "excel"
+                  : "table"
         );
         toast.success(`Extraction method: ${labels.join(", ")}`);
       }
@@ -380,8 +382,8 @@ export default function UploadPage() {
                   </p>
                   {excelOnlySelected && (
                     <p className="mt-2 text-center text-xs text-amber-700">
-                      Selected distributor is Excel-only — loose PDF uploads are blocked; PDFs inside
-                      a ZIP will fail per file.
+                      This distributor is set to Excel only — loose PDF uploads are blocked; PDFs
+                      inside a ZIP will fail per file. Switch input mode to Both to allow PDF again.
                     </p>
                   )}
                   <label className="mt-4 inline-flex min-h-[44px] cursor-pointer items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium hover:bg-muted touch-manipulation">

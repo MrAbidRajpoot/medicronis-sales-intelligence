@@ -576,7 +576,8 @@ export default function DistributorsPage() {
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              Excel only blocks PDF uploads — use for fragile Family-J layouts.
+              Default is Both (PDF + Excel; Excel optional). Set Excel only only when you
+              intentionally want to block PDF uploads.
             </p>
           </div>
 

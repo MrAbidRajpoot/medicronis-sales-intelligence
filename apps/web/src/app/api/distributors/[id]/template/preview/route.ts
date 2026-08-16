@@ -87,9 +87,9 @@ export async function POST(
 
     const distributorPreset = getDistributorLinePreset(distributor.code);
     const lineFallback =
-      isLineFallbackStructure(presetConfig?.headerStructure) ||
-      isLineFallbackStructure(overrideConfig?.headerStructure) ||
-      isLineFallbackStructure(analysis.headerStructure);
+      analysis.usesLineParser ??
+      (isLineFallbackStructure(overrideConfig?.headerStructure) ||
+        isLineFallbackStructure(analysis.headerStructure));
 
     let mergedPreset = presetConfig;
     if (lineFallback && (distributorPreset || presetConfig)) {
@@ -103,6 +103,12 @@ export async function POST(
           presetConfig?.lineParser,
           distributorPreset?.lineParser ?? overrideConfig?.lineParser
         ),
+      };
+    } else if (mergedPreset) {
+      mergedPreset = {
+        ...mergedPreset,
+        headerStructure: analysis.headerStructure,
+        tableExtractionDisabled: false,
       };
     }
 

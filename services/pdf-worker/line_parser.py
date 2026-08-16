@@ -32,7 +32,7 @@ REQUIRED_LINE_FIELDS = ("product_name", "sales_qty", "sales_amount")
 OPTIONAL_LINE_FIELDS = ("unit_price", "returns_qty", "closing_stock")
 ALL_MAPPABLE_FIELDS = REQUIRED_LINE_FIELDS + OPTIONAL_LINE_FIELDS
 
-ExtractMethod = str  # "table" | "line_fallback" | "alternate_settings"
+ExtractMethod = str  # "table" | "line_fallback" | "alternate_settings" | "geometry"
 
 
 def _is_header_line(line: str) -> bool:

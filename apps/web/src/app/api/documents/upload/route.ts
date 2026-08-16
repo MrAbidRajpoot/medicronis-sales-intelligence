@@ -26,6 +26,7 @@ import type { ExtractMethod } from "@/lib/pdf-template-types";
 function formatExtractMethod(method: ExtractMethod | undefined): string {
   if (method === "line_fallback") return "Line parser fallback";
   if (method === "alternate_settings") return "Alternate pdfplumber settings";
+  if (method === "geometry") return "Geometry table builder";
   if (method === "table") return "Table extraction";
   if (method === "excel") return "Excel import";
   return "Unknown";

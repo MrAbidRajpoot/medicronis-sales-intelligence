@@ -60,7 +60,7 @@ enum PdfHeaderStructure {
   line_fallback
 }
 
-/// BOTH = PDF + Excel allowed; EXCEL_ONLY = Excel compulsory (PDF blocked).
+/// BOTH = PDF + Excel allowed (Excel optional); EXCEL_ONLY = Excel compulsory (PDF blocked).
 enum DistributorInputMode {
   BOTH
   EXCEL_ONLY
@@ -203,7 +203,7 @@ model Distributor {
   regionId    String?
   zoneId      String?
   pdfFormatId String?
-  /// BOTH = PDF+Excel; EXCEL_ONLY = Excel compulsory (fragile PDF layouts).
+  /// BOTH = PDF+Excel (Excel optional); EXCEL_ONLY = Excel compulsory (manual).
   inputMode   DistributorInputMode @default(BOTH)
   isActive    Boolean              @default(true)
   createdAt   DateTime             @default(now())

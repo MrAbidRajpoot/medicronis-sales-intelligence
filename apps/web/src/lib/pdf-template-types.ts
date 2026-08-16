@@ -116,7 +116,7 @@ export interface PdfPlumberSettings {
   join_tolerance?: number;
 }
 
-export type ExtractMethod = "table" | "line_fallback" | "alternate_settings" | "excel";
+export type ExtractMethod = "table" | "line_fallback" | "alternate_settings" | "geometry" | "excel";
 
 /**
  * Per-distributor (or format preset) extraction config stored in
@@ -128,6 +128,11 @@ export interface TemplateConfig {
   skipRowsContaining?: string[];
   /** When true, skip pdfplumber table extraction (Family J). */
   tableExtractionDisabled?: boolean;
+  /**
+   * Prefer geometry (x/y char) table builder before line_fallback when
+   * pdfplumber tables are weak or disabled (Family J / line_fallback formats).
+   */
+  preferGeometry?: boolean;
   fields: Partial<Record<CanonicalField, FieldMapping>>;
   detection?: TemplateDetectionConfig;
   lineParser?: LineParserConfig;

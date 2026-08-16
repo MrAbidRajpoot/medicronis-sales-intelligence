@@ -211,6 +211,7 @@ FAMILY_I_DEFAULT: dict[str, Any] = {
 FAMILY_J_DEFAULT: dict[str, Any] = {
     "headerStructure": "line_fallback",
     "tableExtractionDisabled": True,
+    "preferGeometry": True,
     "skipRowsContaining": ["total", "page", "grand total"],
     "detection": {
         "titlePatterns": [
@@ -250,6 +251,15 @@ FAMILY_J_BUKHARI: dict[str, Any] = {
 
 FAMILY_J_AYAN: dict[str, Any] = {
     **FAMILY_J_DEFAULT,
+    "preferGeometry": True,
+    # Geometry columns: Description/Pack | T.P. | Opening | Purchase | SalesQty | SaleValue | Bonus | S.E.P. | Closing | ClosingValue
+    "fields": {
+        "product_name": {"col": 0, "group": "Description"},
+        "unit_price": {"col": 1, "group": "T.P."},
+        "sales_qty": {"col": 4},
+        "sales_amount": {"col": 5},
+        "closing_stock": {"col": 8},
+    },
     "lineParser": {
         "enabled": True,
         "mode": "rate_and_columns",
@@ -316,6 +326,7 @@ FAMILY_Z_EVERGREEN: dict[str, Any] = {
     **FAMILY_E_DEFAULT,
     "tableExtractionDisabled": True,
     "headerStructure": "line_fallback",
+    "preferGeometry": True,
     "skipRowsContaining": SSR_SKIP + ["sale & stock statment", "email:", "land line"],
     "lineParser": {
         "enabled": True,
@@ -375,6 +386,7 @@ FAMILY_I_HASHMANI: dict[str, Any] = {
     **FAMILY_I_DEFAULT,
     "tableExtractionDisabled": True,
     "headerStructure": "line_fallback",
+    "preferGeometry": True,
     "lineParser": {
         "enabled": True,
         "mode": "rate_and_columns",
@@ -388,6 +400,7 @@ FAMILY_G_ZAVION: dict[str, Any] = {
     **FAMILY_G_DEFAULT,
     "tableExtractionDisabled": True,
     "headerStructure": "line_fallback",
+    "preferGeometry": True,
     "lineParser": {
         "enabled": True,
         "mode": "rate_and_columns",
@@ -403,6 +416,7 @@ FAMILY_D_AL_MAKKAH: dict[str, Any] = {
     **FAMILY_D_DEFAULT,
     "tableExtractionDisabled": True,
     "headerStructure": "line_fallback",
+    "preferGeometry": True,
     "skipRowsContaining": SSR_SKIP + ["medicronis", "product name"],
     "lineParser": {
         "enabled": True,

@@ -257,9 +257,8 @@ export function TemplateWizard({
           (formatId ? formats.find((f) => f.id === formatId)?.defaultConfig : null);
 
         const lineMode =
-          isLineFallbackStructure(preview.headerStructure) ||
-          preview.usesLineParser ||
-          isLineFallbackStructure(preset?.headerStructure);
+          preview.usesLineParser ??
+          isLineFallbackStructure(preview.headerStructure);
 
         if (lineMode) {
           setHeaderStructure("line_fallback");
@@ -281,15 +280,13 @@ export function TemplateWizard({
               preview.suggestedMappings ?? preset?.fields ?? {}
             )
           );
+          setTableExtractionDisabled(false);
         }
 
         if (preset) {
           setSkipRowsBeforeHeader(preset.skipRowsBeforeHeader ?? 0);
           setSkipRowsContaining((preset.skipRowsContaining ?? []).join(", "));
           setPdfPlumberSettings(preset.pdfPlumberSettings ?? {});
-          if (!lineMode) {
-            setTableExtractionDisabled(preset.tableExtractionDisabled ?? false);
-          }
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Analysis failed");

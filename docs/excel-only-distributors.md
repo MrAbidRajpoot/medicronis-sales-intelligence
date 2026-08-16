@@ -1,12 +1,22 @@
-# Excel-only distributors
+# Excel-only distributors (historical)
 
-These distributors use **Excel compulsory** upload (`inputMode = EXCEL_ONLY`).
-PDF and ZIP-with-PDF uploads are blocked. Configure the Excel column map at
-`/distributors/[id]/excel-template` before uploading.
+**Default input mode is `BOTH`** (PDF + Excel allowed). Excel column maps remain
+optional for BOTH — configure at `/distributors/[id]/excel-template` when uploading
+`.xlsx`. PDF upload works whenever a PDF template/geometry is ready.
 
-Codes are the exact values from `prisma/july-closing-distributors.ts`.
+`inputMode = EXCEL_ONLY` still exists for **manual** use: set it on a distributor
+when you intentionally want to block PDF and require Excel. Seed does **not**
+force Excel-only for any July Closing codes.
 
-## Family J / problem PDFs
+## Historical problem-PDF list
+
+These codes were previously seeded as `EXCEL_ONLY` (fragile Family J /
+line_fallback layouts). They now seed as `BOTH` so PDF upload is allowed again
+(subject to PDF template/geometry). The list below is historical reference only.
+
+Codes match `prisma/july-closing-distributors.ts`.
+
+### Family J / problem PDFs
 
 | Seed code | Notes / alternate label |
 |-----------|-------------------------|
@@ -22,7 +32,7 @@ Codes are the exact values from `prisma/july-closing-distributors.ts`.
 | `ZAFAR-NWS` | Family J |
 | `AMT-FSD` | Family J |
 
-## Fragile line_fallback / related formats
+### Fragile line_fallback / related formats
 
 | Seed code | Notes / alternate label |
 |-----------|-------------------------|
@@ -36,6 +46,6 @@ Codes are the exact values from `prisma/july-closing-distributors.ts`.
 
 ## Source of truth
 
-- Code list: `prisma/excel-only-distributors.ts`
-- Seed sets `Distributor.inputMode = EXCEL_ONLY` for these codes
-- All other distributors remain `BOTH` (PDF + Excel allowed)
+- Historical codes: `prisma/excel-only-distributors.ts` (`HISTORICAL_EXCEL_ONLY_DISTRIBUTOR_CODES`)
+- Seed sets `Distributor.inputMode = BOTH` for all July Closing distributors
+- `EXCEL_ONLY` remains available via the Distributors UI / API for intentional use
