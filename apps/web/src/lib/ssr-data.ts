@@ -51,6 +51,12 @@ export interface SsrDataLine {
   yesterdaySalesValue: number;
   /** Current period sales value − prior comparison value. */
   difference: number;
+  /** Assigned ProductTarget.quantity for product + month + geo; 0 if none. */
+  targetUnits: number;
+  /** targetUnits × selling price (S.P). */
+  targetValue: number;
+  /** salesValue / targetValue when targetValue ≠ 0, else "-". */
+  targetAchvPercent: number | "-";
   lmtdSalesUnits: number;
   /** Current period units − same-day-prior-month units. */
   lmtdDifferenceUnits: number;
@@ -96,6 +102,9 @@ export const DATA_COLUMNS: readonly SsrDataColumn[] = [
   { label: "Yesterday", key: "yesterdayUnits", kind: "units" },
   { label: "Yesterday Sale Value", key: "yesterdaySalesValue", kind: "money" },
   { label: "Difference", key: "difference", kind: "money" },
+  { label: "Target Units", key: "targetUnits", kind: "units" },
+  { label: "Target Value", key: "targetValue", kind: "money" },
+  { label: "Target Achv. %", key: "targetAchvPercent", kind: "percent" },
   { label: "LMTD Sales Unit", key: "lmtdSalesUnits", kind: "units" },
   { label: "LMTD Difference", key: "lmtdDifferenceUnits", kind: "units" },
   { label: "LMTD Sales Value", key: "lmtdSalesValue", kind: "money" },
@@ -345,6 +354,23 @@ function computeLmtdPercent(salesValue: number, lmtdSalesValue: number): number 
   return salesValue / lmtdSalesValue - 1;
 }
 
+/** Achievement ratio (Sales Value ÷ Target Value); "-" when no target value. */
+export function computeTargetAchvPercent(salesValue: number, targetValue: number): number | "-" {
+  if (targetValue === 0) return "-";
+  return salesValue / targetValue;
+}
+
+export function lookupTargetUnits(
+  targetUnitsByKey: Map<string, number> | undefined,
+  productId: string,
+  distributor: Pick<Distributor, "territoryId" | "areaId" | "regionId" | "zoneId">
+): number {
+  if (!targetUnitsByKey) return 0;
+  const { territoryId, areaId, regionId, zoneId } = distributor;
+  if (!territoryId || !areaId || !regionId || !zoneId) return 0;
+  return targetUnitsByKey.get(`${productId}|${territoryId}|${areaId}|${regionId}|${zoneId}`) ?? 0;
+}
+
 /** Latest closing stock on asOfDate per distributor + product (when populated on facts). */
 function latestClosingStockByKey(
   facts: FactWithRelations[],
@@ -380,6 +406,8 @@ export function buildDataSheetRows(
     asOfDate?: Date;
     viewType?: SsrViewTypeLabel;
     masters: SsrGridMasters;
+    /** productId|territoryId|areaId|regionId|zoneId → target quantity for asOfDate's month. */
+    targetUnitsByKey?: Map<string, number>;
   }
 ): SsrDataLine[] {
   const asOfDate = options.asOfDate ?? range.end;
@@ -424,6 +452,10 @@ export function buildDataSheetRows(
       const lmtdDifferenceValue = salesValue - lmtdSalesValue;
       const difference = salesValue - yesterdaySalesValue;
 
+      const targetUnits = lookupTargetUnits(options.targetUnitsByKey, product.id, distributor);
+      const targetValue = targetUnits * sellingPrice;
+      const targetAchvPercent = computeTargetAchvPercent(salesValue, targetValue);
+
       const closingStock = closingStockByKey.get(key) ?? null;
       const stockValue = closingStock == null ? null : closingStock * sellingPrice;
       const inventory = salesUnits * 1.5;
@@ -450,6 +482,9 @@ export function buildDataSheetRows(
         yesterdayUnits,
         yesterdaySalesValue,
         difference,
+        targetUnits,
+        targetValue,
+        targetAchvPercent,
         lmtdSalesUnits,
         lmtdDifferenceUnits,
         lmtdSalesValue,

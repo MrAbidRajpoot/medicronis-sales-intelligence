@@ -121,7 +121,10 @@ function fact(date: Date, quantity: number, options: { unitPrice?: number; closi
   };
 }
 
-function buildRow(facts: ReturnType<typeof fact>[]) {
+function buildRow(
+  facts: ReturnType<typeof fact>[],
+  targetUnitsByKey?: Map<string, number>
+) {
   const masters = {
     distributors: [distributor],
     products: [product],
@@ -130,19 +133,32 @@ function buildRow(facts: ReturnType<typeof fact>[]) {
   return buildDataSheetRows(
     facts as unknown as Parameters<typeof buildDataSheetRows>[0],
     buildDateRange("day", asOfDate),
-    { asOfDate, viewType: "day", masters }
+    { asOfDate, viewType: "day", masters, targetUnitsByKey }
   )[0]!;
 }
 
-const row = buildRow([
-  fact(asOfDate, 20, { unitPrice: 999, closingStock: 384 }),
-  fact(new Date(Date.UTC(2026, 7, 11)), 4),
-  fact(new Date(Date.UTC(2026, 6, 12)), 9),
-  fact(new Date(Date.UTC(2026, 6, 1)), 100),
-]);
+const targetKey = `${product.id}|${distributor.territoryId}|${distributor.areaId}|${distributor.regionId}|${distributor.zoneId}`;
+const targets = new Map<string, number>([[targetKey, 218.025]]);
+
+const row = buildRow(
+  [
+    fact(asOfDate, 20, { unitPrice: 999, closingStock: 384 }),
+    fact(new Date(Date.UTC(2026, 7, 11)), 4),
+    fact(new Date(Date.UTC(2026, 6, 12)), 9),
+    fact(new Date(Date.UTC(2026, 6, 1)), 100),
+  ],
+  targets
+);
 
 assert.equal(row.sellingPrice, 161.5, "newSp takes precedence over PDF unitPrice");
 assert.equal(row.salesValue, 20 * 161.5, "sales value is units × S.P");
+assert.equal(row.targetUnits, 218.025, "target units come from ProductTarget for month/geo");
+assert.equal(row.targetValue, 218.025 * 161.5, "target value is target units × S.P");
+assert.equal(
+  row.targetAchvPercent,
+  (20 * 161.5) / (218.025 * 161.5),
+  "target achv % is sales value / target value"
+);
 assert.equal(row.lmtdSalesUnits, 9, "LMTD uses July 12 only for an August 12 report");
 assert.equal(
   sameDayPriorMonth(new Date(Date.UTC(2026, 4, 31))).toISOString(),
@@ -155,6 +171,9 @@ const noLmtdRow = buildRow([
   fact(new Date(Date.UTC(2026, 7, 11)), 4),
 ]);
 assert.equal(noLmtdRow.lmtdPercent, "-", "zero LMTD value displays as a dash");
+assert.equal(noLmtdRow.targetUnits, 0, "missing target map yields zero units");
+assert.equal(noLmtdRow.targetValue, 0);
+assert.equal(noLmtdRow.targetAchvPercent, "-", "zero target value displays as a dash");
 
 assert.equal(row.inventory, 30);
 assert.equal(row.order, 0);
@@ -183,6 +202,9 @@ assert.deepEqual(DATA_HEADERS, [
   "Yesterday",
   "Yesterday Sale Value",
   "Difference",
+  "Target Units",
+  "Target Value",
+  "Target Achv. %",
   "LMTD Sales Unit",
   "LMTD Difference",
   "LMTD Sales Value",

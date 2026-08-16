@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { fetchSsrGridMasters } from "@/lib/db-helpers";
 import { buildDataSheetRows, buildDateRange, getSsrExportFactBounds, reportCodeFor, type SsrViewTypeLabel } from "@/lib/ssr-data";
+import { fetchProductTargetUnitsByKey } from "@/lib/target-helpers";
 import { toIsoDate } from "@/lib/date-utils";
 
 export const dynamic = "force-dynamic";
@@ -19,32 +20,36 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   const range = buildDateRange(viewType, report.asOfDate);
   const factBounds = getSsrExportFactBounds(viewType, report.asOfDate);
 
-  const facts = await prisma.dailySalesFact.findMany({
-    where: {
-      saleDate: {
-        gte: factBounds.min,
-        lte: factBounds.max,
-      },
-    },
-    include: {
-      distributor: {
-        include: {
-          territory: { include: { manager: true } },
-          area: { include: { manager: true } },
-          region: { include: { manager: true } },
-          zone: { include: { manager: true } },
+  const [facts, masters, targetUnitsByKey] = await Promise.all([
+    prisma.dailySalesFact.findMany({
+      where: {
+        saleDate: {
+          gte: factBounds.min,
+          lte: factBounds.max,
         },
       },
-      product: true,
-    },
-    orderBy: [{ distributor: { name: "asc" } }, { product: { name: "asc" } }],
-  });
+      include: {
+        distributor: {
+          include: {
+            territory: { include: { manager: true } },
+            area: { include: { manager: true } },
+            region: { include: { manager: true } },
+            zone: { include: { manager: true } },
+          },
+        },
+        product: true,
+      },
+      orderBy: [{ distributor: { name: "asc" } }, { product: { name: "asc" } }],
+    }),
+    fetchSsrGridMasters(),
+    fetchProductTargetUnitsByKey(report.asOfDate),
+  ]);
 
-  const masters = await fetchSsrGridMasters();
   const lines = buildDataSheetRows(facts, range, {
     asOfDate: report.asOfDate,
     viewType,
     masters,
+    targetUnitsByKey,
   });
 
   return NextResponse.json({
@@ -75,6 +80,9 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       yesterdayUnits: l.yesterdayUnits,
       yesterdaySalesValue: l.yesterdaySalesValue,
       difference: l.difference,
+      targetUnits: l.targetUnits,
+      targetValue: l.targetValue,
+      targetAchvPercent: l.targetAchvPercent,
       lmtdSalesUnits: l.lmtdSalesUnits,
       lmtdDifferenceUnits: l.lmtdDifferenceUnits,
       lmtdSalesValue: l.lmtdSalesValue,

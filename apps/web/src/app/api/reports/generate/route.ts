@@ -10,6 +10,7 @@ import {
   reportCodeFor,
   type SsrViewTypeLabel,
 } from "@/lib/ssr-data";
+import { fetchProductTargetUnitsByKey } from "@/lib/target-helpers";
 import { SsrViewType } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -103,12 +104,14 @@ export async function POST(request: NextRequest) {
     });
 
     const masters = await fetchSsrGridMasters();
+    const targetUnitsByKey = await fetchProductTargetUnitsByKey(resolvedAsOfDate);
     const generatedAt = new Date();
     const reportCode = reportCodeFor(resolvedAsOfDate, resolvedViewLabel);
     const lines = buildDataSheetRows(facts, range, {
       asOfDate: resolvedAsOfDate,
       viewType: resolvedViewLabel,
       masters,
+      targetUnitsByKey,
     });
 
     const { filePath } = await generateSsrDataExcel(

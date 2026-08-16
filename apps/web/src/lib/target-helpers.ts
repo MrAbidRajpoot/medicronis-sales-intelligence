@@ -1,6 +1,43 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
+/** Lookup key for ProductTarget → SSR row (product + exact geo tuple). */
+export function productTargetKey(
+  productId: string,
+  territoryId: string | null | undefined,
+  areaId: string | null | undefined,
+  regionId: string | null | undefined,
+  zoneId: string | null | undefined
+): string | null {
+  if (!territoryId || !areaId || !regionId || !zoneId) return null;
+  return `${productId}|${territoryId}|${areaId}|${regionId}|${zoneId}`;
+}
+
+/** Active target quantities for the calendar month of `asOfDate` (UTC). */
+export async function fetchProductTargetUnitsByKey(asOfDate: Date): Promise<Map<string, number>> {
+  const year = asOfDate.getUTCFullYear();
+  const month = asOfDate.getUTCMonth() + 1;
+
+  const targets = await prisma.productTarget.findMany({
+    where: { year, month, isActive: true },
+    select: {
+      productId: true,
+      territoryId: true,
+      areaId: true,
+      regionId: true,
+      zoneId: true,
+      quantity: true,
+    },
+  });
+
+  const map = new Map<string, number>();
+  for (const t of targets) {
+    const key = productTargetKey(t.productId, t.territoryId, t.areaId, t.regionId, t.zoneId);
+    if (key) map.set(key, Number(t.quantity));
+  }
+  return map;
+}
+
 export const targetInclude = {
   product: { select: { id: true, sku: true, name: true } },
   territory: { select: { id: true, name: true, managerId: true } },

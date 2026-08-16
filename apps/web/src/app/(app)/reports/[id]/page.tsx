@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { prisma } from "@/lib/prisma";
 import { fetchSsrGridMasters } from "@/lib/db-helpers";
 import { buildDataSheetRows, buildDateRange, DATA_COLUMNS, formatPeriod, formatSalesTillDate, formatSsrDataCell, getSsrExportFactBounds, reportCodeFor, viewTypeLabel, type SsrDataLine, type SsrViewTypeLabel } from "@/lib/ssr-data";
+import { fetchProductTargetUnitsByKey } from "@/lib/target-helpers";
 import { cn, formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { toIsoDate } from "@/lib/date-utils";
 
@@ -27,32 +28,36 @@ export default async function ReportDetailPage({ params }: { params: { id: strin
   const range = buildDateRange(viewType, report.asOfDate);
   const factBounds = getSsrExportFactBounds(viewType, report.asOfDate);
 
-  const facts = await prisma.dailySalesFact.findMany({
-    where: {
-      saleDate: {
-        gte: factBounds.min,
-        lte: factBounds.max,
-      },
-    },
-    include: {
-      distributor: {
-        include: {
-          territory: { include: { manager: true } },
-          area: { include: { manager: true } },
-          region: { include: { manager: true } },
-          zone: { include: { manager: true } },
+  const [facts, masters, targetUnitsByKey] = await Promise.all([
+    prisma.dailySalesFact.findMany({
+      where: {
+        saleDate: {
+          gte: factBounds.min,
+          lte: factBounds.max,
         },
       },
-      product: true,
-    },
-    orderBy: [{ distributor: { name: "asc" } }, { product: { name: "asc" } }],
-  });
+      include: {
+        distributor: {
+          include: {
+            territory: { include: { manager: true } },
+            area: { include: { manager: true } },
+            region: { include: { manager: true } },
+            zone: { include: { manager: true } },
+          },
+        },
+        product: true,
+      },
+      orderBy: [{ distributor: { name: "asc" } }, { product: { name: "asc" } }],
+    }),
+    fetchSsrGridMasters(),
+    fetchProductTargetUnitsByKey(report.asOfDate),
+  ]);
 
-  const masters = await fetchSsrGridMasters();
   const dataLines = buildDataSheetRows(facts, range, {
     asOfDate: report.asOfDate,
     viewType,
     masters,
+    targetUnitsByKey,
   });
   const reportCode = reportCodeFor(report.asOfDate, viewType);
   const subtotal = dataLines.reduce((sum, l) => sum + l.salesValue, 0);

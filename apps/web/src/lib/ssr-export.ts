@@ -8,6 +8,7 @@ import {
   type SsrLineData,
   type SsrDataLine,
   type SsrDateExportMeta,
+  DATA_COLUMNS,
   DATA_HEADERS,
   formatPeriod,
   formatSalesTillDate,
@@ -153,42 +154,39 @@ export async function generateSsrExcel(
 
 const DATA_NUM_FMT = {
   sp: "#,##0.00",
-  integer: "#,##0",
+  integer: "#,##0.##",
   money: "#,##0.00",
-  percent: "0%",
+  percent: "0.00%",
 } as const;
 
 function dataRowValues(line: SsrDataLine): (string | number | null)[] {
-  return [
-    line.distributorName,
-    line.territory,
-    line.area,
-    line.region,
-    line.zone,
-    line.category,
-    line.group,
-    line.manager,
-    line.productName,
-    line.sellingPrice,
-    line.salesUnits,
-    line.closingStock,
-    line.salesValue,
-    line.stockValue ?? 0,
-    line.yesterdayUnits,
-    line.yesterdaySalesValue,
-    line.difference,
-    line.lmtdSalesUnits,
-    line.lmtdDifferenceUnits,
-    line.lmtdSalesValue,
-    line.lmtdDifferenceValue,
-    line.lmtdPercent,
-    line.inventory,
-    line.order,
-    line.orderValue,
-    line.excessStock,
-    line.excessStockValue,
-    line.inventoryValue,
-  ];
+  return DATA_COLUMNS.map((col) => {
+    const value = line[col.key];
+    if (col.key === "stockValue") return (value as number | null) ?? 0;
+    if (value === "-") return "-";
+    return value as string | number | null;
+  });
+}
+
+function applyDataCellFormat(cell: ExcelJS.Cell, colIndex: number, val: string | number | null) {
+  const column = DATA_COLUMNS[colIndex];
+  if (!column) return;
+
+  if (column.key === "sellingPrice") {
+    cell.numFmt = DATA_NUM_FMT.sp;
+    return;
+  }
+  if (column.kind === "money") {
+    cell.numFmt = DATA_NUM_FMT.money;
+    return;
+  }
+  if (column.kind === "units" || column.kind === "closingStock") {
+    cell.numFmt = DATA_NUM_FMT.integer;
+    return;
+  }
+  if (column.kind === "percent" && typeof val === "number") {
+    cell.numFmt = DATA_NUM_FMT.percent;
+  }
 }
 
 export async function generateSsrDataExcel(
@@ -203,35 +201,17 @@ export async function generateSsrDataExcel(
     views: [{ showGridLines: true }],
   });
 
-  ws.columns = [
-    { width: 28 },
-    { width: 14 },
-    { width: 12 },
-    { width: 10 },
-    { width: 14 },
-    { width: 14 },
-    { width: 16 },
-    { width: 32 },
-    { width: 10 },
-    { width: 12 },
-    { width: 14 },
-    { width: 14 },
-    { width: 12 },
-    { width: 18 },
-    { width: 12 },
-    { width: 16 },
-    { width: 16 },
-    { width: 16 },
-    { width: 16 },
-    { width: 14 },
-    { width: 14 },
-    { width: 14 },
-    { width: 14 },
-    { width: 16 },
-    { width: 16 },
-    { width: 18 },
-    { width: 16 },
-  ];
+  ws.columns = DATA_COLUMNS.map((col) => {
+    if (col.kind === "text") {
+      if (col.key === "distributorName" || col.key === "productName" || col.key === "manager") {
+        return { width: 28 };
+      }
+      return { width: 14 };
+    }
+    if (col.kind === "percent") return { width: 14 };
+    if (col.kind === "money") return { width: 16 };
+    return { width: 14 };
+  });
 
   const colCount = DATA_HEADERS.length;
 
@@ -260,12 +240,7 @@ export async function generateSsrDataExcel(
     values.forEach((val, i) => {
       const cell = ws.getCell(r, i + 1);
       cell.value = val;
-      if (i === 8) cell.numFmt = DATA_NUM_FMT.sp;
-      if ([9, 10, 13, 16, 17, 21, 22, 24].includes(i)) cell.numFmt = DATA_NUM_FMT.integer;
-      if ([11, 12, 14, 15, 18, 19, 23, 25, 26].includes(i)) {
-        cell.numFmt = DATA_NUM_FMT.money;
-      }
-      if (i === 20 && typeof val === "number") cell.numFmt = DATA_NUM_FMT.percent;
+      applyDataCellFormat(cell, i, val);
     });
   });
 

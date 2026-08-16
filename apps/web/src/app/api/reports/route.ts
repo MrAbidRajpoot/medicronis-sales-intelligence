@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { fetchSsrGridMasters } from "@/lib/db-helpers";
 import { toIsoDate } from "@/lib/date-utils";
 import { buildDataSheetRows, buildDateRange, getSsrExportFactBounds, type SsrViewTypeLabel } from "@/lib/ssr-data";
+import { fetchProductTargetUnitsByKey } from "@/lib/target-helpers";
 
 export const dynamic = "force-dynamic";
 
@@ -25,29 +26,33 @@ export async function GET() {
       const viewType = viewTypeLabelFromReport(r.viewType);
       const range = buildDateRange(viewType, r.asOfDate!);
       const factBounds = getSsrExportFactBounds(viewType, r.asOfDate!);
-      const facts = await prisma.dailySalesFact.findMany({
-        where: {
-          saleDate: {
-            gte: factBounds.min,
-            lte: factBounds.max,
-          },
-        },
-        include: {
-          distributor: {
-            include: {
-              territory: { include: { manager: true } },
-              area: { include: { manager: true } },
-              region: { include: { manager: true } },
-              zone: { include: { manager: true } },
+      const [facts, targetUnitsByKey] = await Promise.all([
+        prisma.dailySalesFact.findMany({
+          where: {
+            saleDate: {
+              gte: factBounds.min,
+              lte: factBounds.max,
             },
           },
-          product: true,
-        },
-      });
+          include: {
+            distributor: {
+              include: {
+                territory: { include: { manager: true } },
+                area: { include: { manager: true } },
+                region: { include: { manager: true } },
+                zone: { include: { manager: true } },
+              },
+            },
+            product: true,
+          },
+        }),
+        fetchProductTargetUnitsByKey(r.asOfDate!),
+      ]);
       const lines = buildDataSheetRows(facts, range, {
         asOfDate: r.asOfDate!,
         viewType,
         masters,
+        targetUnitsByKey,
       });
       const totalValue = lines.reduce((sum, line) => sum + line.salesValue, 0);
       return { id: r.id, count: lines.length, totalValue, range };
