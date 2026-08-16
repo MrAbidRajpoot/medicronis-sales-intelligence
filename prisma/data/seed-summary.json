@@ -1,0 +1,13 @@
+{
+  "products": 43,
+  "managers": 71,
+  "territories": 87,
+  "areas": 27,
+  "regions": 23,
+  "zones": 11,
+  "productTargets": 11105,
+  "skippedTargetRowsNoProduct": 85,
+  "unmatchedProductNames": [
+    "KhaajGo Bar 85G"
+  ]
+}

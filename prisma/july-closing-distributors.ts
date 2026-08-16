@@ -32,7 +32,7 @@ export type JulyClosingDistributor = {
 export const JULY_CLOSING_DISTRIBUTORS: JulyClosingDistributor[] = [
   {
     code: "AIM-HYD",
-    name: "AIM Pharma HYD",
+    name: "AIM Pharma, HYDERABAD",
     territory: "Hyderabad",
     region: "South",
     zone: "Pak-1",
