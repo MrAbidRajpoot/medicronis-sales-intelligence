@@ -27,7 +27,14 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       },
     },
     include: {
-      distributor: { include: { manager: true } },
+      distributor: {
+        include: {
+          territory: { include: { manager: true } },
+          area: { include: { manager: true } },
+          region: { include: { manager: true } },
+          zone: { include: { manager: true } },
+        },
+      },
       product: true,
     },
     orderBy: [{ distributor: { name: "asc" } }, { product: { name: "asc" } }],
@@ -54,9 +61,10 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     totalValue: lines.reduce((s, l) => s + l.salesValue, 0),
     lines: lines.map((l) => ({
       distributorName: l.distributorName,
-      city: l.city,
+      territory: l.territory,
+      area: l.area,
       region: l.region,
-      country: l.country,
+      zone: l.zone,
       category: l.category,
       group: l.group,
       manager: l.manager,

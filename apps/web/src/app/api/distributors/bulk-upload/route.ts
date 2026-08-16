@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { resolveManagerId } from "@/lib/distributor-helpers";
 import { parseDistributorImportFile } from "@/lib/distributor-import";
+import {
+  areaDelegate,
+  regionDelegate,
+  resolveGeoIdByName,
+  territoryDelegate,
+  zoneDelegate,
+} from "@/lib/geo-master";
 
 export const dynamic = "force-dynamic";
 
@@ -66,17 +72,22 @@ export async function POST(request: NextRequest) {
       }
 
       try {
-        const managerId = await resolveManagerId(null, row.managerName);
+        const [territoryId, areaId, regionId, zoneId] = await Promise.all([
+          resolveGeoIdByName(territoryDelegate, row.territoryName),
+          resolveGeoIdByName(areaDelegate, row.areaName),
+          resolveGeoIdByName(regionDelegate, row.regionName),
+          resolveGeoIdByName(zoneDelegate, row.zoneName),
+        ]);
 
         await prisma.distributor.create({
           data: {
             code: row.code,
             name: row.name,
-            region: row.region,
-            country: row.country,
-            city: row.city,
             pdfFormatId: defaultFormat.id,
-            ...(managerId !== undefined && managerId !== null && { managerId }),
+            ...(territoryId && { territoryId }),
+            ...(areaId && { areaId }),
+            ...(regionId && { regionId }),
+            ...(zoneId && { zoneId }),
             templates: {
               create: {
                 name: `${defaultFormat.name} — ${row.name}`,

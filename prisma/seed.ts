@@ -120,16 +120,48 @@ async function main() {
   });
   console.log(`  User: ${admin.username}`);
 
+  const MANAGER_NAMES = ["Vacant", ...MANAGERS];
   const managerMap = new Map<string, string>();
-  for (const name of MANAGERS) {
+  for (const name of MANAGER_NAMES) {
     const manager = await prisma.manager.upsert({
       where: { name },
-      update: {},
+      update: { isActive: true },
       create: { name },
     });
     managerMap.set(name, manager.id);
   }
-  console.log(`  Managers: ${MANAGERS.length}`);
+  console.log(`  Managers: ${MANAGER_NAMES.length}`);
+
+  const vacantId = managerMap.get("Vacant")!;
+  let geoManagerIdx = 0;
+
+  async function upsertGeo(
+    model: "territory" | "area" | "region" | "zone",
+    name: string | null | undefined,
+    cache: Map<string, string>
+  ): Promise<string | null> {
+    if (!name?.trim()) return null;
+    const trimmed = name.trim();
+    const cached = cache.get(trimmed);
+    if (cached) return cached;
+
+    const managerId =
+      managerMap.get(MANAGERS[geoManagerIdx % MANAGERS.length]) ?? vacantId;
+    geoManagerIdx++;
+
+    const row = await prisma[model].upsert({
+      where: { name: trimmed },
+      update: {},
+      create: { name: trimmed, managerId },
+    });
+    cache.set(trimmed, row.id);
+    return row.id;
+  }
+
+  const territoryCache = new Map<string, string>();
+  const areaCache = new Map<string, string>();
+  const regionCache = new Map<string, string>();
+  const zoneCache = new Map<string, string>();
 
   const distributorMap = new Map<string, string>();
   for (let i = 0; i < DISTRIBUTORS.length; i++) {
@@ -141,26 +173,31 @@ async function main() {
       ? "EXCEL_ONLY"
       : "BOTH";
 
+    const territoryId = await upsertGeo("territory", d.territory, territoryCache);
+    const areaId = await upsertGeo("area", d.area, areaCache);
+    const regionId = await upsertGeo("region", d.region, regionCache);
+    const zoneId = await upsertGeo("zone", d.zone, zoneCache);
+
     const dist = await prisma.distributor.upsert({
       where: { code: d.code },
       update: {
         name: d.name,
-        region: d.region,
-        country: d.country,
-        city: d.city,
+        territoryId,
+        areaId,
+        regionId,
+        zoneId,
         pdfFormatId,
         inputMode,
-        managerId: managerMap.get(MANAGERS[i % MANAGERS.length]),
       },
       create: {
         code: d.code,
         name: d.name,
-        region: d.region,
-        country: d.country,
-        city: d.city,
+        territoryId,
+        areaId,
+        regionId,
+        zoneId,
         pdfFormatId,
         inputMode,
-        managerId: managerMap.get(MANAGERS[i % MANAGERS.length]),
       },
     });
     distributorMap.set(d.code, dist.id);

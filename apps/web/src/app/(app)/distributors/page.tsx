@@ -15,15 +15,8 @@ import { Dialog } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/components/toast-provider";
-import {
-  DISTRIBUTOR_COUNTRIES,
-  DISTRIBUTOR_REGIONS,
-  formatCountryLabel,
-  formatRegionLabel,
-  PAKISTAN_CITIES,
-} from "@/lib/distributor-options";
 
-interface ManagerOption {
+interface GeoOption {
   id: string;
   name: string;
 }
@@ -32,10 +25,14 @@ interface Distributor {
   id: string;
   code: string;
   name: string;
-  region: string | null;
-  country: string | null;
-  city: string | null;
-  managerId: string | null;
+  territoryId: string | null;
+  territoryName: string | null;
+  areaId: string | null;
+  areaName: string | null;
+  regionId: string | null;
+  regionName: string | null;
+  zoneId: string | null;
+  zoneName: string | null;
   managerName: string | null;
   isActive: boolean;
   documentCount: number;
@@ -49,19 +46,20 @@ interface Distributor {
 const emptyForm = {
   code: "",
   name: "",
-  region: "",
-  country: "",
-  city: "",
-  managerId: "",
-  managerName: "",
-  useNewManager: false,
+  territoryId: "",
+  areaId: "",
+  regionId: "",
+  zoneId: "",
   inputMode: "BOTH" as "BOTH" | "EXCEL_ONLY",
 };
 
 export default function DistributorsPage() {
   const router = useRouter();
   const [items, setItems] = useState<Distributor[]>([]);
-  const [managers, setManagers] = useState<ManagerOption[]>([]);
+  const [territories, setTerritories] = useState<GeoOption[]>([]);
+  const [areas, setAreas] = useState<GeoOption[]>([]);
+  const [regions, setRegions] = useState<GeoOption[]>([]);
+  const [zones, setZones] = useState<GeoOption[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -78,12 +76,20 @@ export default function DistributorsPage() {
     errors: { rowNumber: number; code: string; message: string }[];
   } | null>(null);
 
-  const loadManagers = useCallback(async () => {
+  const loadGeo = useCallback(async () => {
     try {
-      const res = await fetch("/api/managers");
-      setManagers(await res.json());
+      const [tRes, aRes, rRes, zRes] = await Promise.all([
+        fetch("/api/territories"),
+        fetch("/api/areas"),
+        fetch("/api/regions"),
+        fetch("/api/zones"),
+      ]);
+      setTerritories(await tRes.json());
+      setAreas(await aRes.json());
+      setRegions(await rRes.json());
+      setZones(await zRes.json());
     } catch {
-      toast.error("Failed to load managers");
+      toast.error("Failed to load geography options");
     }
   }, []);
 
@@ -101,8 +107,8 @@ export default function DistributorsPage() {
 
   useEffect(() => {
     load();
-    loadManagers();
-  }, [load, loadManagers]);
+    loadGeo();
+  }, [load, loadGeo]);
 
   const filteredItems = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -111,12 +117,11 @@ export default function DistributorsPage() {
       const haystack = [
         item.code,
         item.name,
-        item.city,
+        item.territoryName,
+        item.areaName,
+        item.regionName,
+        item.zoneName,
         item.managerName,
-        item.region,
-        formatRegionLabel(item.region),
-        item.country,
-        formatCountryLabel(item.country),
       ]
         .filter(Boolean)
         .join(" ")
@@ -136,12 +141,10 @@ export default function DistributorsPage() {
     setForm({
       code: item.code,
       name: item.name,
-      region: item.region ?? "",
-      country: item.country ?? "",
-      city: item.city ?? "",
-      managerId: item.managerId ?? "",
-      managerName: "",
-      useNewManager: false,
+      territoryId: item.territoryId ?? "",
+      areaId: item.areaId ?? "",
+      regionId: item.regionId ?? "",
+      zoneId: item.zoneId ?? "",
       inputMode: item.inputMode ?? "BOTH",
     });
     setDialogOpen(true);
@@ -154,11 +157,10 @@ export default function DistributorsPage() {
       const payload = {
         code: form.code,
         name: form.name,
-        region: form.region || null,
-        country: form.country || null,
-        city: form.city || null,
-        managerId: form.useNewManager ? null : form.managerId || null,
-        managerName: form.useNewManager ? form.managerName : null,
+        territoryId: form.territoryId || null,
+        areaId: form.areaId || null,
+        regionId: form.regionId || null,
+        zoneId: form.zoneId || null,
         inputMode: form.inputMode,
       };
 
@@ -175,7 +177,7 @@ export default function DistributorsPage() {
         toast.success("Distributor updated");
         setDialogOpen(false);
         load();
-        loadManagers();
+        loadGeo();
       } else {
         const nextPath =
           form.inputMode === "EXCEL_ONLY"
@@ -247,7 +249,7 @@ export default function DistributorsPage() {
       if (data.created > 0) {
         toast.success(`Imported ${data.created} distributor(s)`);
         load();
-        loadManagers();
+        loadGeo();
       } else {
         toast.error("No distributors were imported");
       }
@@ -303,7 +305,7 @@ export default function DistributorsPage() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by code, name, city, manager, region, country…"
+              placeholder="Search by code, name, territory, area, region, zone, manager…"
               className="pl-9"
               aria-label="Search distributors"
             />
@@ -316,16 +318,17 @@ export default function DistributorsPage() {
               description="Try a different search term, or clear the search to see all distributors."
             />
           ) : (
-            <div className="rounded-lg border bg-white">
+            <div className="rounded-lg border bg-white overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Code</TableHead>
                     <TableHead>Name</TableHead>
+                    <TableHead>Territory</TableHead>
+                    <TableHead>Area</TableHead>
                     <TableHead>Region</TableHead>
-                    <TableHead>Country</TableHead>
-                    <TableHead>City</TableHead>
-                    <TableHead>Manager</TableHead>
+                    <TableHead>Zone</TableHead>
+                    <TableHead title="Resolved from Territory → Area → Region → Zone">Manager</TableHead>
                     <TableHead className="text-right">Documents</TableHead>
                     <TableHead className="text-right">Mappings</TableHead>
                     <TableHead>Template</TableHead>
@@ -339,9 +342,10 @@ export default function DistributorsPage() {
                     <TableRow key={item.id} className={!item.isActive ? "opacity-60" : undefined}>
                       <TableCell className="font-mono text-sm">{item.code}</TableCell>
                       <TableCell className="font-medium">{item.name}</TableCell>
-                      <TableCell className="text-muted-foreground">{formatRegionLabel(item.region)}</TableCell>
-                      <TableCell className="text-muted-foreground">{formatCountryLabel(item.country)}</TableCell>
-                      <TableCell className="text-muted-foreground">{item.city ?? "—"}</TableCell>
+                      <TableCell className="text-muted-foreground">{item.territoryName ?? "—"}</TableCell>
+                      <TableCell className="text-muted-foreground">{item.areaName ?? "—"}</TableCell>
+                      <TableCell className="text-muted-foreground">{item.regionName ?? "—"}</TableCell>
+                      <TableCell className="text-muted-foreground">{item.zoneName ?? "—"}</TableCell>
                       <TableCell className="text-muted-foreground">{item.managerName ?? "—"}</TableCell>
                       <TableCell className="text-right">{item.documentCount}</TableCell>
                       <TableCell className="text-right">{item.mappingCount}</TableCell>
@@ -418,7 +422,7 @@ export default function DistributorsPage() {
         onClose={() => setDialogOpen(false)}
         title={editing ? "Edit Distributor" : "Add Distributor"}
         description="Distributor code is used for PDF template auto-detection"
-        className={editing ? "max-w-lg" : "max-w-lg"}
+        className="max-w-lg"
       >
         <form onSubmit={handleSave} className="space-y-4">
           {!editing && (
@@ -479,36 +483,36 @@ export default function DistributorsPage() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label>Region</Label>
+              <Label>Territory</Label>
               <Select
-                value={form.region}
-                onValueChange={(value) => setForm((f) => ({ ...f, region: value }))}
+                value={form.territoryId}
+                onValueChange={(value) => setForm((f) => ({ ...f, territoryId: value }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select region" />
+                  <SelectValue placeholder="Select territory" />
                 </SelectTrigger>
                 <SelectContent>
-                  {DISTRIBUTOR_REGIONS.map((r) => (
-                    <SelectItem key={r.value} value={r.value}>
-                      {r.label}
+                  {territories.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Country</Label>
+              <Label>Area</Label>
               <Select
-                value={form.country}
-                onValueChange={(value) => setForm((f) => ({ ...f, country: value }))}
+                value={form.areaId}
+                onValueChange={(value) => setForm((f) => ({ ...f, areaId: value }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select country" />
+                  <SelectValue placeholder="Select area" />
                 </SelectTrigger>
                 <SelectContent>
-                  {DISTRIBUTOR_COUNTRIES.map((c) => (
-                    <SelectItem key={c.value} value={c.value}>
-                      {c.label}
+                  {areas.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -516,20 +520,43 @@ export default function DistributorsPage() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>City</Label>
-            <Select value={form.city} onValueChange={(value) => setForm((f) => ({ ...f, city: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select city" />
-              </SelectTrigger>
-              <SelectContent className="max-h-72">
-                {PAKISTAN_CITIES.map((city) => (
-                  <SelectItem key={city} value={city}>
-                    {city}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Region</Label>
+              <Select
+                value={form.regionId}
+                onValueChange={(value) => setForm((f) => ({ ...f, regionId: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select region" />
+                </SelectTrigger>
+                <SelectContent>
+                  {regions.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Zone</Label>
+              <Select
+                value={form.zoneId}
+                onValueChange={(value) => setForm((f) => ({ ...f, zoneId: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select zone" />
+                </SelectTrigger>
+                <SelectContent>
+                  {zones.map((z) => (
+                    <SelectItem key={z.id} value={z.id}>
+                      {z.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -551,58 +578,6 @@ export default function DistributorsPage() {
             <p className="text-xs text-muted-foreground">
               Excel only blocks PDF uploads — use for fragile Family-J layouts.
             </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Manager</Label>
-            {!form.useNewManager ? (
-              <Select
-                value={form.managerId}
-                onValueChange={(value) => {
-                  if (value === "__new__") {
-                    setForm((f) => ({ ...f, useNewManager: true, managerId: "", managerName: "" }));
-                  } else {
-                    setForm((f) => ({ ...f, managerId: value }));
-                  }
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select existing manager" />
-                </SelectTrigger>
-                <SelectContent>
-                  {managers.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>
-                      {m.name}
-                    </SelectItem>
-                  ))}
-                  <SelectItem value="__new__">+ Add new manager</SelectItem>
-                </SelectContent>
-              </Select>
-            ) : (
-              <div className="space-y-2">
-                <Input
-                  value={form.managerName}
-                  onChange={(e) => setForm((f) => ({ ...f, managerName: e.target.value }))}
-                  placeholder="Enter manager name"
-                  required
-                />
-                <Button
-                  type="button"
-                  variant="link"
-                  className="h-auto p-0 text-sm"
-                  onClick={() =>
-                    setForm((f) => ({
-                      ...f,
-                      useNewManager: false,
-                      managerName: "",
-                      managerId: editing?.managerId ?? "",
-                    }))
-                  }
-                >
-                  Select from existing managers
-                </Button>
-              </div>
-            )}
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
@@ -649,7 +624,8 @@ export default function DistributorsPage() {
           <div className="rounded-md border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
             Download the template first, fill in your distributors, then upload the .xlsx file here.
             Required columns: <span className="font-medium text-foreground">Code</span>,{" "}
-            <span className="font-medium text-foreground">Name</span>.
+            <span className="font-medium text-foreground">Name</span>. Optional: Territory, Area, Region, Zone.
+            Managers are assigned on geography pages.
           </div>
 
           <div className="space-y-2">

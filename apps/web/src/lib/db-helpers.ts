@@ -10,7 +10,12 @@ export async function fetchSsrGridMasters(): Promise<SsrGridMasters> {
   const [distributors, products] = await Promise.all([
     prisma.distributor.findMany({
       where: { isActive: true },
-      include: { manager: true },
+      include: {
+        territory: { include: { manager: true } },
+        area: { include: { manager: true } },
+        region: { include: { manager: true } },
+        zone: { include: { manager: true } },
+      },
       orderBy: { name: "asc" },
     }),
     prisma.product.findMany({

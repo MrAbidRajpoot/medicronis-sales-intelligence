@@ -6,8 +6,10 @@ import type {
   ProductGroup,
   DailySalesFact,
   Manager,
-  DistributorRegion,
-  DistributorCountry,
+  Territory,
+  Area,
+  Region,
+  Zone,
 } from "@prisma/client";
 import {
   addDays,
@@ -18,6 +20,7 @@ import {
   startOfWeek,
   toIsoDate,
 } from "@/lib/date-utils";
+import { resolveDistributorManagerName } from "@/lib/manager-helpers";
 
 /** Line layout matching Medicronis SSR workbook (Wholeseller / Direct Party sheet). */
 export interface SsrLineData {
@@ -31,9 +34,10 @@ export interface SsrLineData {
 /** Line layout for SSR DATA sheet (phase 1 + computed phase 3 columns). */
 export interface SsrDataLine {
   distributorName: string;
-  city: string;
+  territory: string;
+  area: string;
   region: string;
-  country: string;
+  zone: string;
   category: string;
   group: string;
   manager: string;
@@ -76,9 +80,10 @@ export interface SsrDataColumn {
 /** Single source of truth for DATA sheet column order and labels (export + preview). */
 export const DATA_COLUMNS: readonly SsrDataColumn[] = [
   { label: "Distributor Name", key: "distributorName", kind: "text" },
-  { label: "City", key: "city", kind: "text" },
+  { label: "Territory", key: "territory", kind: "text" },
+  { label: "Area", key: "area", kind: "text" },
   { label: "Region", key: "region", kind: "text" },
-  { label: "Country", key: "country", kind: "text" },
+  { label: "Zone", key: "zone", kind: "text" },
   { label: "Category", key: "category", kind: "text" },
   { label: "Group", key: "group", kind: "text" },
   { label: "Manager", key: "manager", kind: "text" },
@@ -137,7 +142,7 @@ export interface SsrExportMeta {
   batchCode: string;
   distributorName: string;
   distributorCode: string;
-  city: string;
+  territory: string;
   periodStart: Date;
   periodEnd: Date;
   generatedAt: Date;
@@ -162,48 +167,35 @@ export interface SsrDateExportMeta {
 /** Master data carried on facts (distributor + product relations). */
 export type SsrMasters = Record<string, never>;
 
-export type DistributorWithManager = Distributor & { manager: Manager | null };
+export type DistributorWithGeo = Distributor & {
+  territory: (Territory & { manager: Manager | null }) | null;
+  area: (Area & { manager: Manager | null }) | null;
+  region: (Region & { manager: Manager | null }) | null;
+  zone: (Zone & { manager: Manager | null }) | null;
+};
+
+/** @deprecated Use DistributorWithGeo */
+export type DistributorWithManager = DistributorWithGeo;
 
 export type ProductWithGroup = Product & { productGroup: ProductGroup | null };
 
 export interface SsrGridMasters {
-  distributors: DistributorWithManager[];
+  distributors: DistributorWithGeo[];
   products: ProductWithGroup[];
 }
 
 type BatchWithLines = SalesBatch & {
-  distributor: Distributor;
+  distributor: DistributorWithGeo;
   salesLines: (SalesLine & { product: Product })[];
 };
 
 type FactWithRelations = DailySalesFact & {
-  distributor: Distributor & { manager: Manager | null };
+  distributor: DistributorWithGeo;
   product: Product;
 };
 
-const REGION_LABELS: Record<DistributorRegion, string> = {
-  SOUTH: "South",
-  CENTER_1: "Center 1",
-  CENTER_2: "Center 2",
-  NORTH_1: "North 1",
-  NORTH_2: "North 2",
-};
-
-const COUNTRY_LABELS: Record<DistributorCountry, string> = {
-  PAK_1: "Pak 1",
-  PAK_2: "Pak 2",
-};
-
-export function formatRegion(region: DistributorRegion | null): string {
-  return region ? REGION_LABELS[region] : "";
-}
-
-export function formatCountry(country: DistributorCountry | null): string {
-  return country ? COUNTRY_LABELS[country] : "";
-}
-
 export function buildSsrLines(batch: BatchWithLines): SsrLineData[] {
-  const partyName = formatPartyName(batch.distributor.name, batch.distributor.city);
+  const partyName = formatPartyName(batch.distributor.name, batch.distributor.territory?.name ?? null);
 
   return batch.salesLines.map((sl) => {
     const quantity = Number(sl.quantity);
@@ -444,12 +436,13 @@ export function buildDataSheetRows(
 
       rows.push({
         distributorName: distributor.name,
-        city: distributor.city ?? "",
-        region: formatRegion(distributor.region),
-        country: formatCountry(distributor.country),
+        territory: distributor.territory?.name ?? "",
+        area: distributor.area?.name ?? "",
+        region: distributor.region?.name ?? "",
+        zone: distributor.zone?.name ?? "",
         category: "Distributor",
         group: product.productGroup?.name ?? "",
-        manager: distributor.manager?.name ?? "",
+        manager: resolveDistributorManagerName(distributor) ?? "",
         productName: product.name,
         sellingPrice,
         salesUnits,
@@ -496,9 +489,9 @@ export function reportCodeFor(asOfDate: Date, viewType: string): string {
   return `SSR-${viewType}-${iso}`;
 }
 
-export function formatPartyName(name: string, city: string | null): string {
-  if (city?.trim()) {
-    return `${name}, ${city.trim()}`;
+export function formatPartyName(name: string, territory: string | null): string {
+  if (territory?.trim()) {
+    return `${name}, ${territory.trim()}`;
   }
   return name;
 }

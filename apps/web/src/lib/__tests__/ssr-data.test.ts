@@ -1,6 +1,6 @@
 /**
  * Runnable SSR DATA computation checks.
- * Run: npx tsx apps/web/src/lib/__tests__/ssr-data.test.ts
+ * Run: npx tsx --tsconfig apps/web/tsconfig.json apps/web/src/lib/__tests__/ssr-data.test.ts
  */
 import assert from "node:assert/strict";
 import { sameDayPriorMonth } from "../date-utils";
@@ -13,26 +13,62 @@ import { DATA_HEADERS } from "../ssr-export";
 
 const asOfDate = new Date(Date.UTC(2026, 7, 12));
 
+const manager = {
+  id: "manager-1",
+  name: "Test Manager",
+  isActive: true,
+  createdAt: asOfDate,
+  updatedAt: asOfDate,
+};
+
 const distributor = {
   id: "dist-1",
   code: "DIST-1",
   name: "Test Distributor",
-  city: "Karachi",
-  region: "SOUTH",
-  country: "PAK_1",
-  managerId: "manager-1",
+  territoryId: "terr-1",
+  areaId: "area-1",
+  regionId: "reg-1",
+  zoneId: "zone-1",
   pdfFormatId: null,
+  inputMode: "BOTH",
   isActive: true,
   createdAt: asOfDate,
   updatedAt: asOfDate,
-  manager: {
-    id: "manager-1",
-    name: "Test Manager",
-    email: null,
-    phone: null,
+  territory: {
+    id: "terr-1",
+    name: "Karachi",
+    managerId: manager.id,
     isActive: true,
     createdAt: asOfDate,
     updatedAt: asOfDate,
+    manager,
+  },
+  area: {
+    id: "area-1",
+    name: "South Karachi",
+    managerId: manager.id,
+    isActive: true,
+    createdAt: asOfDate,
+    updatedAt: asOfDate,
+    manager,
+  },
+  region: {
+    id: "reg-1",
+    name: "South",
+    managerId: manager.id,
+    isActive: true,
+    createdAt: asOfDate,
+    updatedAt: asOfDate,
+    manager,
+  },
+  zone: {
+    id: "zone-1",
+    name: "Pak-1",
+    managerId: manager.id,
+    isActive: true,
+    createdAt: asOfDate,
+    updatedAt: asOfDate,
+    manager,
   },
 };
 
@@ -128,11 +164,13 @@ assert.equal(row.excessStockValue, 354 * 161.5);
 assert.equal(row.inventoryValue, 30 * 161.5);
 assert.equal(row.category, "Distributor");
 assert.equal(row.group, "Medicronis");
+assert.equal(row.manager, "Test Manager");
 assert.deepEqual(DATA_HEADERS, [
   "Distributor Name",
-  "City",
+  "Territory",
+  "Area",
   "Region",
-  "Country",
+  "Zone",
   "Category",
   "Group",
   "Manager",

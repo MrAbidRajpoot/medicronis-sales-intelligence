@@ -1,14 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { resolveManagerId } from "@/lib/distributor-helpers";
-import { VALID_COUNTRIES, VALID_REGIONS } from "@/lib/distributor-options";
+import {
+  areaDelegate,
+  assertActiveGeoId,
+  distributorGeoInclude,
+  mapDistributorGeo,
+  regionDelegate,
+  territoryDelegate,
+  zoneDelegate,
+  type GeoRef,
+} from "@/lib/geo-master";
+import { resolveDistributorManagerName } from "@/lib/manager-helpers";
 import {
   isDistributorExcelReady,
   isDistributorInputReady,
   isDistributorUploadReady,
 } from "@/lib/template-readiness";
-import type { DistributorCountry, DistributorInputMode, DistributorRegion } from "@prisma/client";
+import type { DistributorInputMode } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -23,13 +32,16 @@ function mapDistributorRow(d: {
   id: string;
   code: string;
   name: string;
-  region: DistributorRegion | null;
-  country: DistributorCountry | null;
-  city: string | null;
-  managerId: string | null;
+  territoryId: string | null;
+  areaId: string | null;
+  regionId: string | null;
+  zoneId: string | null;
+  territory?: GeoRef;
+  area?: GeoRef;
+  region?: GeoRef;
+  zone?: GeoRef;
   pdfFormatId: string | null;
   inputMode: DistributorInputMode;
-  manager?: { name: string } | null;
   templates: Array<{
     config: unknown;
     configuredAt: Date | null;
@@ -56,11 +68,8 @@ function mapDistributorRow(d: {
     id: d.id,
     code: d.code,
     name: d.name,
-    region: d.region,
-    country: d.country,
-    city: d.city,
-    managerId: d.managerId,
-    managerName: d.manager?.name ?? null,
+    ...mapDistributorGeo(d),
+    managerName: resolveDistributorManagerName(d),
     inputMode: d.inputMode,
     templateReady,
     excelTemplateReady,
@@ -78,7 +87,7 @@ export async function GET(request: NextRequest) {
   const includeInactive = request.nextUrl.searchParams.get("includeInactive") === "1";
 
   const include = {
-    manager: { select: { id: true, name: true } },
+    ...distributorGeoInclude,
     _count: { select: { documents: true, productMappings: true } },
     templates: {
       where: { isActive: true },
@@ -104,13 +113,13 @@ export async function GET(request: NextRequest) {
       id: true,
       code: true,
       name: true,
-      region: true,
-      country: true,
-      city: true,
-      managerId: true,
+      territoryId: true,
+      areaId: true,
+      regionId: true,
+      zoneId: true,
       pdfFormatId: true,
       inputMode: true,
-      manager: { select: { name: true } },
+      ...distributorGeoInclude,
       templates: {
         where: { isActive: true },
         orderBy: [{ version: "desc" }, { updatedAt: "desc" }],
@@ -129,21 +138,19 @@ export async function POST(request: NextRequest) {
     const {
       code,
       name,
-      region,
-      country,
-      city,
-      managerId,
-      managerName,
+      territoryId,
+      areaId,
+      regionId,
+      zoneId,
       pdfFormatId,
       inputMode,
     } = body as {
       code?: string;
       name?: string;
-      region?: DistributorRegion | null;
-      country?: DistributorCountry | null;
-      city?: string | null;
-      managerId?: string | null;
-      managerName?: string | null;
+      territoryId?: string | null;
+      areaId?: string | null;
+      regionId?: string | null;
+      zoneId?: string | null;
       pdfFormatId?: string;
       inputMode?: DistributorInputMode;
     };
@@ -166,12 +173,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid or inactive PDF format" }, { status: 400 });
     }
 
-    if (region && !VALID_REGIONS.has(region)) {
-      return NextResponse.json({ error: "Invalid region" }, { status: 400 });
-    }
-
-    if (country && !VALID_COUNTRIES.has(country)) {
-      return NextResponse.json({ error: "Invalid country" }, { status: 400 });
+    let resolvedTerritoryId: string | null = null;
+    let resolvedAreaId: string | null = null;
+    let resolvedRegionId: string | null = null;
+    let resolvedZoneId: string | null = null;
+    try {
+      resolvedTerritoryId = await assertActiveGeoId(territoryDelegate, territoryId, "territory");
+      resolvedAreaId = await assertActiveGeoId(areaDelegate, areaId, "area");
+      resolvedRegionId = await assertActiveGeoId(regionDelegate, regionId, "region");
+      resolvedZoneId = await assertActiveGeoId(zoneDelegate, zoneId, "zone");
+    } catch (err) {
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : "Invalid geo reference" },
+        { status: 400 }
+      );
     }
 
     const existing = await prisma.distributor.findUnique({ where: { code: code.trim() } });
@@ -179,15 +194,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Distributor code already exists" }, { status: 409 });
     }
 
-    const resolvedManagerId = await resolveManagerId(managerId, managerName);
-
     const createData: Prisma.DistributorCreateInput = {
       code: code.trim().toUpperCase(),
       name: name.trim(),
-      region: region ?? null,
-      country: country ?? null,
-      city: city?.trim() || null,
       inputMode: inputMode ?? "BOTH",
+      ...(resolvedTerritoryId && { territory: { connect: { id: resolvedTerritoryId } } }),
+      ...(resolvedAreaId && { area: { connect: { id: resolvedAreaId } } }),
+      ...(resolvedRegionId && { region: { connect: { id: resolvedRegionId } } }),
+      ...(resolvedZoneId && { zone: { connect: { id: resolvedZoneId } } }),
       ...(pdfFormat && {
         pdfFormat: { connect: { id: pdfFormat.id } },
         templates: {
@@ -203,13 +217,12 @@ export async function POST(request: NextRequest) {
       }),
     };
 
-    if (resolvedManagerId !== undefined && resolvedManagerId !== null) {
-      createData.manager = { connect: { id: resolvedManagerId } };
-    }
-
     const distributor = await prisma.distributor.create({
       data: createData,
-      include: { manager: { select: { id: true, name: true } }, pdfFormat: true },
+      include: {
+        pdfFormat: true,
+        ...distributorGeoInclude,
+      },
     });
 
     return NextResponse.json(distributor, { status: 201 });

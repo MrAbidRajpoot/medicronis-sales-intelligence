@@ -75,7 +75,7 @@ export async function generateSsrExcel(
 
   // Subtitle — distributor + period
   ws.mergeCells("A2:E2");
-  ws.getCell("A2").value = `${meta.distributorName}${meta.city ? ` — ${meta.city}` : ""}  |  ${formatPeriod(meta.periodStart, meta.periodEnd)}  |  Batch: ${meta.batchCode}`;
+  ws.getCell("A2").value = `${meta.distributorName}${meta.territory ? ` — ${meta.territory}` : ""}  |  ${formatPeriod(meta.periodStart, meta.periodEnd)}  |  Batch: ${meta.batchCode}`;
   ws.getCell("A2").font = { size: 10, color: { argb: "FF64748B" } };
   ws.getCell("A2").alignment = { horizontal: "center" };
 
@@ -130,12 +130,12 @@ export async function generateSsrExcel(
     { width: 14 },
     { width: 16 },
   ];
-  ["Distributor Name", "City", "Sales Units", "Sales Value"].forEach((h, i) => {
+  ["Distributor Name", "Territory", "Sales Units", "Sales Value"].forEach((h, i) => {
     applyHeaderStyle(summary.getCell(1, i + 1));
     summary.getCell(1, i + 1).value = h;
   });
   summary.getCell(2, 1).value = meta.distributorName;
-  summary.getCell(2, 2).value = meta.city;
+  summary.getCell(2, 2).value = meta.territory;
   summary.getCell(2, 3).value = lines.reduce((s, l) => s + l.quantity, 0);
   summary.getCell(2, 3).numFmt = "#,##0";
   summary.getCell(2, 4).value = totalValue;
@@ -161,9 +161,10 @@ const DATA_NUM_FMT = {
 function dataRowValues(line: SsrDataLine): (string | number | null)[] {
   return [
     line.distributorName,
-    line.city,
+    line.territory,
+    line.area,
     line.region,
-    line.country,
+    line.zone,
     line.category,
     line.group,
     line.manager,
@@ -305,7 +306,7 @@ export async function generateSsrPdf(
     doc.fontSize(14).fillColor("#1A568E").text(`Updated Sales Till ${formatSalesTillDate(meta.periodEnd)}`, { align: "center" });
     doc.moveDown(0.2);
     doc.fontSize(9).fillColor("#64748B").text(
-      `${meta.distributorName}${meta.city ? ` — ${meta.city}` : ""}  |  ${formatPeriod(meta.periodStart, meta.periodEnd)}`,
+      `${meta.distributorName}${meta.territory ? ` — ${meta.territory}` : ""}  |  ${formatPeriod(meta.periodStart, meta.periodEnd)}`,
       { align: "center" }
     );
     doc.moveDown(0.6);

@@ -89,7 +89,14 @@ export async function POST(request: NextRequest) {
         },
       },
       include: {
-        distributor: { include: { manager: true } },
+        distributor: {
+          include: {
+            territory: { include: { manager: true } },
+            area: { include: { manager: true } },
+            region: { include: { manager: true } },
+            zone: { include: { manager: true } },
+          },
+        },
         product: true,
       },
       orderBy: [{ distributor: { name: "asc" } }, { product: { name: "asc" } }],

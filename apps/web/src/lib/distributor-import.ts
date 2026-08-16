@@ -1,24 +1,22 @@
 import ExcelJS from "exceljs";
-import type { DistributorCountryValue, DistributorRegionValue } from "./distributor-options";
-import { parseCountryInput, parseRegionInput } from "./distributor-options";
 
 export const DISTRIBUTOR_IMPORT_HEADERS = [
   "Code",
   "Name",
+  "Territory",
+  "Area",
   "Region",
-  "Country",
-  "City",
-  "Manager",
+  "Zone",
 ] as const;
 
 export interface DistributorImportRow {
   rowNumber: number;
   code: string;
   name: string;
-  region: DistributorRegionValue | null;
-  country: DistributorCountryValue | null;
-  city: string | null;
-  managerName: string | null;
+  territoryName: string | null;
+  areaName: string | null;
+  regionName: string | null;
+  zoneName: string | null;
 }
 
 export interface DistributorImportError {
@@ -31,18 +29,18 @@ const SAMPLE_ROWS: Omit<DistributorImportRow, "rowNumber">[] = [
   {
     code: "DIST-001",
     name: "MedSupply Karachi",
-    region: "SOUTH",
-    country: "PAK_1",
-    city: "Karachi",
-    managerName: "Ahmed Khan",
+    territoryName: "Karachi",
+    areaName: "South Karachi",
+    regionName: "South",
+    zoneName: "Pak-1",
   },
   {
     code: "DIST-002",
     name: "PharmaLink Lahore",
-    region: "CENTER_1",
-    country: "PAK_1",
-    city: "Lahore",
-    managerName: "Sara Malik",
+    territoryName: "Lahore",
+    areaName: "Central Lahore",
+    regionName: "Center-1",
+    zoneName: "Pak-1",
   },
 ];
 
@@ -55,10 +53,10 @@ export async function generateDistributorImportTemplate(): Promise<Buffer> {
   ws.columns = [
     { header: "Code", key: "code", width: 16 },
     { header: "Name", key: "name", width: 36 },
-    { header: "Region", key: "region", width: 14 },
-    { header: "Country", key: "country", width: 12 },
-    { header: "City", key: "city", width: 18 },
-    { header: "Manager", key: "managerName", width: 24 },
+    { header: "Territory", key: "territoryName", width: 18 },
+    { header: "Area", key: "areaName", width: 18 },
+    { header: "Region", key: "regionName", width: 14 },
+    { header: "Zone", key: "zoneName", width: 12 },
   ];
 
   const headerRow = ws.getRow(1);
@@ -75,19 +73,19 @@ export async function generateDistributorImportTemplate(): Promise<Buffer> {
     ws.addRow({
       code: row.code,
       name: row.name,
-      region: row.region === "SOUTH" ? "South" : "Center-1",
-      country: "Pak-1",
-      city: row.city,
-      managerName: row.managerName,
+      territoryName: row.territoryName,
+      areaName: row.areaName,
+      regionName: row.regionName,
+      zoneName: row.zoneName,
     });
   });
 
   ws.getCell("A1").note = "Required. Must be unique.";
   ws.getCell("B1").note = "Required.";
-  ws.getCell("C1").note = "Optional. South, Center-1, Center-2, North-1, North-2";
-  ws.getCell("D1").note = "Optional. Pak-1 or Pak-2";
-  ws.getCell("E1").note = "Optional. City name.";
-  ws.getCell("F1").note = "Optional. Added to manager bank if new.";
+  ws.getCell("C1").note = "Optional. Added to territory bank if new (Vacant manager).";
+  ws.getCell("D1").note = "Optional. Added to area bank if new (Vacant manager).";
+  ws.getCell("E1").note = "Optional. Added to region bank if new (Vacant manager).";
+  ws.getCell("F1").note = "Optional. Added to zone bank if new (Vacant manager).";
 
   const instructions = wb.addWorksheet("Instructions");
   instructions.getColumn(1).width = 90;
@@ -95,11 +93,14 @@ export async function generateDistributorImportTemplate(): Promise<Buffer> {
   instructions.addRow([]);
   instructions.addRow(["1. Fill in the Distributors sheet starting from row 2."]);
   instructions.addRow(["2. Code and Name are required for each row."]);
-  instructions.addRow(["3. Region values: South, Center-1, Center-2, North-1, North-2"]);
-  instructions.addRow(["4. Country values: Pak-1, Pak-2"]);
-  instructions.addRow(["5. Manager names are added to the manager bank automatically."]);
-  instructions.addRow(["6. Delete the sample rows before uploading your data."]);
-  instructions.addRow(["7. Save as .xlsx and upload from the Distributors page."]);
+  instructions.addRow([
+    "3. Territory, Area, Region, and Zone names are added to master data automatically if new.",
+  ]);
+  instructions.addRow([
+    "4. New geography rows are assigned the Vacant manager. Assign managers on the geo pages.",
+  ]);
+  instructions.addRow(["5. Delete the sample rows before uploading your data."]);
+  instructions.addRow(["6. Save as .xlsx and upload from the Distributors page."]);
   instructions.getCell("A1").font = { bold: true, size: 14, color: { argb: "FF1A568E" } };
 
   return Buffer.from(await wb.xlsx.writeBuffer());
@@ -122,10 +123,10 @@ function findHeaderMap(headerRow: ExcelJS.Row): Map<string, number> | null {
     const label = cellText(cell.value).toLowerCase();
     if (label === "code" || label === "distributor code") map.set("code", col);
     if (label === "name" || label === "distributor name") map.set("name", col);
-    if (label === "region") map.set("region", col);
-    if (label === "country") map.set("country", col);
-    if (label === "city") map.set("city", col);
-    if (label === "manager") map.set("managerName", col);
+    if (label === "territory") map.set("territoryName", col);
+    if (label === "area") map.set("areaName", col);
+    if (label === "region") map.set("regionName", col);
+    if (label === "zone") map.set("zoneName", col);
   });
 
   if (!map.has("code") || !map.has("name")) return null;
@@ -173,10 +174,10 @@ export async function parseDistributorImportFile(data: ArrayBuffer): Promise<{
 
     const code = getCell("code").toUpperCase();
     const name = getCell("name");
-    const regionRaw = getCell("region");
-    const countryRaw = getCell("country");
-    const city = getCell("city") || null;
-    const managerName = getCell("managerName") || null;
+    const territoryName = getCell("territoryName") || null;
+    const areaName = getCell("areaName") || null;
+    const regionName = getCell("regionName") || null;
+    const zoneName = getCell("zoneName") || null;
 
     if (!code && !name) continue;
 
@@ -195,34 +196,14 @@ export async function parseDistributorImportFile(data: ArrayBuffer): Promise<{
     }
     seenCodes.add(code);
 
-    const region = regionRaw ? parseRegionInput(regionRaw) : null;
-    if (regionRaw && !region) {
-      errors.push({
-        rowNumber: i,
-        code,
-        message: "Invalid region. Use South, Center-1, Center-2, North-1, or North-2",
-      });
-      continue;
-    }
-
-    const country = countryRaw ? parseCountryInput(countryRaw) : null;
-    if (countryRaw && !country) {
-      errors.push({
-        rowNumber: i,
-        code,
-        message: "Invalid country. Use Pak-1 or Pak-2",
-      });
-      continue;
-    }
-
     rows.push({
       rowNumber: i,
       code,
       name,
-      region,
-      country,
-      city,
-      managerName,
+      territoryName,
+      areaName,
+      regionName,
+      zoneName,
     });
   }
 

@@ -53,19 +53,6 @@ enum SsrViewType {
   MONTH
 }
 
-enum DistributorRegion {
-  SOUTH
-  CENTER_1
-  CENTER_2
-  NORTH_1
-  NORTH_2
-}
-
-enum DistributorCountry {
-  PAK_1
-  PAK_2
-}
-
 enum PdfHeaderStructure {
   single_row
   grouped_two_row
@@ -120,7 +107,10 @@ model Manager {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  distributors Distributor[]
+  territories Territory[]
+  areas       Area[]
+  regions     Region[]
+  zones       Zone[]
 }
 
 model Manufacturer {
@@ -143,14 +133,70 @@ model ProductGroup {
   products Product[]
 }
 
+model Territory {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  managerId String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  manager      Manager       @relation(fields: [managerId], references: [id])
+  distributors Distributor[]
+
+  @@index([managerId])
+}
+
+model Area {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  managerId String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  manager      Manager       @relation(fields: [managerId], references: [id])
+  distributors Distributor[]
+
+  @@index([managerId])
+}
+
+model Region {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  managerId String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  manager      Manager       @relation(fields: [managerId], references: [id])
+  distributors Distributor[]
+
+  @@index([managerId])
+}
+
+model Zone {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  managerId String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  manager      Manager       @relation(fields: [managerId], references: [id])
+  distributors Distributor[]
+
+  @@index([managerId])
+}
+
 model Distributor {
   id          String               @id @default(cuid())
   code        String               @unique
   name        String
-  region      DistributorRegion?
-  country     DistributorCountry?
-  city        String?
-  managerId   String?
+  territoryId String?
+  areaId      String?
+  regionId    String?
+  zoneId      String?
   pdfFormatId String?
   /// BOTH = PDF+Excel; EXCEL_ONLY = Excel compulsory (fragile PDF layouts).
   inputMode   DistributorInputMode @default(BOTH)
@@ -158,7 +204,10 @@ model Distributor {
   createdAt   DateTime             @default(now())
   updatedAt   DateTime             @updatedAt
 
-  manager         Manager?                  @relation(fields: [managerId], references: [id])
+  territory       Territory?                @relation(fields: [territoryId], references: [id])
+  area            Area?                    @relation(fields: [areaId], references: [id])
+  region          Region?                  @relation(fields: [regionId], references: [id])
+  zone            Zone?                    @relation(fields: [zoneId], references: [id])
   pdfFormat       PdfFormat?                @relation(fields: [pdfFormatId], references: [id])
   templates       DistributorTemplate[]
   productMappings DistributorProductMapping[]
@@ -166,7 +215,10 @@ model Distributor {
   salesBatches    SalesBatch[]
   dailySalesFacts DailySalesFact[]
 
-  @@index([managerId])
+  @@index([territoryId])
+  @@index([areaId])
+  @@index([regionId])
+  @@index([zoneId])
   @@index([pdfFormatId])
   @@index([inputMode])
 }
