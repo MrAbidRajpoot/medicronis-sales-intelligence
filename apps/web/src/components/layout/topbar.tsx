@@ -1,16 +1,27 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { cn } from "@/lib/utils";
-import { navItems } from "@/lib/nav";
+import { useEffect, useState } from "react";
+import { NavMenu } from "@/components/layout/nav-menu";
 
 export function TopBar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [reviewCount, setReviewCount] = useState(0);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    fetch("/api/review")
+      .then((r) => r.json())
+      .then((d) => setReviewCount(d.count ?? d.items?.length ?? 0))
+      .catch(() => {});
+  }, [mobileOpen]);
 
   return (
     <>
@@ -42,24 +53,9 @@ export function TopBar() {
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="fixed inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
-          <nav className="fixed left-0 top-0 h-full w-64 bg-white p-4 shadow-xl">
+          <nav className="fixed left-0 top-0 h-full w-64 space-y-1 overflow-y-auto bg-white p-4 shadow-xl">
             <p className="mb-4 px-3 text-sm font-semibold">Medicronis</p>
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setMobileOpen(false)}
-                className={cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium",
-                  pathname.startsWith(item.href)
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground"
-                )}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            ))}
+            <NavMenu reviewCount={reviewCount} onNavigate={() => setMobileOpen(false)} />
           </nav>
         </div>
       )}

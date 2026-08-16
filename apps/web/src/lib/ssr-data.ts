@@ -349,7 +349,8 @@ function lookupTotals(map: Map<string, AggTotals>, key: string): AggTotals {
   return map.get(key) ?? { salesUnits: 0 };
 }
 
-function computeLmtdPercent(salesValue: number, lmtdSalesValue: number): number | "-" {
+/** (salesValue / lmtdSalesValue − 1) when lmtdSalesValue ≠ 0, else "-". Shared by SSR and monthly reports. */
+export function computeLmtdPercent(salesValue: number, lmtdSalesValue: number): number | "-" {
   if (lmtdSalesValue === 0) return "-";
   return salesValue / lmtdSalesValue - 1;
 }

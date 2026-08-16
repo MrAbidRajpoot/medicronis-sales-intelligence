@@ -77,3 +77,23 @@ export function resolveDistributorManagerName(d: {
     null
   );
 }
+
+/** Same priority chain as resolveDistributorManagerName, returning the manager id. */
+export function resolveDistributorManagerId(d: {
+  territory?: { managerId?: string | null; manager?: { id: string } | null } | null;
+  area?: { managerId?: string | null; manager?: { id: string } | null } | null;
+  region?: { managerId?: string | null; manager?: { id: string } | null } | null;
+  zone?: { managerId?: string | null; manager?: { id: string } | null } | null;
+}): string | null {
+  return (
+    d.territory?.manager?.id ??
+    d.territory?.managerId ??
+    d.area?.manager?.id ??
+    d.area?.managerId ??
+    d.region?.manager?.id ??
+    d.region?.managerId ??
+    d.zone?.manager?.id ??
+    d.zone?.managerId ??
+    null
+  );
+}

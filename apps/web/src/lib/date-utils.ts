@@ -40,6 +40,11 @@ export function startOfMonth(date: Date): Date {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
 }
 
+/** Last day of calendar month, UTC midnight. */
+export function endOfMonth(date: Date): Date {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0));
+}
+
 /** Add calendar days in UTC (preserves UTC midnight dates). */
 export function addDays(date: Date, days: number): Date {
   return new Date(
