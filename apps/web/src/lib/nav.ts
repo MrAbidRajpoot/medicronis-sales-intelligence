@@ -12,6 +12,7 @@ import {
   Globe2,
   CircleDot,
   UserRound,
+  Target,
   type LucideIcon,
 } from "lucide-react";
 
@@ -28,6 +29,7 @@ export const navItems: NavItem[] = [
   { href: "/documents", label: "Documents", icon: FileText },
   { href: "/review", label: "Review Queue", icon: ClipboardCheck, badgeKey: "review" },
   { href: "/reports", label: "SSR Reports", icon: BarChart3 },
+  { href: "/targets", label: "Targets", icon: Target },
   { href: "/distributors", label: "Distributors", icon: Building2 },
   { href: "/managers", label: "Managers", icon: UserRound },
   { href: "/territories", label: "Territories", icon: MapPinned },

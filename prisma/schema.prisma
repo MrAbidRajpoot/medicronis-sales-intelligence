@@ -111,6 +111,7 @@ model Manager {
   areas       Area[]
   regions     Region[]
   zones       Zone[]
+  productTargets ProductTarget[]
 }
 
 model Manufacturer {
@@ -141,8 +142,9 @@ model Territory {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  manager      Manager       @relation(fields: [managerId], references: [id])
-  distributors Distributor[]
+  manager        Manager         @relation(fields: [managerId], references: [id])
+  distributors   Distributor[]
+  productTargets ProductTarget[]
 
   @@index([managerId])
 }
@@ -155,8 +157,9 @@ model Area {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  manager      Manager       @relation(fields: [managerId], references: [id])
-  distributors Distributor[]
+  manager        Manager         @relation(fields: [managerId], references: [id])
+  distributors   Distributor[]
+  productTargets ProductTarget[]
 
   @@index([managerId])
 }
@@ -169,8 +172,9 @@ model Region {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  manager      Manager       @relation(fields: [managerId], references: [id])
-  distributors Distributor[]
+  manager        Manager         @relation(fields: [managerId], references: [id])
+  distributors   Distributor[]
+  productTargets ProductTarget[]
 
   @@index([managerId])
 }
@@ -183,8 +187,9 @@ model Zone {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  manager      Manager       @relation(fields: [managerId], references: [id])
-  distributors Distributor[]
+  manager        Manager         @relation(fields: [managerId], references: [id])
+  distributors   Distributor[]
+  productTargets ProductTarget[]
 
   @@index([managerId])
 }
@@ -278,9 +283,44 @@ model Product {
   extractedRows       ExtractedRow[]
   salesLines          SalesLine[]
   dailySalesFacts     DailySalesFact[]
+  productTargets      ProductTarget[]
 
   @@index([manufacturerId])
   @@index([productGroupId])
+}
+
+/// Monthly sales target for a product under a specific geo + manager scope.
+/// Manager must own the selected territory, area, region, and zone.
+model ProductTarget {
+  id          String   @id @default(cuid())
+  productId   String
+  year        Int
+  month       Int
+  territoryId String
+  areaId      String
+  regionId    String
+  zoneId      String
+  managerId   String
+  quantity    Decimal  @db.Decimal(14, 2)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  product   Product   @relation(fields: [productId], references: [id])
+  territory Territory @relation(fields: [territoryId], references: [id])
+  area      Area      @relation(fields: [areaId], references: [id])
+  region    Region    @relation(fields: [regionId], references: [id])
+  zone      Zone      @relation(fields: [zoneId], references: [id])
+  manager   Manager   @relation(fields: [managerId], references: [id])
+
+  @@unique([productId, year, month, territoryId, areaId, regionId, zoneId])
+  @@index([year, month])
+  @@index([productId, year, month])
+  @@index([managerId])
+  @@index([territoryId])
+  @@index([areaId])
+  @@index([regionId])
+  @@index([zoneId])
 }
 
 model ProductAlias {
