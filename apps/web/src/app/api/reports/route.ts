@@ -2,20 +2,19 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { fetchSsrGridMasters } from "@/lib/db-helpers";
 import { toIsoDate } from "@/lib/date-utils";
-import { buildDataSheetRows, buildDateRange, getSsrExportFactBounds, type SsrViewTypeLabel } from "@/lib/ssr-data";
+import { buildDataSheetRows, buildDateRange, getSsrExportFactBounds, reportCodeFor } from "@/lib/ssr-data";
 import { fetchProductTargetUnitsByKey } from "@/lib/target-helpers";
 
 export const dynamic = "force-dynamic";
 
-function viewTypeLabelFromReport(viewType: string | null | undefined): SsrViewTypeLabel {
-  const value = viewType?.toLowerCase();
-  if (value === "week" || value === "month") return value;
-  return "day";
-}
-
 export async function GET() {
+  // Prefer DAY rows (current semantics). Legacy WEEK/MONTH rows may still exist in DB.
   const reports = await prisma.ssrReport.findMany({
-    where: { salesBatchId: { equals: null }, asOfDate: { not: null } },
+    where: {
+      salesBatchId: { equals: null },
+      asOfDate: { not: null },
+      OR: [{ viewType: "DAY" }, { viewType: null }],
+    },
     orderBy: { createdAt: "desc" },
   });
 
@@ -23,9 +22,8 @@ export async function GET() {
 
   const factCounts = await Promise.all(
     reports.map(async (r) => {
-      const viewType = viewTypeLabelFromReport(r.viewType);
-      const range = buildDateRange(viewType, r.asOfDate!);
-      const factBounds = getSsrExportFactBounds(viewType, r.asOfDate!);
+      const range = buildDateRange(r.asOfDate!);
+      const factBounds = getSsrExportFactBounds(r.asOfDate!);
       const [facts, targetUnitsByKey] = await Promise.all([
         prisma.dailySalesFact.findMany({
           where: {
@@ -50,7 +48,6 @@ export async function GET() {
       ]);
       const lines = buildDataSheetRows(facts, range, {
         asOfDate: r.asOfDate!,
-        viewType,
         masters,
         targetUnitsByKey,
       });
@@ -63,13 +60,11 @@ export async function GET() {
   return NextResponse.json(
     reports.map((r) => {
       const stats = factMap.get(r.id);
-      const viewType = viewTypeLabelFromReport(r.viewType);
-      const range = r.asOfDate ? buildDateRange(viewType, r.asOfDate) : null;
+      const range = r.asOfDate ? buildDateRange(r.asOfDate) : null;
       return {
         id: r.id,
-        reportCode: r.asOfDate ? `SSR-${viewType}-${toIsoDate(r.asOfDate)}` : "SSR",
+        reportCode: r.asOfDate ? reportCodeFor(r.asOfDate) : "SSR",
         distributorName: "All distributors",
-        viewType,
         asOfDate: r.asOfDate ? toIsoDate(r.asOfDate) : null,
         periodStart: range ? toIsoDate(range.start) : r.asOfDate,
         periodEnd: range ? toIsoDate(range.end) : r.asOfDate,

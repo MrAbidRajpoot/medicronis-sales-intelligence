@@ -1,15 +1,21 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getDashboardSalesRanges, getTotalSales, ssrActivityDetail } from "@/lib/dashboard-sales";
+import {
+  formatDashboardAsOfDate,
+  getLatestSalesAsOfDate,
+  getTotalSales,
+  salesRangeForAsOfDate,
+  ssrActivityDetail,
+} from "@/lib/dashboard-sales";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const salesRanges = getDashboardSalesRanges();
+  const asOfDate = await getLatestSalesAsOfDate(prisma);
+  const salesRange = asOfDate ? salesRangeForAsOfDate(asOfDate) : undefined;
+
   const [
-    dailySales,
-    weeklySales,
-    monthlySales,
+    totalSales,
     pendingDocs,
     activeDistributors,
     extractionStats,
@@ -17,9 +23,7 @@ export async function GET() {
     recentDocs,
     recentReports,
   ] = await Promise.all([
-    getTotalSales(prisma, salesRanges.day),
-    getTotalSales(prisma, salesRanges.week),
-    getTotalSales(prisma, salesRanges.month),
+    salesRange ? getTotalSales(prisma, salesRange) : Promise.resolve(0),
     prisma.document.count({
       where: { status: { in: ["REVIEW_REQUIRED", "PROCESSING", "UPLOADED", "EXTRACTED"] } },
     }),
@@ -41,7 +45,7 @@ export async function GET() {
       take: 3,
       orderBy: { createdAt: "desc" },
       where: { salesBatchId: { equals: null } },
-      select: { id: true, asOfDate: true, viewType: true, generatedAt: true, createdAt: true },
+      select: { id: true, asOfDate: true, generatedAt: true, createdAt: true },
     }),
   ]);
 
@@ -68,7 +72,9 @@ export async function GET() {
 
   return NextResponse.json({
     kpis: {
-      totalSales: { day: dailySales, week: weeklySales, month: monthlySales },
+      totalSales,
+      asOfDate: asOfDate ? asOfDate.toISOString().slice(0, 10) : null,
+      asOfLabel: asOfDate ? formatDashboardAsOfDate(asOfDate) : null,
       pendingDocs,
       matchRate,
       activeDistributors,

@@ -1,6 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { DocumentStatus } from "@prisma/client";
-import type { SsrGridMasters } from "@/lib/ssr-data";
+import {
+  buildDataSheetRows,
+  buildDateRange,
+  getSsrExportFactBounds,
+  reportCodeFor,
+  type SsrDataLine,
+  type SsrDateRange,
+  type SsrGridMasters,
+} from "@/lib/ssr-data";
+import { fetchProductTargetUnitsByKey } from "@/lib/target-helpers";
 import { validateExcelTemplateConfig } from "@/lib/excel-template-validation";
 import { normalizeDistributorKey } from "@/lib/distributor-normalize";
 
@@ -25,6 +34,53 @@ export async function fetchSsrGridMasters(): Promise<SsrGridMasters> {
     }),
   ]);
   return { distributors, products };
+}
+
+const ssrFactInclude = {
+  distributor: {
+    include: {
+      territory: { include: { manager: true } },
+      area: { include: { manager: true } },
+      region: { include: { manager: true } },
+      zone: { include: { manager: true } },
+    },
+  },
+  product: true,
+} as const;
+
+/** Facts + masters + targets for one asOfDate — same rows as the SSR DATA sheet / Excel. */
+export async function fetchSsrDataSheet(asOfDate: Date): Promise<{
+  lines: SsrDataLine[];
+  range: SsrDateRange;
+  reportCode: string;
+}> {
+  const range = buildDateRange(asOfDate);
+  const factBounds = getSsrExportFactBounds(asOfDate);
+
+  const [facts, masters, targetUnitsByKey] = await Promise.all([
+    prisma.dailySalesFact.findMany({
+      where: {
+        saleDate: {
+          gte: factBounds.min,
+          lte: factBounds.max,
+        },
+      },
+      include: ssrFactInclude,
+      orderBy: [{ distributor: { name: "asc" } }, { product: { name: "asc" } }],
+    }),
+    fetchSsrGridMasters(),
+    fetchProductTargetUnitsByKey(asOfDate),
+  ]);
+
+  return {
+    lines: buildDataSheetRows(facts, range, {
+      asOfDate,
+      masters,
+      targetUnitsByKey,
+    }),
+    range,
+    reportCode: reportCodeFor(asOfDate),
+  };
 }
 
 export async function getDemoUserId(): Promise<string> {

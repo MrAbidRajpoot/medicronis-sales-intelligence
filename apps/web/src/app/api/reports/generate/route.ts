@@ -1,43 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getDemoUserId, fetchSsrGridMasters } from "@/lib/db-helpers";
+import { getDemoUserId, fetchSsrDataSheet } from "@/lib/db-helpers";
 import { isFutureDate, parseIsoDate } from "@/lib/date-utils";
-import { generateSsrDataExcel } from "@/lib/ssr-export";
-import {
-  buildDataSheetRows,
-  buildDateRange,
-  getSsrExportFactBounds,
-  reportCodeFor,
-  type SsrViewTypeLabel,
-} from "@/lib/ssr-data";
-import { fetchProductTargetUnitsByKey } from "@/lib/target-helpers";
-import { SsrViewType } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
-const VIEW_TYPE_MAP: Record<SsrViewTypeLabel, SsrViewType> = {
-  day: "DAY",
-  week: "WEEK",
-  month: "MONTH",
-};
-
-function parseViewType(value: string): SsrViewTypeLabel | null {
-  if (value === "day" || value === "week" || value === "month") return value;
-  return null;
-}
-
+/**
+ * SSR semantics: one report per asOfDate = "Updated Sales Till {asOfDate}".
+ * Prisma still has @@unique([asOfDate, viewType]); we always store viewType = DAY
+ * and upsert only on asOfDate+DAY (minimal migration risk). Week/month are unused.
+ *
+ * Excel is not written to disk. Download rebuilds the workbook from DailySalesFact.
+ */
 export async function POST(request: NextRequest) {
   try {
     const userId = await getDemoUserId();
     const body = await request.json();
-    const { viewType, asOfDate, documentId } = body as {
-      viewType?: string;
+    const { asOfDate, documentId } = body as {
       asOfDate?: string;
       documentId?: string;
     };
 
-    let resolvedViewType: SsrViewType = "DAY";
-    let resolvedViewLabel: SsrViewTypeLabel = "day";
     let resolvedAsOfDate: Date | null = null;
 
     if (documentId) {
@@ -49,20 +32,10 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Document must be approved first" }, { status: 400 });
       }
       resolvedAsOfDate = doc.reportDate;
-      resolvedViewType = "DAY";
-      resolvedViewLabel = "day";
     } else {
-      if (!viewType || !asOfDate) {
+      if (!asOfDate) {
         return NextResponse.json(
-          { error: "viewType and asOfDate required (or pass documentId)" },
-          { status: 400 }
-        );
-      }
-
-      const parsedViewType = parseViewType(viewType);
-      if (!parsedViewType) {
-        return NextResponse.json(
-          { error: "viewType must be day, week, or month" },
+          { error: "asOfDate required (or pass documentId)" },
           { status: 400 }
         );
       }
@@ -74,77 +47,29 @@ export async function POST(request: NextRequest) {
       if (isFutureDate(resolvedAsOfDate)) {
         return NextResponse.json({ error: "asOfDate cannot be in the future" }, { status: 400 });
       }
-
-      resolvedViewType = VIEW_TYPE_MAP[parsedViewType];
-      resolvedViewLabel = parsedViewType;
     }
 
-    const range = buildDateRange(resolvedViewLabel, resolvedAsOfDate);
-    const factBounds = getSsrExportFactBounds(resolvedViewLabel, resolvedAsOfDate);
-
-    const facts = await prisma.dailySalesFact.findMany({
-      where: {
-        saleDate: {
-          gte: factBounds.min,
-          lte: factBounds.max,
-        },
-      },
-      include: {
-        distributor: {
-          include: {
-            territory: { include: { manager: true } },
-            area: { include: { manager: true } },
-            region: { include: { manager: true } },
-            zone: { include: { manager: true } },
-          },
-        },
-        product: true,
-      },
-      orderBy: [{ distributor: { name: "asc" } }, { product: { name: "asc" } }],
-    });
-
-    const masters = await fetchSsrGridMasters();
-    const targetUnitsByKey = await fetchProductTargetUnitsByKey(resolvedAsOfDate);
+    const { lines, reportCode } = await fetchSsrDataSheet(resolvedAsOfDate);
     const generatedAt = new Date();
-    const reportCode = reportCodeFor(resolvedAsOfDate, resolvedViewLabel);
-    const lines = buildDataSheetRows(facts, range, {
-      asOfDate: resolvedAsOfDate,
-      viewType: resolvedViewLabel,
-      masters,
-      targetUnitsByKey,
-    });
-
-    const { filePath } = await generateSsrDataExcel(
-      {
-        reportCode,
-        asOfDate: resolvedAsOfDate,
-        viewType: resolvedViewLabel,
-        periodStart: range.start,
-        periodEnd: range.end,
-        generatedAt,
-      },
-      lines
-    );
-
     const totalValue = lines.reduce((s, l) => s + l.salesValue, 0);
 
     const report = await prisma.ssrReport.upsert({
       where: {
         asOfDate_viewType: {
           asOfDate: resolvedAsOfDate,
-          viewType: resolvedViewType,
+          viewType: "DAY",
         },
       },
       create: {
-        viewType: resolvedViewType,
+        viewType: "DAY",
         asOfDate: resolvedAsOfDate,
-        filePath,
+        filePath: null,
         status: "READY",
         generatedById: userId,
         generatedAt,
       },
       update: {
-        filePath,
+        filePath: null,
         status: "READY",
         generatedById: userId,
         generatedAt,
@@ -155,7 +80,6 @@ export async function POST(request: NextRequest) {
       id: report.id,
       status: report.status,
       reportCode,
-      viewType: resolvedViewLabel,
       asOfDate: asOfDate ?? resolvedAsOfDate,
       lineCount: lines.length,
       totalValue,

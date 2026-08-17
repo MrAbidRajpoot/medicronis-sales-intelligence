@@ -5,21 +5,25 @@
 import assert from "node:assert/strict";
 import type { PrismaClient } from "@prisma/client";
 import {
-  getDashboardSalesRanges,
+  formatDashboardAsOfDate,
+  getLatestSalesAsOfDate,
   getSalesByDistributor,
   getTotalSales,
+  salesRangeForAsOfDate,
+  ssrActivityDetail,
 } from "../dashboard-sales";
 import { formatCurrency } from "../utils";
 
 const asOf = new Date(Date.UTC(2026, 7, 14));
-const ranges = getDashboardSalesRanges(asOf);
+const range = salesRangeForAsOfDate(asOf);
 
-assert.equal(ranges.day.start.toISOString(), "2026-08-14T00:00:00.000Z");
-assert.equal(ranges.week.start.toISOString(), "2026-08-10T00:00:00.000Z");
-assert.equal(ranges.month.start.toISOString(), "2026-08-01T00:00:00.000Z");
-assert.equal(ranges.day.end, asOf);
-assert.equal(ranges.week.end, asOf);
-assert.equal(ranges.month.end, asOf);
+assert.equal(range.start.toISOString(), "2026-08-14T00:00:00.000Z");
+assert.equal(range.end.toISOString(), "2026-08-14T00:00:00.000Z");
+assert.equal(formatDashboardAsOfDate(asOf), "14 Aug 2026");
+assert.equal(
+  ssrActivityDetail({ asOfDate: asOf }),
+  "SSR · Sales Till 14 Aug 2026"
+);
 
 const facts = [
   {
@@ -62,32 +66,55 @@ const facts = [
 ];
 
 const prisma = {
+  ssrReport: {
+    findFirst: async () => ({
+      asOfDate: new Date(Date.UTC(2026, 7, 14)),
+    }),
+  },
   dailySalesFact: {
+    findFirst: async () => ({
+      saleDate: new Date(Date.UTC(2026, 7, 12)),
+    }),
     findMany: async ({ where }: { where?: { saleDate?: { gte: Date; lte: Date } } }) => {
-      const range = where?.saleDate;
-      if (!range) return facts;
+      const dateRange = where?.saleDate;
+      if (!dateRange) return facts;
       return facts.filter(
-        (fact) => fact.saleDate.getTime() >= range.gte.getTime()
-          && fact.saleDate.getTime() <= range.lte.getTime()
+        (fact) => fact.saleDate.getTime() >= dateRange.gte.getTime()
+          && fact.saleDate.getTime() <= dateRange.lte.getTime()
       );
     },
   },
 } as unknown as PrismaClient;
 
 async function run() {
-  const dailyByDistributor = await getSalesByDistributor(prisma, ranges.day);
-  assert.deepEqual(dailyByDistributor, [
+  const latestAsOf = await getLatestSalesAsOfDate(prisma);
+  assert.equal(latestAsOf?.toISOString(), "2026-08-14T00:00:00.000Z");
+
+  const byDistributor = await getSalesByDistributor(prisma, range);
+  assert.deepEqual(byDistributor, [
     { name: "Alpha Distributor", value: 3_230 },
   ]);
   assert.equal(
-    dailyByDistributor[0]?.value,
+    byDistributor[0]?.value,
     20 * 161.5,
     "dashboard sales use quantity × newSp, not the PDF line total or stored salesValue"
   );
 
-  assert.equal(await getTotalSales(prisma, ranges.day), 3_230);
-  assert.equal(await getTotalSales(prisma, ranges.week), 3_250);
-  assert.equal(await getTotalSales(prisma, ranges.month), 3_350);
+  assert.equal(await getTotalSales(prisma, range), 3_230);
+
+  const prismaNoSsr = {
+    ssrReport: {
+      findFirst: async () => null,
+    },
+    dailySalesFact: {
+      findFirst: async () => ({
+        saleDate: new Date(Date.UTC(2026, 7, 12)),
+      }),
+    },
+  } as unknown as PrismaClient;
+
+  const fallbackAsOf = await getLatestSalesAsOfDate(prismaNoSsr);
+  assert.equal(fallbackAsOf?.toISOString(), "2026-08-12T00:00:00.000Z");
 
   assert.match(
     formatCurrency(435_123.45),

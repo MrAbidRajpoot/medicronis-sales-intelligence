@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Download, Plus, Eye, BarChart3, Loader2 } from "lucide-react";
+import { Plus, Eye, BarChart3, Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { DataTable } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
@@ -10,25 +10,18 @@ import { EmptyState } from "@/components/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/toast-provider";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { todayIsoDate } from "@/lib/date-utils";
 import { SsrReportStatus } from "@prisma/client";
 import { useRouter } from "next/navigation";
+import { SsrExcelDownloadButton } from "@/components/reports/ssr-excel-download-button";
 
 interface ReportRow {
   id: string;
   reportCode: string;
   distributorName: string;
-  viewType: string;
   asOfDate: string | null;
   periodStart: string;
   periodEnd: string;
@@ -47,7 +40,6 @@ export default function ReportsPage() {
   const router = useRouter();
   const [reports, setReports] = useState<ReportRow[]>([]);
   const [asOfDate, setAsOfDate] = useState(todayIsoDate());
-  const [viewType, setViewType] = useState("day");
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [coverage, setCoverage] = useState<CoverageStats | null>(null);
@@ -68,7 +60,7 @@ export default function ReportsPage() {
     }
 
     setCoverageLoading(true);
-    fetch(`/api/reports/coverage?viewType=${viewType}&asOfDate=${asOfDate}`)
+    fetch(`/api/reports/coverage?asOfDate=${asOfDate}`)
       .then((r) => r.json())
       .then((data) => {
         if (data.error) throw new Error(data.error);
@@ -76,7 +68,7 @@ export default function ReportsPage() {
       })
       .catch(() => setCoverage(null))
       .finally(() => setCoverageLoading(false));
-  }, [viewType, asOfDate]);
+  }, [asOfDate]);
 
   async function handleGenerate() {
     if (asOfDate > todayIsoDate()) {
@@ -88,7 +80,7 @@ export default function ReportsPage() {
       const res = await fetch("/api/reports/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ viewType, asOfDate }),
+        body: JSON.stringify({ asOfDate }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Generation failed");
@@ -126,19 +118,6 @@ export default function ReportsPage() {
                 className="w-[160px]"
               />
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs">View</Label>
-              <Select value={viewType} onValueChange={setViewType}>
-                <SelectTrigger className="w-[120px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="day">Day</SelectItem>
-                  <SelectItem value="week">Week</SelectItem>
-                  <SelectItem value="month">Month</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
             {coverageLoading ? (
               <Badge variant="outline" className="mb-0.5 h-9 px-3">
                 <Loader2 className="mr-1 h-3 w-3 animate-spin" />
@@ -161,7 +140,7 @@ export default function ReportsPage() {
         <EmptyState
           icon={BarChart3}
           title="No SSR reports yet"
-          description="Approve documents to create daily sales facts, then generate day, week, or month SSR reports here."
+          description="Approve documents to create daily sales facts, then generate an SSR for a report date here."
           action={{ label: "View Documents", href: "/documents" }}
         />
       ) : (
@@ -179,16 +158,11 @@ export default function ReportsPage() {
             },
             { key: "distributor", header: "Scope", cell: (row) => row.distributorName },
             {
-              key: "view",
-              header: "View / Date",
+              key: "salesTill",
+              header: "Sales Till",
               cell: (row) => (
-                <span className="whitespace-nowrap text-sm capitalize">
-                  {row.viewType}
-                  {row.viewType !== "day" && row.periodStart && row.periodEnd
-                    ? ` · ${formatDate(row.periodStart)} – ${formatDate(row.periodEnd)}`
-                    : row.asOfDate
-                      ? ` · ${formatDate(row.asOfDate)}`
-                      : ""}
+                <span className="whitespace-nowrap text-sm">
+                  {row.asOfDate ? formatDate(row.asOfDate) : "—"}
                 </span>
               ),
             },
@@ -221,11 +195,7 @@ export default function ReportsPage() {
                     </Link>
                   </Button>
                   {row.status === "READY" && (
-                    <Button variant="ghost" size="sm" asChild title="Download Excel">
-                      <a href={`/api/reports/${row.id}/download?format=xlsx`} title="Download Excel">
-                        <Download className="h-4 w-4" />
-                      </a>
-                    </Button>
+                    <SsrExcelDownloadButton reportId={row.id} variant="ghost" iconOnly />
                   )}
                 </div>
               ),

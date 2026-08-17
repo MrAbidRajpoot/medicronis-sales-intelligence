@@ -7,6 +7,7 @@ import { sameDayPriorMonth } from "../date-utils";
 import {
   buildDataSheetRows,
   buildDateRange,
+  reportCodeFor,
   type SsrGridMasters,
 } from "../ssr-data";
 import { DATA_HEADERS } from "../ssr-export";
@@ -132,8 +133,8 @@ function buildRow(
 
   return buildDataSheetRows(
     facts as unknown as Parameters<typeof buildDataSheetRows>[0],
-    buildDateRange("day", asOfDate),
-    { asOfDate, viewType: "day", masters, targetUnitsByKey }
+    buildDateRange(asOfDate),
+    { asOfDate, masters, targetUnitsByKey }
   )[0]!;
 }
 
@@ -184,6 +185,10 @@ assert.equal(row.inventoryValue, 30 * 161.5);
 assert.equal(row.category, "Distributor");
 assert.equal(row.group, "Medicronis");
 assert.equal(row.manager, "Test Manager");
+assert.equal(row.yesterdayUnits, 4, "Yesterday uses prior calendar day only");
+assert.equal(row.salesUnits, 20, "Sales Units are facts for asOfDate only (not month sum)");
+assert.deepEqual(buildDateRange(asOfDate), { start: asOfDate, end: asOfDate });
+assert.equal(reportCodeFor(asOfDate), "SSR-2026-08-12");
 assert.deepEqual(DATA_HEADERS, [
   "Distributor Name",
   "Territory",

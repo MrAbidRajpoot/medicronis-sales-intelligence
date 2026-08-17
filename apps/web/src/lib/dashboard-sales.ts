@@ -1,5 +1,4 @@
 import type { PrismaClient } from "@prisma/client";
-import { parseIsoDate, startOfMonth, startOfWeek, todayIsoDate } from "@/lib/date-utils";
 import { resolveSellingPrice } from "@/lib/ssr-data";
 
 export type SalesDateRange = {
@@ -7,12 +6,47 @@ export type SalesDateRange = {
   end: Date;
 };
 
-export function getDashboardSalesRanges(asOf = parseIsoDate(todayIsoDate())!) {
-  return {
-    day: { start: asOf, end: asOf },
-    week: { start: startOfWeek(asOf), end: asOf },
-    month: { start: startOfMonth(asOf), end: asOf },
-  } satisfies Record<"day" | "week" | "month", SalesDateRange>;
+/** Human-readable asOfDate (UTC), e.g. "31 Jul 2026". */
+export function formatDashboardAsOfDate(date: Date): string {
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+/**
+ * Latest READY distributor SSR (salesBatchId null) by asOfDate desc.
+ * Falls back to the latest DailySalesFact.saleDate when no READY SSR exists.
+ */
+export async function getLatestSalesAsOfDate(
+  prisma: PrismaClient
+): Promise<Date | null> {
+  const latestReport = await prisma.ssrReport.findFirst({
+    where: {
+      status: "READY",
+      salesBatchId: null,
+      asOfDate: { not: null },
+    },
+    orderBy: { asOfDate: "desc" },
+    select: { asOfDate: true },
+  });
+
+  if (latestReport?.asOfDate) {
+    return latestReport.asOfDate;
+  }
+
+  const latestFact = await prisma.dailySalesFact.findFirst({
+    orderBy: { saleDate: "desc" },
+    select: { saleDate: true },
+  });
+
+  return latestFact?.saleDate ?? null;
+}
+
+export function salesRangeForAsOfDate(asOfDate: Date): SalesDateRange {
+  return { start: asOfDate, end: asOfDate };
 }
 
 export async function getSalesByDistributor(
@@ -73,12 +107,9 @@ export async function getTotalSales(
 
 export function ssrActivityDetail(report: {
   asOfDate: Date | null;
-  viewType: string | null;
 }): string {
   if (report.asOfDate) {
-    const view = report.viewType?.toLowerCase() ?? "day";
-    const date = report.asOfDate.toISOString().slice(0, 10);
-    return `${view.charAt(0).toUpperCase()}${view.slice(1)} view for ${date}`;
+    return `SSR · Sales Till ${formatDashboardAsOfDate(report.asOfDate)}`;
   }
   return "SSR report";
 }

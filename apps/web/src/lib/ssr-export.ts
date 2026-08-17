@@ -12,7 +12,6 @@ import {
   DATA_HEADERS,
   formatPeriod,
   formatSalesTillDate,
-  viewTypeLabel,
 } from "@/lib/ssr-data";
 
 export type { SsrExportMeta, SsrLineData, SsrDataLine, SsrDateExportMeta };
@@ -50,7 +49,7 @@ function applyTotalRowStyle(cell: ExcelJS.Cell, fill = HEADER_FILL) {
 export async function generateSsrExcel(
   meta: SsrExportMeta,
   lines: SsrLineData[]
-): Promise<{ filePath: string; buffer: Buffer }> {
+): Promise<{ buffer: Buffer; fileName: string }> {
   const wb = new ExcelJS.Workbook();
   wb.creator = "Medicronis";
   wb.created = meta.generatedAt;
@@ -143,13 +142,9 @@ export async function generateSsrExcel(
   summary.getCell(2, 4).numFmt = "#,##0.00";
 
   const buffer = Buffer.from(await wb.xlsx.writeBuffer());
-  const reportsDir = path.join(getUploadDir(), "reports");
-  await mkdir(reportsDir, { recursive: true });
   const fileName = `${meta.batchCode.replace(/[^a-zA-Z0-9-]/g, "_")}.xlsx`;
-  const filePath = path.join(reportsDir, fileName);
-  await writeFile(filePath, buffer);
 
-  return { filePath, buffer };
+  return { buffer, fileName };
 }
 
 const DATA_NUM_FMT = {
@@ -192,7 +187,7 @@ function applyDataCellFormat(cell: ExcelJS.Cell, colIndex: number, val: string |
 export async function generateSsrDataExcel(
   meta: SsrDateExportMeta,
   lines: SsrDataLine[]
-): Promise<{ filePath: string; buffer: Buffer }> {
+): Promise<{ buffer: Buffer; fileName: string }> {
   const wb = new ExcelJS.Workbook();
   wb.creator = "Medicronis";
   wb.created = meta.generatedAt;
@@ -222,7 +217,7 @@ export async function generateSsrDataExcel(
   titleCell.alignment = { horizontal: "center" };
 
   ws.mergeCells(2, 1, 2, colCount);
-  ws.getCell("A2").value = `${viewTypeLabel(meta.viewType)} — ${formatPeriod(meta.periodStart, meta.periodEnd)}  |  Report: ${meta.reportCode}`;
+  ws.getCell("A2").value = `Sales Till ${formatSalesTillDate(meta.asOfDate)}  |  Report: ${meta.reportCode}`;
   ws.getCell("A2").font = { size: 10, color: { argb: "FF64748B" } };
   ws.getCell("A2").alignment = { horizontal: "center" };
 
@@ -245,13 +240,9 @@ export async function generateSsrDataExcel(
   });
 
   const buffer = Buffer.from(await wb.xlsx.writeBuffer());
-  const reportsDir = path.join(getUploadDir(), "reports");
-  await mkdir(reportsDir, { recursive: true });
   const fileName = `${meta.reportCode.replace(/[^a-zA-Z0-9-]/g, "_")}.xlsx`;
-  const filePath = path.join(reportsDir, fileName);
-  await writeFile(filePath, buffer);
 
-  return { filePath, buffer };
+  return { buffer, fileName };
 }
 
 export async function generateSsrPdf(

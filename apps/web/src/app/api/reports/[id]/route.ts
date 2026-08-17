@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { fetchSsrGridMasters } from "@/lib/db-helpers";
-import { buildDataSheetRows, buildDateRange, getSsrExportFactBounds, reportCodeFor, type SsrViewTypeLabel } from "@/lib/ssr-data";
-import { fetchProductTargetUnitsByKey } from "@/lib/target-helpers";
+import { fetchSsrDataSheet } from "@/lib/db-helpers";
 import { toIsoDate } from "@/lib/date-utils";
 
 export const dynamic = "force-dynamic";
@@ -16,47 +14,12 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
   }
 
-  const viewType = (report.viewType?.toLowerCase() ?? "day") as SsrViewTypeLabel;
-  const range = buildDateRange(viewType, report.asOfDate);
-  const factBounds = getSsrExportFactBounds(viewType, report.asOfDate);
-
-  const [facts, masters, targetUnitsByKey] = await Promise.all([
-    prisma.dailySalesFact.findMany({
-      where: {
-        saleDate: {
-          gte: factBounds.min,
-          lte: factBounds.max,
-        },
-      },
-      include: {
-        distributor: {
-          include: {
-            territory: { include: { manager: true } },
-            area: { include: { manager: true } },
-            region: { include: { manager: true } },
-            zone: { include: { manager: true } },
-          },
-        },
-        product: true,
-      },
-      orderBy: [{ distributor: { name: "asc" } }, { product: { name: "asc" } }],
-    }),
-    fetchSsrGridMasters(),
-    fetchProductTargetUnitsByKey(report.asOfDate),
-  ]);
-
-  const lines = buildDataSheetRows(facts, range, {
-    asOfDate: report.asOfDate,
-    viewType,
-    masters,
-    targetUnitsByKey,
-  });
+  const { lines, range, reportCode } = await fetchSsrDataSheet(report.asOfDate);
 
   return NextResponse.json({
     id: report.id,
     status: report.status,
-    reportCode: reportCodeFor(report.asOfDate, viewType),
-    viewType,
+    reportCode,
     asOfDate: toIsoDate(report.asOfDate),
     periodStart: toIsoDate(range.start),
     periodEnd: toIsoDate(range.end),

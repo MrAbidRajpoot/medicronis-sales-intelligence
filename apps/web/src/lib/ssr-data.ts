@@ -13,11 +13,8 @@ import type {
 } from "@prisma/client";
 import {
   addDays,
-  addMonths,
   minDate,
   sameDayPriorMonth,
-  startOfMonth,
-  startOfWeek,
   toIsoDate,
 } from "@/lib/date-utils";
 import { resolveDistributorManagerName } from "@/lib/manager-helpers";
@@ -45,7 +42,7 @@ export interface SsrDataLine {
   sellingPrice: number;
   salesUnits: number;
   salesValue: number;
-  /** Prior comparison units: previous day, week, or prior-month matching window. */
+  /** Prior calendar day units (Yesterday column). */
   yesterdayUnits: number;
   /** Prior comparison units × resolved selling price. */
   yesterdaySalesValue: number;
@@ -157,8 +154,6 @@ export interface SsrExportMeta {
   generatedAt: Date;
 }
 
-export type SsrViewTypeLabel = "day" | "week" | "month";
-
 export interface SsrDateRange {
   start: Date;
   end: Date;
@@ -167,7 +162,6 @@ export interface SsrDateRange {
 export interface SsrDateExportMeta {
   reportCode: string;
   asOfDate: Date;
-  viewType: SsrViewTypeLabel;
   periodStart: Date;
   periodEnd: Date;
   generatedAt: Date;
@@ -221,33 +215,19 @@ export function buildSsrLines(batch: BatchWithLines): SsrLineData[] {
   });
 }
 
-export function buildDateRange(viewType: SsrViewTypeLabel, asOfDate: Date): SsrDateRange {
-  switch (viewType) {
-    case "week":
-      return { start: startOfWeek(asOfDate), end: asOfDate };
-    case "month":
-      return { start: startOfMonth(asOfDate), end: asOfDate };
-    default:
-      return { start: asOfDate, end: asOfDate };
-  }
+/**
+ * SSR period is always the single asOfDate.
+ * Facts for that date already carry till-date quantities from the distributor PDF
+ * (not daily increments), so we do not sum startOfMonth..asOfDate.
+ */
+export function buildDateRange(asOfDate: Date): SsrDateRange {
+  return { start: asOfDate, end: asOfDate };
 }
 
-/** Prior comparison window: day → yesterday; week → same Mon..day shifted −7d; month → same calendar window in prior month. */
-export function priorPeriodRange(viewType: SsrViewTypeLabel, asOfDate: Date): SsrDateRange {
-  switch (viewType) {
-    case "week": {
-      const start = startOfWeek(asOfDate);
-      return { start: addDays(start, -7), end: addDays(asOfDate, -7) };
-    }
-    case "month": {
-      const start = startOfMonth(asOfDate);
-      return { start: addMonths(start, -1), end: addMonths(asOfDate, -1) };
-    }
-    default: {
-      const yesterday = addDays(asOfDate, -1);
-      return { start: yesterday, end: yesterday };
-    }
-  }
+/** Prior comparison window: previous calendar day (Yesterday column). */
+export function priorPeriodRange(asOfDate: Date): SsrDateRange {
+  const yesterday = addDays(asOfDate, -1);
+  return { start: yesterday, end: yesterday };
 }
 
 export interface SsrExportFactBounds {
@@ -259,12 +239,9 @@ export interface SsrExportFactBounds {
 }
 
 /** Date span for one DailySalesFact query covering all computed SSR columns. */
-export function getSsrExportFactBounds(
-  viewType: SsrViewTypeLabel,
-  asOfDate: Date
-): SsrExportFactBounds {
-  const periodRange = buildDateRange(viewType, asOfDate);
-  const priorPeriod = priorPeriodRange(viewType, asOfDate);
+export function getSsrExportFactBounds(asOfDate: Date): SsrExportFactBounds {
+  const periodRange = buildDateRange(asOfDate);
+  const priorPeriod = priorPeriodRange(asOfDate);
   const lmtdDate = sameDayPriorMonth(asOfDate);
 
   const min = minDate([
@@ -390,35 +367,24 @@ function latestClosingStockByKey(
   return latest;
 }
 
-export function viewTypeLabel(viewType: SsrViewTypeLabel): string {
-  const labels: Record<SsrViewTypeLabel, string> = {
-    day: "Daily",
-    week: "Weekly",
-    month: "Monthly",
-  };
-  return labels[viewType];
-}
-
 /** Full product master × distributor grid; left-join aggregated facts (zeros where no sale). */
 export function buildDataSheetRows(
   facts: FactWithRelations[],
   range: SsrDateRange,
   options: {
     asOfDate?: Date;
-    viewType?: SsrViewTypeLabel;
     masters: SsrGridMasters;
     /** productId|territoryId|areaId|regionId|zoneId → target quantity for asOfDate's month. */
     targetUnitsByKey?: Map<string, number>;
   }
 ): SsrDataLine[] {
   const asOfDate = options.asOfDate ?? range.end;
-  const viewType = options.viewType ?? "day";
   const { distributors, products } = resolveSsrGridMasters(facts, range, options.masters);
 
   if (distributors.length === 0 || products.length === 0) return [];
 
   const periodAgg = aggregateFactsInRange(facts, range);
-  const priorPeriodAgg = aggregateFactsInRange(facts, priorPeriodRange(viewType, asOfDate));
+  const priorPeriodAgg = aggregateFactsInRange(facts, priorPeriodRange(asOfDate));
   const lmtdDate = sameDayPriorMonth(asOfDate);
   const lmtdAgg = aggregateFactsInRange(facts, { start: lmtdDate, end: lmtdDate });
   const closingStockByKey = latestClosingStockByKey(facts, asOfDate);
@@ -517,12 +483,11 @@ export function buildSsrDataLines(
   if (facts.length === 0) return [];
   const asOfDate = facts[0]!.saleDate;
   const range = { start: asOfDate, end: asOfDate };
-  return buildDataSheetRows(facts, range, { asOfDate, viewType: "day", masters });
+  return buildDataSheetRows(facts, range, { asOfDate, masters });
 }
 
-export function reportCodeFor(asOfDate: Date, viewType: string): string {
-  const iso = toIsoDate(asOfDate);
-  return `SSR-${viewType}-${iso}`;
+export function reportCodeFor(asOfDate: Date): string {
+  return `SSR-${toIsoDate(asOfDate)}`;
 }
 
 export function formatPartyName(name: string, territory: string | null): string {

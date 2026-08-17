@@ -1,11 +1,9 @@
 import Link from "next/link";
 import {
-  CalendarCheck,
-  CalendarDays,
-  CalendarRange,
   FileWarning,
   Target,
   Building2,
+  Banknote,
 } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { KpiCard } from "@/components/kpi-card";
@@ -16,24 +14,26 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
 import {
-  getDashboardSalesRanges,
+  formatDashboardAsOfDate,
+  getLatestSalesAsOfDate,
   getSalesByDistributor,
+  salesRangeForAsOfDate,
   ssrActivityDetail,
 } from "@/lib/dashboard-sales";
-import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
+import { formatCurrency, formatDateTime } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const salesRanges = getDashboardSalesRanges();
+  const asOfDate = await getLatestSalesAsOfDate(prisma);
+  const salesRange = asOfDate ? salesRangeForAsOfDate(asOfDate) : undefined;
+
   const [
     pendingDocs,
     activeDistributors,
     extractionStats,
     statusCounts,
-    dailySalesRaw,
-    weeklySalesRaw,
-    monthlySalesRaw,
+    salesByDistributor,
     recentDocs,
     recentReports,
   ] = await Promise.all([
@@ -46,9 +46,7 @@ export default async function DashboardPage() {
       where: { status: "COMPLETED" },
     }),
     prisma.document.groupBy({ by: ["status"], _count: { id: true } }),
-    getSalesByDistributor(prisma, salesRanges.day),
-    getSalesByDistributor(prisma, salesRanges.week),
-    getSalesByDistributor(prisma, salesRanges.month),
+    salesRange ? getSalesByDistributor(prisma, salesRange) : Promise.resolve([]),
     prisma.document.findMany({
       take: 6,
       orderBy: { updatedAt: "desc" },
@@ -58,7 +56,7 @@ export default async function DashboardPage() {
       take: 3,
       orderBy: { createdAt: "desc" },
       where: { salesBatchId: { equals: null } },
-      select: { id: true, asOfDate: true, viewType: true, generatedAt: true, createdAt: true },
+      select: { id: true, asOfDate: true, generatedAt: true, createdAt: true },
     }),
   ]);
 
@@ -68,32 +66,12 @@ export default async function DashboardPage() {
 
   const statusMap = Object.fromEntries(statusCounts.map((s) => [s.status, s._count.id]));
 
-  const salesCharts = [
-    { title: "Sales by Distributor — Today", data: toChartData(dailySalesRaw) },
-    { title: "Sales by Distributor — This Week", data: toChartData(weeklySalesRaw) },
-    { title: "Sales by Distributor — This Month", data: toChartData(monthlySalesRaw) },
-  ];
-
-  const salesKpis = [
-    {
-      title: "Daily Sales",
-      total: sumSales(dailySalesRaw),
-      subtitle: formatDate(salesRanges.day.start),
-      icon: CalendarDays,
-    },
-    {
-      title: "Weekly Sales",
-      total: sumSales(weeklySalesRaw),
-      subtitle: `${formatDate(salesRanges.week.start)} — today`,
-      icon: CalendarRange,
-    },
-    {
-      title: "Monthly Sales",
-      total: sumSales(monthlySalesRaw),
-      subtitle: `${formatDate(salesRanges.month.start)} — today`,
-      icon: CalendarCheck,
-    },
-  ];
+  const salesTotal = salesByDistributor.reduce((total, row) => total + row.value, 0);
+  const asOfLabel = asOfDate ? formatDashboardAsOfDate(asOfDate) : null;
+  const salesKpiTitle = asOfLabel ? `Sales Till ${asOfLabel}` : "Latest SSR Sales";
+  const chartTitle = asOfLabel
+    ? `Sales by Distributor — Till ${asOfLabel}`
+    : "Sales by Distributor — Latest SSR";
 
   const activity = [
     ...recentDocs.map((d) => ({
@@ -132,16 +110,13 @@ export default async function DashboardPage() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {salesKpis.map((kpi) => (
-          <KpiCard
-            key={kpi.title}
-            title={kpi.title}
-            value={formatCurrency(kpi.total)}
-            subtitle={kpi.subtitle}
-            icon={kpi.icon}
-          />
-        ))}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <KpiCard
+          title={salesKpiTitle}
+          value={formatCurrency(salesTotal)}
+          subtitle={asOfLabel ? "from latest SSR sheet" : "no SSR sales yet"}
+          icon={Banknote}
+        />
         <KpiCard
           title="Pending Documents"
           value={String(pendingDocs)}
@@ -162,16 +137,14 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {salesCharts.map((chart) => (
-          <Card key={chart.title}>
-            <CardHeader>
-              <CardTitle className="text-base">{chart.title}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <SalesByDistributorChart data={chart.data} />
-            </CardContent>
-          </Card>
-        ))}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">{chartTitle}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <SalesByDistributorChart data={toChartData(salesByDistributor)} />
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
@@ -234,10 +207,6 @@ function statusLabel(status: string): string {
     FAILED: "Upload Failed",
   };
   return map[status] ?? status;
-}
-
-function sumSales(data: { value: number }[]): number {
-  return data.reduce((total, row) => total + row.value, 0);
 }
 
 function toChartData(data: { name: string; value: number }[]) {

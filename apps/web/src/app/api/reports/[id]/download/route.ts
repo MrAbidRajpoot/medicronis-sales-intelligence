@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readFile } from "fs/promises";
-import path from "path";
 import { prisma } from "@/lib/prisma";
+import { fetchSsrDataSheet } from "@/lib/db-helpers";
+import { generateSsrDataExcel } from "@/lib/ssr-export";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     where: { id: params.id },
   });
 
-  if (!report || report.salesBatchId) {
+  if (!report || report.salesBatchId || !report.asOfDate) {
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
   }
 
@@ -24,21 +24,28 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     return NextResponse.json({ error: "PDF export not available for date-based reports" }, { status: 400 });
   }
 
-  if (!report.filePath) {
-    return NextResponse.json({ error: "Excel file not available" }, { status: 400 });
-  }
-
   try {
-    const buffer = await readFile(report.filePath);
-    const fileName = path.basename(report.filePath);
+    const { lines, range, reportCode } = await fetchSsrDataSheet(report.asOfDate);
+    const { buffer, fileName } = await generateSsrDataExcel(
+      {
+        reportCode,
+        asOfDate: report.asOfDate,
+        periodStart: range.start,
+        periodEnd: range.end,
+        generatedAt: new Date(),
+      },
+      lines
+    );
 
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "Content-Disposition": `attachment; filename="${fileName}"`,
+        "Cache-Control": "no-store",
       },
     });
-  } catch {
-    return NextResponse.json({ error: "Report file missing on disk" }, { status: 404 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Download failed";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
