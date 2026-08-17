@@ -10,6 +10,7 @@ import {
 import type {
   MonthlyReportColumnLabels,
   MonthlyReportFilters,
+  MonthlySnapshotCoverage,
   ProductWiseRow,
 } from "./types";
 
@@ -21,6 +22,7 @@ export interface ProductWiseResponse {
   filters: MonthlyReportFilters;
   columns: string[];
   columnLabels: MonthlyReportColumnLabels;
+  coverage: MonthlySnapshotCoverage | null;
   rows: ProductWiseRow[];
   totals: ProductWiseRow | null;
 }

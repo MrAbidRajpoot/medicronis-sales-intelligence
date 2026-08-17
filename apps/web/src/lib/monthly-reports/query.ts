@@ -6,11 +6,12 @@
 
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { addMonths, endOfMonth, startOfMonth } from "@/lib/date-utils";
+import { addMonths, endOfMonth, startOfMonth, toIsoDate } from "@/lib/date-utils";
 import { resolveDistributorManagerId } from "@/lib/manager-helpers";
 import { fetchProductTargetUnitsByKey } from "@/lib/target-helpers";
 import {
   buildMonthlyGrainRows,
+  snapshotCoverageFromGrain,
   type MonthlyFactRow,
 } from "./metrics";
 import type {
@@ -18,6 +19,7 @@ import type {
   MonthlyReportFilters,
   MonthlyReportPeriod,
   MonthlyReportPeriodInput,
+  MonthlySnapshotCoverage,
 } from "./types";
 
 const MONTH_NAMES = [
@@ -142,11 +144,32 @@ export interface MonthlyReportQueryResult {
   period: MonthlyReportPeriod;
   facts: MonthlyFactRow[];
   targetUnitsByKey: Map<string, number>;
+  /** ISO YYYY-MM-DD of READY global SSR sheets (salesBatchId null) in prior+current month. */
+  readyAsOfDates: Set<string>;
+}
+
+async function fetchReadySsrAsOfDates(period: MonthlyReportPeriod): Promise<Set<string>> {
+  const reports = await prisma.ssrReport.findMany({
+    where: {
+      status: "READY",
+      salesBatchId: { equals: null },
+      asOfDate: {
+        gte: period.priorMonthStart,
+        lte: period.monthEnd,
+      },
+    },
+    select: { asOfDate: true },
+  });
+  const dates = new Set<string>();
+  for (const report of reports) {
+    if (report.asOfDate) dates.add(toIsoDate(report.asOfDate));
+  }
+  return dates;
 }
 
 /**
  * Load facts for [priorMonthStart, monthEnd] with optional filters, plus ProductTarget map
- * for the current month. Empty filter dimensions are omitted (no IN []).
+ * for the current month and READY SSR asOfDates. Empty filter dimensions are omitted (no IN []).
  */
 export async function queryMonthlyReportData(
   filters: MonthlyReportFilters,
@@ -154,15 +177,16 @@ export async function queryMonthlyReportData(
 ): Promise<MonthlyReportQueryResult> {
   const period = resolveMonthlyReportPeriod(periodInput);
 
-  const [distributorIds, productIds, targetUnitsByKey] = await Promise.all([
+  const [distributorIds, productIds, targetUnitsByKey, readyAsOfDates] = await Promise.all([
     resolveFilteredDistributorIds(filters),
     resolveFilteredProductIds(filters),
     fetchProductTargetUnitsByKey(period.asOfDate),
+    fetchReadySsrAsOfDates(period),
   ]);
 
   // No matching distributors/products after filters → empty facts (still return period/targets).
   if (distributorIds?.length === 0 || productIds?.length === 0) {
-    return { period, facts: [], targetUnitsByKey };
+    return { period, facts: [], targetUnitsByKey, readyAsOfDates };
   }
 
   const where: Prisma.DailySalesFactWhereInput = {
@@ -192,17 +216,24 @@ export async function queryMonthlyReportData(
     orderBy: [{ saleDate: "asc" }, { distributorId: "asc" }, { productId: "asc" }],
   })) as MonthlyFactRow[];
 
-  return { period, facts, targetUnitsByKey };
+  return { period, facts, targetUnitsByKey, readyAsOfDates };
 }
 
 /** Convenience: query + build grain rows ready for aggregateDistributorWise / aggregateProductWise. */
 export async function loadMonthlyGrainRows(
   filters: MonthlyReportFilters,
   periodInput: MonthlyReportPeriodInput
-): Promise<{ period: MonthlyReportPeriod; grainRows: MonthlyGrainRow[] }> {
-  const { period, facts, targetUnitsByKey } = await queryMonthlyReportData(filters, periodInput);
-  const grainRows = buildMonthlyGrainRows(facts, period, targetUnitsByKey);
-  return { period, grainRows };
+): Promise<{
+  period: MonthlyReportPeriod;
+  grainRows: MonthlyGrainRow[];
+  coverage: MonthlySnapshotCoverage | null;
+}> {
+  const { period, facts, targetUnitsByKey, readyAsOfDates } = await queryMonthlyReportData(
+    filters,
+    periodInput
+  );
+  const grainRows = buildMonthlyGrainRows(facts, period, { readyAsOfDates, targetUnitsByKey });
+  return { period, grainRows, coverage: snapshotCoverageFromGrain(grainRows) };
 }
 
 /** Latest calendar month that has any DailySalesFact; falls back to current UTC month. */

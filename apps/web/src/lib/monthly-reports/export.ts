@@ -6,9 +6,13 @@
 import ExcelJS from "exceljs";
 import {
   distributorWiseHeaders,
+  distributorWiseSnapshotBanner,
+  formatSnapshotCoverageSubtitle,
   productWiseHeaders,
+  productWiseSnapshotBanner,
   type DistributorWiseRow,
   type MonthlyReportPeriod,
+  type MonthlySnapshotCoverage,
   type ProductWiseRow,
 } from "./types";
 
@@ -39,6 +43,7 @@ type ColKind = "text" | "units" | "money" | "percent";
 const COL_KINDS: ColKind[] = [
   "text",
   "text",
+  "text",
   "units",
   "units",
   "units",
@@ -52,6 +57,7 @@ const COL_KINDS: ColKind[] = [
 ];
 
 const COL_FILLS = [
+  HEADER_FILLS.identity,
   HEADER_FILLS.identity,
   HEADER_FILLS.identity,
   HEADER_FILLS.target,
@@ -70,6 +76,7 @@ function rowValues(row: DistributorWiseRow): (string | number)[] {
   return [
     row.distributorName,
     row.city,
+    row.asOfDate,
     row.targetUnits,
     row.salesUnits,
     row.lmtdSalesUnits,
@@ -93,10 +100,17 @@ export async function generateDistributorWiseExcel(options: {
   period: MonthlyReportPeriod;
   rows: DistributorWiseRow[];
   totals?: DistributorWiseRow | null;
+  coverage?: MonthlySnapshotCoverage | null;
 }): Promise<{ buffer: Buffer; fileName: string }> {
-  const { period, rows, totals } = options;
+  const { period, rows, totals, coverage = null } = options;
   const headers = distributorWiseHeaders(period);
   const title = `Distributorwise Report — ${period.monthName} ${period.year}`;
+  const subtitle = [
+    distributorWiseSnapshotBanner(period.monthName),
+    formatSnapshotCoverageSubtitle(coverage, period.priorMonthName),
+  ]
+    .filter(Boolean)
+    .join("  |  ");
   const fileName = `Distributor-Wise-${period.year}-${String(period.month).padStart(2, "0")}.xlsx`;
 
   const wb = new ExcelJS.Workbook();
@@ -104,12 +118,13 @@ export async function generateDistributorWiseExcel(options: {
   wb.created = new Date();
 
   const ws = wb.addWorksheet("Distributor Wise", {
-    views: [{ showGridLines: true, state: "frozen", ySplit: 2 }],
+    views: [{ showGridLines: true, state: "frozen", ySplit: 3 }],
   });
 
   ws.columns = [
     { width: 36 },
     { width: 16 },
+    { width: 14 },
     { width: 14 },
     { width: 16 },
     { width: 18 },
@@ -129,7 +144,14 @@ export async function generateDistributorWiseExcel(options: {
   titleCell.alignment = { horizontal: "left", vertical: "middle" };
   ws.getRow(1).height = 22;
 
-  const headerRow = 2;
+  ws.mergeCells(2, 1, 2, headers.length);
+  const subtitleCell = ws.getCell(2, 1);
+  subtitleCell.value = subtitle;
+  subtitleCell.font = { italic: true, size: 10, color: { argb: "FF5A5A5A" } };
+  subtitleCell.alignment = { horizontal: "left", vertical: "middle", wrapText: true };
+  ws.getRow(2).height = 28;
+
+  const headerRow = 3;
   headers.forEach((h, i) => {
     const cell = ws.getCell(headerRow, i + 1);
     cell.value = h;
@@ -224,10 +246,17 @@ export async function generateProductWiseExcel(options: {
   period: MonthlyReportPeriod;
   rows: ProductWiseRow[];
   totals?: ProductWiseRow | null;
+  coverage?: MonthlySnapshotCoverage | null;
 }): Promise<{ buffer: Buffer; fileName: string }> {
-  const { period, rows, totals } = options;
+  const { period, rows, totals, coverage = null } = options;
   const headers = productWiseHeaders(period);
   const title = `Productwise Report — ${period.monthName} ${period.year}`;
+  const subtitle = [
+    productWiseSnapshotBanner(period.monthName),
+    formatSnapshotCoverageSubtitle(coverage, period.priorMonthName),
+  ]
+    .filter(Boolean)
+    .join("  |  ");
   const fileName = `Product-Wise-${period.year}-${String(period.month).padStart(2, "0")}.xlsx`;
 
   const wb = new ExcelJS.Workbook();
@@ -235,7 +264,7 @@ export async function generateProductWiseExcel(options: {
   wb.created = new Date();
 
   const ws = wb.addWorksheet("Product Wise", {
-    views: [{ showGridLines: true, state: "frozen", ySplit: 2 }],
+    views: [{ showGridLines: true, state: "frozen", ySplit: 3 }],
   });
 
   ws.columns = [
@@ -259,7 +288,14 @@ export async function generateProductWiseExcel(options: {
   titleCell.alignment = { horizontal: "left", vertical: "middle" };
   ws.getRow(1).height = 22;
 
-  const headerRow = 2;
+  ws.mergeCells(2, 1, 2, headers.length);
+  const subtitleCell = ws.getCell(2, 1);
+  subtitleCell.value = subtitle;
+  subtitleCell.font = { italic: true, size: 10, color: { argb: "FF5A5A5A" } };
+  subtitleCell.alignment = { horizontal: "left", vertical: "middle", wrapText: true };
+  ws.getRow(2).height = 28;
+
+  const headerRow = 3;
   headers.forEach((h, i) => {
     const cell = ws.getCell(headerRow, i + 1);
     cell.value = h;

@@ -1,10 +1,14 @@
 /**
  * Pure monthly-report metrics: grain build + Distributor/Product Wise aggregation.
  * Reuses SSR pricing (resolveSellingPrice), target lookup, and % helpers.
- * LMTD here = full prior calendar month (NOT SSR same-day-prior-month).
+ *
+ * Facts are MTD snapshots: DailySalesFact.quantity on saleDate D = month-start through D.
+ * Never sum quantities across days in the same month.
+ * Each distributor uses its own latest READY SSR asOfDate in the selected month.
  */
 
 import type { DailySalesFact, Distributor, Product } from "@prisma/client";
+import { toIsoDate } from "@/lib/date-utils";
 import {
   computeLmtdPercent,
   computeTargetAchvPercent,
@@ -16,6 +20,7 @@ import type {
   DistributorWiseRow,
   MonthlyGrainRow,
   MonthlyReportPeriod,
+  MonthlySnapshotCoverage,
   ProductWiseRow,
 } from "./types";
 
@@ -28,99 +33,130 @@ function factKey(distributorId: string, productId: string): string {
   return `${distributorId}:${productId}`;
 }
 
+function snapshotFactKey(distributorId: string, productId: string, date: Date): string {
+  return `${distributorId}:${productId}:${toIsoDate(date)}`;
+}
+
 function inRange(date: Date, start: Date, end: Date): boolean {
   const t = date.getTime();
   return t >= start.getTime() && t <= end.getTime();
 }
 
-interface AggUnits {
-  salesUnits: number;
+export interface BuildMonthlyGrainOptions {
+  /** ISO YYYY-MM-DD of READY SsrReport rows with salesBatchId = null. */
+  readyAsOfDates: ReadonlySet<string>;
+  targetUnitsByKey?: Map<string, number>;
 }
 
-function aggregateUnitsInRange(
-  facts: MonthlyFactRow[],
-  start: Date,
-  end: Date
-): Map<string, AggUnits> {
-  const groups = new Map<string, AggUnits>();
-  for (const fact of facts) {
-    if (!inRange(fact.saleDate, start, end)) continue;
-    const key = factKey(fact.distributorId, fact.productId);
-    const quantity = Number(fact.quantity);
-    const existing = groups.get(key);
-    if (existing) existing.salesUnits += quantity;
-    else groups.set(key, { salesUnits: quantity });
-  }
-  return groups;
+/** Trim, collapse inner whitespace, lower-case — used to treat duplicate master names as one distributor. */
+export function normalizeDistributorDisplayName(name: string): string {
+  return name.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
 /**
- * Latest non-null closingStock per distributor×product within [monthStart, monthEnd].
- * Unlike SSR (which looks only at asOfDate), monthly reports use the last stock day in the month.
+ * Per-distributor latest saleDate in [start, end] that has facts AND a READY global SSR
+ * asOfDate on that calendar day. Distributors with no such day are omitted.
+ * Comparison is by ISO YYYY-MM-DD (not raw Date ticks) so time-of-day cannot split a day.
  */
-export function latestClosingStockInMonth(
+export function latestSnapshotDateByDistributor(
   facts: MonthlyFactRow[],
-  monthStart: Date,
-  monthEnd: Date
-): Map<string, number> {
-  const latestDate = new Map<string, number>();
-  const latestStock = new Map<string, number>();
-
+  start: Date,
+  end: Date,
+  readyAsOfDates: ReadonlySet<string>
+): Map<string, Date> {
+  const latest = new Map<string, Date>();
   for (const fact of facts) {
-    if (fact.closingStock == null) continue;
-    if (!inRange(fact.saleDate, monthStart, monthEnd)) continue;
-
-    const key = factKey(fact.distributorId, fact.productId);
-    const saleTime = fact.saleDate.getTime();
-    const prev = latestDate.get(key);
-    if (prev == null || saleTime >= prev) {
-      latestDate.set(key, saleTime);
-      latestStock.set(key, Number(fact.closingStock));
-    }
-  }
-
-  return latestStock;
-}
-
-/** Latest fact in current month (for unitPrice fallback when product.newSp is null). */
-function latestFactInMonthByKey(
-  facts: MonthlyFactRow[],
-  monthStart: Date,
-  monthEnd: Date
-): Map<string, MonthlyFactRow> {
-  const latest = new Map<string, MonthlyFactRow>();
-  for (const fact of facts) {
-    if (!inRange(fact.saleDate, monthStart, monthEnd)) continue;
-    const key = factKey(fact.distributorId, fact.productId);
-    const prev = latest.get(key);
-    if (!prev || fact.saleDate.getTime() >= prev.saleDate.getTime()) {
-      latest.set(key, fact);
+    if (!inRange(fact.saleDate, start, end)) continue;
+    const iso = toIsoDate(fact.saleDate);
+    if (!readyAsOfDates.has(iso)) continue;
+    const prev = latest.get(fact.distributorId);
+    if (!prev || iso > toIsoDate(prev)) {
+      latest.set(fact.distributorId, fact.saleDate);
     }
   }
   return latest;
 }
 
+function indexFactsBySnapshot(facts: MonthlyFactRow[]): Map<string, MonthlyFactRow> {
+  const index = new Map<string, MonthlyFactRow>();
+  for (const fact of facts) {
+    index.set(snapshotFactKey(fact.distributorId, fact.productId, fact.saleDate), fact);
+  }
+  return index;
+}
+
+function minMaxIso(dates: Date[]): { min: string; max: string } | null {
+  if (dates.length === 0) return null;
+  let minT = dates[0]!.getTime();
+  let maxT = minT;
+  let minDate = dates[0]!;
+  let maxDate = dates[0]!;
+  for (let i = 1; i < dates.length; i++) {
+    const d = dates[i]!;
+    const t = d.getTime();
+    if (t < minT) {
+      minT = t;
+      minDate = d;
+    }
+    if (t > maxT) {
+      maxT = t;
+      maxDate = d;
+    }
+  }
+  return { min: toIsoDate(minDate), max: toIsoDate(maxDate) };
+}
+
+/** Coverage from included distributors' per-row snapshot dates. */
+export function snapshotCoverageFromGrain(rows: MonthlyGrainRow[]): MonthlySnapshotCoverage | null {
+  if (rows.length === 0) return null;
+
+  const currentByDist = new Map<string, Date>();
+  const priorByDist = new Map<string, Date>();
+  for (const row of rows) {
+    currentByDist.set(row.distributorId, row.asOfDate);
+    if (row.lmtdAsOfDate) priorByDist.set(row.distributorId, row.lmtdAsOfDate);
+  }
+
+  const current = minMaxIso(Array.from(currentByDist.values()));
+  if (!current) return null;
+  const prior = minMaxIso(Array.from(priorByDist.values()));
+
+  return {
+    fromDate: current.min,
+    toDate: current.max,
+    priorFromDate: prior?.min ?? null,
+    priorToDate: prior?.max ?? null,
+  };
+}
+
 /**
- * Build distributor×product grain rows for the monthly period.
- * Keys = union of current-month and prior-month fact pairs (after query filters).
+ * Build distributor×product grain rows from each included distributor's latest READY SSR
+ * snapshot in the current month (and independently in the prior month for LMTD).
+ * Distributors with no usable current-month snapshot are omitted entirely.
  */
 export function buildMonthlyGrainRows(
   facts: MonthlyFactRow[],
   period: MonthlyReportPeriod,
-  targetUnitsByKey?: Map<string, number>
+  options: BuildMonthlyGrainOptions
 ): MonthlyGrainRow[] {
-  const currentAgg = aggregateUnitsInRange(facts, period.monthStart, period.monthEnd);
-  const lmtdAgg = aggregateUnitsInRange(facts, period.priorMonthStart, period.priorMonthEnd);
-  const closingStockByKey = latestClosingStockInMonth(facts, period.monthStart, period.monthEnd);
-  const latestFactByKey = latestFactInMonthByKey(facts, period.monthStart, period.monthEnd);
+  const { readyAsOfDates, targetUnitsByKey } = options;
+  const latestCurrent = latestSnapshotDateByDistributor(
+    facts,
+    period.monthStart,
+    period.monthEnd,
+    readyAsOfDates
+  );
+  const latestPrior = latestSnapshotDateByDistributor(
+    facts,
+    period.priorMonthStart,
+    period.priorMonthEnd,
+    readyAsOfDates
+  );
 
-  const keys = new Set<string>([
-    ...Array.from(currentAgg.keys()),
-    ...Array.from(lmtdAgg.keys()),
-  ]);
-  // Include keys that only have closing stock in the current month (no sales either month).
-  for (const key of Array.from(closingStockByKey.keys())) keys.add(key);
+  if (latestCurrent.size === 0) return [];
 
+  const factBySnapshot = indexFactsBySnapshot(facts);
+  const keys = new Set<string>();
   const metaByKey = new Map<
     string,
     {
@@ -128,10 +164,21 @@ export function buildMonthlyGrainRows(
       product: Pick<Product, "id" | "name" | "newSp">;
     }
   >();
+
   for (const fact of facts) {
+    const currentAsOf = latestCurrent.get(fact.distributorId);
+    if (!currentAsOf) continue;
+    const priorAsOf = latestPrior.get(fact.distributorId);
+    const iso = toIsoDate(fact.saleDate);
+    const onCurrent = iso === toIsoDate(currentAsOf);
+    const onPrior = priorAsOf != null && iso === toIsoDate(priorAsOf);
+    if (!onCurrent && !onPrior) continue;
+
     const key = factKey(fact.distributorId, fact.productId);
-    if (!keys.has(key) || metaByKey.has(key)) continue;
-    metaByKey.set(key, { distributor: fact.distributor, product: fact.product });
+    keys.add(key);
+    if (!metaByKey.has(key)) {
+      metaByKey.set(key, { distributor: fact.distributor, product: fact.product });
+    }
   }
 
   const rows: MonthlyGrainRow[] = [];
@@ -141,10 +188,19 @@ export function buildMonthlyGrainRows(
     if (!meta) continue;
 
     const { distributor, product } = meta;
-    const salesUnits = currentAgg.get(key)?.salesUnits ?? 0;
-    const lmtdSalesUnits = lmtdAgg.get(key)?.salesUnits ?? 0;
-    const asOfFact = latestFactByKey.get(key);
-    const sellingPrice = resolveSellingPrice(product, asOfFact);
+    const asOfDate = latestCurrent.get(distributor.id);
+    if (!asOfDate) continue;
+    const lmtdAsOfDate = latestPrior.get(distributor.id) ?? null;
+
+    const currentFact = factBySnapshot.get(snapshotFactKey(distributor.id, product.id, asOfDate));
+    const priorFact =
+      lmtdAsOfDate != null
+        ? factBySnapshot.get(snapshotFactKey(distributor.id, product.id, lmtdAsOfDate))
+        : undefined;
+
+    const salesUnits = currentFact ? Number(currentFact.quantity) : 0;
+    const lmtdSalesUnits = priorFact ? Number(priorFact.quantity) : 0;
+    const sellingPrice = resolveSellingPrice(product, currentFact);
     const salesValue = salesUnits * sellingPrice;
     const lmtdSalesValue = lmtdSalesUnits * sellingPrice;
 
@@ -155,7 +211,8 @@ export function buildMonthlyGrainRows(
     );
     const targetValue = targetUnits * sellingPrice;
 
-    const closingStockUnits = closingStockByKey.get(key) ?? 0;
+    const closingStockUnits =
+      currentFact?.closingStock != null ? Number(currentFact.closingStock) : 0;
     const stockValue = closingStockUnits * sellingPrice;
 
     rows.push({
@@ -164,6 +221,8 @@ export function buildMonthlyGrainRows(
       city: distributor.territory?.name ?? "",
       productId: product.id,
       productName: product.name,
+      asOfDate,
+      lmtdAsOfDate,
       sellingPrice,
       targetUnits,
       salesUnits,
@@ -183,11 +242,58 @@ export function buildMonthlyGrainRows(
   });
 }
 
-/** Roll grain rows up to one row per distributor (sums; percents from totals). */
+/**
+ * Keep only grain for the winning distributorId per normalized display name
+ * (later asOfDate wins; older snapshot for a duplicate master name is dropped, not summed).
+ */
+export function filterGrainToLatestDistributorByName(rows: MonthlyGrainRow[]): MonthlyGrainRow[] {
+  const latestById = new Map<string, { name: string; asOfIso: string }>();
+  for (const row of rows) {
+    const asOfIso = toIsoDate(row.asOfDate);
+    const prev = latestById.get(row.distributorId);
+    if (!prev || asOfIso > prev.asOfIso) {
+      latestById.set(row.distributorId, { name: row.distributorName, asOfIso });
+    }
+  }
+
+  const winnerIdByName = new Map<string, { id: string; asOfIso: string }>();
+  for (const [id, meta] of latestById) {
+    const nameKey = normalizeDistributorDisplayName(meta.name);
+    const existing = winnerIdByName.get(nameKey);
+    if (!existing || meta.asOfIso > existing.asOfIso) {
+      winnerIdByName.set(nameKey, { id, asOfIso: meta.asOfIso });
+    }
+  }
+
+  const keepIds = new Set(Array.from(winnerIdByName.values()).map((w) => w.id));
+  return rows.filter((row) => keepIds.has(row.distributorId));
+}
+
+/**
+ * One display row per normalized distributor name. Later asOfDate (ISO YYYY-MM-DD) wins;
+ * the older row is dropped entirely (never 14th + 16th).
+ */
+export function collapseDistributorWiseByName(rows: DistributorWiseRow[]): DistributorWiseRow[] {
+  const byName = new Map<string, DistributorWiseRow>();
+  for (const row of rows) {
+    const key = normalizeDistributorDisplayName(row.distributorName);
+    const existing = byName.get(key);
+    if (!existing || row.asOfDate > existing.asOfDate) {
+      byName.set(key, row);
+    }
+  }
+  return Array.from(byName.values()).sort((a, b) =>
+    a.distributorName.localeCompare(b.distributorName)
+  );
+}
+
+/** Roll grain rows up to one row per distributorId (sums on that id's latest asOfDate only). */
 export function aggregateDistributorWise(rows: MonthlyGrainRow[]): DistributorWiseRow[] {
   type Acc = {
     distributorName: string;
     city: string;
+    asOfDate: Date;
+    lmtdAsOfDate: Date | null;
     targetUnits: number;
     salesUnits: number;
     lmtdSalesUnits: number;
@@ -198,9 +304,19 @@ export function aggregateDistributorWise(rows: MonthlyGrainRow[]): DistributorWi
     stockValue: number;
   };
 
+  const latestIsoById = new Map<string, string>();
+  for (const row of rows) {
+    const iso = toIsoDate(row.asOfDate);
+    const prev = latestIsoById.get(row.distributorId);
+    if (!prev || iso > prev) latestIsoById.set(row.distributorId, iso);
+  }
+
   const byDistributor = new Map<string, Acc>();
 
   for (const row of rows) {
+    const latestIso = latestIsoById.get(row.distributorId);
+    if (toIsoDate(row.asOfDate) !== latestIso) continue;
+
     const existing = byDistributor.get(row.distributorId);
     if (existing) {
       existing.targetUnits += row.targetUnits;
@@ -215,6 +331,8 @@ export function aggregateDistributorWise(rows: MonthlyGrainRow[]): DistributorWi
       byDistributor.set(row.distributorId, {
         distributorName: row.distributorName,
         city: row.city,
+        asOfDate: row.asOfDate,
+        lmtdAsOfDate: row.lmtdAsOfDate,
         targetUnits: row.targetUnits,
         salesUnits: row.salesUnits,
         lmtdSalesUnits: row.lmtdSalesUnits,
@@ -231,6 +349,8 @@ export function aggregateDistributorWise(rows: MonthlyGrainRow[]): DistributorWi
     .map((acc) => ({
       distributorName: acc.distributorName,
       city: acc.city,
+      asOfDate: toIsoDate(acc.asOfDate),
+      lmtdAsOfDate: acc.lmtdAsOfDate ? toIsoDate(acc.lmtdAsOfDate) : null,
       targetUnits: acc.targetUnits,
       salesUnits: acc.salesUnits,
       lmtdSalesUnits: acc.lmtdSalesUnits,

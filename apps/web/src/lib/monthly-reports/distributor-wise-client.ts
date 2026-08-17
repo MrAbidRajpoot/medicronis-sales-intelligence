@@ -6,6 +6,7 @@ import type {
   DistributorWiseRow,
   MonthlyReportColumnLabels,
   MonthlyReportFilters,
+  MonthlySnapshotCoverage,
 } from "./types";
 
 export interface DistributorWisePeriodDto {
@@ -25,6 +26,7 @@ export interface DistributorWiseResponse {
   filters: MonthlyReportFilters;
   columns: string[];
   columnLabels: MonthlyReportColumnLabels;
+  coverage: MonthlySnapshotCoverage | null;
   rows: DistributorWiseRow[];
   totals: DistributorWiseRow | null;
 }

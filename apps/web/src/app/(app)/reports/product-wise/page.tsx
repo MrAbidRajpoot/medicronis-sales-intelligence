@@ -18,7 +18,12 @@ import {
   formatProductWiseCell,
   type ProductWiseResponse,
 } from "@/lib/monthly-reports/product-wise-client";
-import type { MonthlyReportFilters, ProductWiseRow } from "@/lib/monthly-reports/types";
+import {
+  formatSnapshotCoverageSubtitle,
+  productWiseSnapshotBanner,
+  type MonthlyReportFilters,
+  type ProductWiseRow,
+} from "@/lib/monthly-reports/types";
 import { cn } from "@/lib/utils";
 
 const emptyFilters: MonthlyReportFilters = {
@@ -272,7 +277,7 @@ export default function ProductWiseReportPage() {
     <div className="space-y-6">
       <PageHeader
         title="Product Wise"
-        description="Monthly management report — targets, sales, LMTD, achievement, and stock by product"
+        description="Monthly management report — product totals from each distributor's latest MTD snapshot"
         actions={
           <Button
             variant="accent"
@@ -318,8 +323,10 @@ export default function ProductWiseReportPage() {
           </CardTitle>
           {report && (
             <p className="mt-1 text-sm text-muted-foreground">
-              LMTD = full {report.priorPeriod.monthName} ({report.period.priorMonthStart} →{" "}
-              {report.period.priorMonthEnd})
+              {productWiseSnapshotBanner(report.period.monthName)}
+              {report.coverage
+                ? ` ${formatSnapshotCoverageSubtitle(report.coverage, report.priorPeriod.monthName)}.`
+                : ""}
             </p>
           )}
         </CardHeader>

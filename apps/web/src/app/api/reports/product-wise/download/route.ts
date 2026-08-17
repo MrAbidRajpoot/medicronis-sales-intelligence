@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
       period,
       rows: report.rows,
       totals: report.totals,
+      coverage: report.coverage,
     });
 
     return new NextResponse(new Uint8Array(buffer), {

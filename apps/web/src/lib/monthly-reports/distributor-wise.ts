@@ -7,7 +7,12 @@ import {
   computeLmtdPercent,
   computeTargetAchvPercent,
 } from "@/lib/ssr-data";
-import { aggregateDistributorWise } from "./metrics";
+import {
+  aggregateDistributorWise,
+  collapseDistributorWiseByName,
+  filterGrainToLatestDistributorByName,
+  snapshotCoverageFromGrain,
+} from "./metrics";
 import { loadMonthlyGrainRows, resolveLatestFactMonth } from "./query";
 import {
   distributorWiseHeaders,
@@ -128,6 +133,8 @@ export function totalDistributorWise(rows: DistributorWiseRow[]): DistributorWis
   return {
     distributorName: "Total",
     city: "",
+    asOfDate: "",
+    lmtdAsOfDate: null,
     ...acc,
     targetAchvPercent: computeTargetAchvPercent(acc.salesValue, acc.targetValue),
     lmtdPercent: computeLmtdPercent(acc.salesValue, acc.lmtdSalesValue),
@@ -140,8 +147,10 @@ export async function buildDistributorWiseReport(
   month: number
 ): Promise<DistributorWiseResponse> {
   const { period, grainRows } = await loadMonthlyGrainRows(filters, { year, month });
-  const rows = aggregateDistributorWise(grainRows);
+  const remainingGrain = filterGrainToLatestDistributorByName(grainRows);
+  const rows = collapseDistributorWiseByName(aggregateDistributorWise(remainingGrain));
   const totals = totalDistributorWise(rows);
+  const coverage = snapshotCoverageFromGrain(remainingGrain);
 
   return {
     period: periodDto(period),
@@ -149,6 +158,7 @@ export async function buildDistributorWiseReport(
     filters,
     columns: distributorWiseHeaders(period),
     columnLabels: monthlyReportColumnLabels(period),
+    coverage,
     rows,
     totals,
   };

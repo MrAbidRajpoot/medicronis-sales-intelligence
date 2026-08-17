@@ -7,7 +7,11 @@ import {
   computeLmtdPercent,
   computeTargetAchvPercent,
 } from "@/lib/ssr-data";
-import { aggregateProductWise } from "./metrics";
+import {
+  aggregateProductWise,
+  filterGrainToLatestDistributorByName,
+  snapshotCoverageFromGrain,
+} from "./metrics";
 import { loadMonthlyGrainRows, resolveLatestFactMonth } from "./query";
 import {
   monthlyReportColumnLabels,
@@ -98,8 +102,10 @@ export async function buildProductWiseReport(
   month: number
 ): Promise<ProductWiseResponse> {
   const { period, grainRows } = await loadMonthlyGrainRows(filters, { year, month });
-  const rows = aggregateProductWise(grainRows);
+  const remainingGrain = filterGrainToLatestDistributorByName(grainRows);
+  const rows = aggregateProductWise(remainingGrain);
   const totals = totalProductWise(rows);
+  const coverage = snapshotCoverageFromGrain(remainingGrain);
 
   return {
     period: periodDto(period),
@@ -107,6 +113,7 @@ export async function buildProductWiseReport(
     filters,
     columns: productWiseHeaders(period),
     columnLabels: monthlyReportColumnLabels(period),
+    coverage,
     rows,
     totals,
   };

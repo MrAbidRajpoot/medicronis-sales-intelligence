@@ -18,7 +18,12 @@ import {
   formatDistributorWiseCell,
   type DistributorWiseResponse,
 } from "@/lib/monthly-reports/distributor-wise-client";
-import type { DistributorWiseRow, MonthlyReportFilters } from "@/lib/monthly-reports/types";
+import {
+  distributorWiseSnapshotBanner,
+  formatSnapshotCoverageSubtitle,
+  type DistributorWiseRow,
+  type MonthlyReportFilters,
+} from "@/lib/monthly-reports/types";
 import { cn } from "@/lib/utils";
 
 const emptyFilters: MonthlyReportFilters = {
@@ -35,6 +40,7 @@ const emptyFilters: MonthlyReportFilters = {
 type HeaderTone = "identity" | "target" | "sales" | "achv" | "lmtd" | "stock";
 
 const HEADER_TONES: HeaderTone[] = [
+  "identity",
   "identity",
   "identity",
   "target",
@@ -97,6 +103,7 @@ function cellKinds(): Array<"text" | "units" | "money" | "percent"> {
   return [
     "text",
     "text",
+    "text",
     "units",
     "units",
     "units",
@@ -114,6 +121,7 @@ function rowCells(row: DistributorWiseRow): Array<string | number | "-"> {
   return [
     row.distributorName,
     row.city || "—",
+    row.asOfDate || "—",
     row.targetUnits,
     row.salesUnits,
     row.lmtdSalesUnits,
@@ -275,7 +283,7 @@ export default function DistributorWiseReportPage() {
     <div className="space-y-6">
       <PageHeader
         title="Distributor Wise"
-        description="Monthly management report — targets, sales, LMTD, achievement, and closing stock by distributor"
+        description="Monthly management report — each distributor's latest MTD snapshot, targets, LMTD, achievement, and closing stock"
         actions={
           <Button
             variant="accent"
@@ -321,8 +329,10 @@ export default function DistributorWiseReportPage() {
           </CardTitle>
           {report && (
             <p className="mt-1 text-sm text-muted-foreground">
-              LMTD = full {report.priorPeriod.monthName} ({report.period.priorMonthStart} →{" "}
-              {report.period.priorMonthEnd})
+              {distributorWiseSnapshotBanner(report.period.monthName)}
+              {report.coverage
+                ? ` ${formatSnapshotCoverageSubtitle(report.coverage, report.priorPeriod.monthName)}.`
+                : ""}
             </p>
           )}
         </CardHeader>
@@ -359,8 +369,8 @@ export default function DistributorWiseReportPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {report.rows.map((row, rowIdx) => (
-                    <TableRow key={`${row.distributorName}-${rowIdx}`}>
+                  {report.rows.map((row) => (
+                    <TableRow key={row.distributorName}>
                       {rowCells(row).map((val, i) => (
                         <TableCell
                           key={i}
